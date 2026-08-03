@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.06.2.3</title>
+  <title>Odyssée — Légendes de l’Égée v1.06.2.4</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
@@ -126,7 +126,7 @@
   <div id="titleContent">
     <h1 class="gameTitle">ODYSSÉE</h1>
     <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
-    <div class="gameVersion">ALPHA v1.06.2.3</div>
+    <div class="gameVersion">ALPHA v1.06.2.4</div>
     <button id="startButton" type="button">COMMENCER</button>
     <button id="eraseButton" type="button">Effacer la sauvegarde</button>
   </div>
@@ -231,6 +231,7 @@ class WorldScene extends Phaser.Scene {
     this.placeStaticProps();
     this.createActors();
     this.createUI();
+    this.syncActorFx();
     this.setupDomControls();
     this.loadSave();
 
@@ -240,39 +241,42 @@ class WorldScene extends Phaser.Scene {
     this.scale.on("resize",()=>{ this.layout(); this.updateResponsiveView(); });
 
     this.input.keyboard?.on("keydown-E",()=>this.actionUse());
-    this.toast("v1.06.2.3 : style top-down amélioré, plus propre et plus tactique.");
+    this.toast("v1.06.2.4 : nouveau héros top-down, plus lisse, plus tactique et plus lisible.");
   }
 
   createTextures(){
     const g=this.make.graphics({add:false});
 
-    // HERO — top-down, more tactical / realistic
+    // HERO — refined tactical top-down inspired by your refs
     g.clear();
-    g.fillStyle(0x000000,.22).fillEllipse(28,34,24,10);
-    g.fillStyle(0x7b1f18,1).fillRoundedRect(18,18,20,16,4); // cuirass
-    g.fillStyle(0xb98a58,1).fillCircle(28,14,7); // head
-    g.fillStyle(0xcfc79c,1).fillTriangle(28,2,20,19,36,19); // helmet marker
-    g.fillStyle(0x8d7b56,1).fillRect(23,6,10,4); // helmet ridge
-    g.fillStyle(0x6d4d31,1).fillRect(10,18,7,15); // shield
-    g.fillStyle(0xb9a177,1).fillRect(35,4,2,24); // spear shaft
-    g.fillStyle(0xddd5bb,1).fillTriangle(36,2,34,8,38,8); // spear tip
-    g.fillStyle(0xa56a3c,1).fillRect(21,33,5,9); // leg L
-    g.fillStyle(0xa56a3c,1).fillRect(30,33,5,9); // leg R
-    g.lineStyle(2,0x2d1b11,1).strokeRoundedRect(18,18,20,16,4);
-    g.generateTexture("heroTop",56,48);
+    g.fillStyle(0x000000,.24).fillEllipse(40,52,34,16);             // shadow
+    g.fillStyle(0xa4c9cc,.18).fillCircle(40,30,26);                 // subtle outer glow
+    g.fillStyle(0x6d1d17,1).fillEllipse(40,31,26,28);               // red cloak/body
+    g.fillStyle(0x8c3127,1).fillEllipse(40,28,18,18);               // upper armor
+    g.fillStyle(0xcead7f,1).fillCircle(40,18,8);                    // head
+    g.fillStyle(0x8f7b54,1).fillEllipse(40,13,16,9);                // bronze helmet dome
+    g.fillStyle(0xd7c697,1).fillTriangle(40,3,31,17,49,17);         // helmet face point
+    g.fillStyle(0x7f633e,1).fillCircle(27,31,9);                    // shield
+    g.lineStyle(2,0xb9a37b,.9).strokeCircle(27,31,9);
+    g.fillStyle(0xcab07b,1).fillRect(51,9,3,30);                    // spear shaft
+    g.fillStyle(0xe3dbc4,1).fillTriangle(52,4,48,11,56,11);         // spear tip
+    g.fillStyle(0xa77048,1).fillRect(33,43,5,10);                   // left leg
+    g.fillStyle(0xa77048,1).fillRect(42,43,5,10);                   // right leg
+    g.lineStyle(2,0x2a1a12,1).strokeEllipse(40,31,26,28);           // outline
+    g.generateTexture("heroTop",80,72);
 
-    // SHIP — cleaner top-down boat
+    // Ship
     g.clear();
     g.fillStyle(0x000000,.20).fillEllipse(42,72,48,14);
     g.fillStyle(0x4b2e1c,1).fillEllipse(42,44,44,66);
     g.fillStyle(0x744a2d,1).fillEllipse(42,44,34,56);
-    g.fillStyle(0xcdb58f,1).fillRect(40,18,3,38); // mast
-    g.fillStyle(0xe4ddc6,1).fillTriangle(43,20,43,52,62,36); // sail
+    g.fillStyle(0xcdb58f,1).fillRect(40,18,3,38);
+    g.fillStyle(0xe4ddc6,1).fillTriangle(43,20,43,52,62,36);
     g.fillStyle(0x3a2316,1).fillRect(28,55,28,7);
     g.lineStyle(2,0x2b1a10,1).strokeEllipse(42,44,44,66);
     g.generateTexture("shipTop",84,88);
 
-    // TREES — flatter and clearer from above
+    // Trees
     g.clear();
     g.fillStyle(0x000000,.14).fillEllipse(34,40,36,12);
     g.fillStyle(0x234831,1).fillCircle(34,24,18);
@@ -289,7 +293,7 @@ class WorldScene extends Phaser.Scene {
     g.fillStyle(0x6c4a2e,1).fillCircle(32,25,4);
     g.generateTexture("treeTopB",68,56);
 
-    // ROCK
+    // Rock
     g.clear();
     g.fillStyle(0x000000,.18).fillEllipse(24,28,28,10);
     g.fillStyle(0x6e7578,1).fillCircle(22,18,12);
@@ -297,19 +301,19 @@ class WorldScene extends Phaser.Scene {
     g.fillStyle(0xb0b4b0,.55).fillCircle(18,14,5);
     g.generateTexture("rockTop",52,40);
 
-    // FORGE — top-down building with footprint and details
+    // Forge
     g.clear();
     g.fillStyle(0x000000,.16).fillRect(8,10,144,104);
     g.fillStyle(0x8a5835,1).fillRoundedRect(0,0,144,104,6);
     g.lineStyle(3,0x4d311f,1).strokeRoundedRect(0,0,144,104,6);
-    g.fillStyle(0x6a4127,1).fillRect(52,68,40,26); // entrance zone
+    g.fillStyle(0x6a4127,1).fillRect(52,68,40,26);
     g.fillStyle(0x35271a,1).fillRect(18,16,28,24);
-    g.fillStyle(0xe18d3e,1).fillCircle(32,27,7); // forge ember
-    g.fillStyle(0xb07f47,1).fillRect(92,18,28,20); // work area
+    g.fillStyle(0xe18d3e,1).fillCircle(32,27,7);
+    g.fillStyle(0xb07f47,1).fillRect(92,18,28,20);
     g.fillStyle(0xd4c89c,1).fillRect(16,50,110,8);
     g.generateTexture("forgeTop",160,122);
 
-    // MARKET
+    // Market
     g.clear();
     g.fillStyle(0x000000,.16).fillRect(8,10,164,104);
     g.fillStyle(0xd4ba7f,1).fillRoundedRect(0,0,164,104,6);
@@ -322,7 +326,7 @@ class WorldScene extends Phaser.Scene {
     g.fillStyle(0xeee0be,1).fillRect(10,40,144,8);
     g.generateTexture("marketTop",180,122);
 
-    // TEMPLE
+    // Temple
     g.clear();
     g.fillStyle(0x000000,.16).fillRect(10,10,194,138);
     g.fillStyle(0xd8d4c7,1).fillRoundedRect(0,0,194,138,6);
@@ -333,7 +337,7 @@ class WorldScene extends Phaser.Scene {
     g.fillStyle(0xa28c5b,1).fillCircle(97,64,8);
     g.generateTexture("templeTop",214,158);
 
-    // BUSH
+    // Bush
     g.clear();
     g.fillStyle(0x000000,.14).fillEllipse(26,22,28,9);
     g.fillStyle(0x29553d,1).fillCircle(16,16,10);
@@ -520,8 +524,24 @@ class WorldScene extends Phaser.Scene {
 
   createActors(){
     this.ship=this.add.image(this.shipPoint.x,this.shipPoint.y,"shipTop").setDepth(70);
-    this.player=this.add.image(this.landSpawn.x,this.landSpawn.y,"heroTop").setDepth(72);
+
+    // Player group: selection ring + soft cone + refined hero sprite
+    this.playerRing=this.add.circle(this.landSpawn.x,this.landSpawn.y,20,0xeff5f4,.12)
+      .setStrokeStyle(2,0xe8f1ef,.78).setDepth(70);
+    this.playerCone=this.add.triangle(this.landSpawn.x,this.landSpawn.y-26,0,42,16,0,32,42,0xbfe9f0,.22)
+      .setOrigin(.5,.85).setDepth(71);
+    this.player=this.add.image(this.landSpawn.x,this.landSpawn.y,"heroTop").setDepth(72).setScale(.92);
     this.player.rotation=0;
+  }
+
+  syncActorFx(){
+    if(this.player){
+      this.playerRing.setPosition(this.player.x,this.player.y);
+      this.playerCone.setPosition(this.player.x,this.player.y-2);
+      this.playerCone.rotation=this.player.rotation;
+      this.playerRing.setVisible(this.mode==="land" && this.player.visible);
+      this.playerCone.setVisible(this.mode==="land" && this.player.visible);
+    }
   }
 
   createUI(){
@@ -592,7 +612,7 @@ class WorldScene extends Phaser.Scene {
 
   updateResponsiveView(){
     const landscape=this.scale.width>this.scale.height;
-    const zoom=landscape ? (this.scale.height<500 ? 1.02 : 1.12) : .88;
+    const zoom=landscape ? (this.scale.height<500 ? 1.06 : 1.18) : .92;
     this.cameras.main.setZoom(zoom);
   }
 
@@ -626,6 +646,7 @@ class WorldScene extends Phaser.Scene {
       if(ds<118){
         this.mode="sea";
         this.player.setVisible(false);
+        this.syncActorFx();
         this.cameras.main.startFollow(this.ship,true,.08,.08);
         this.toast("Tu prends la mer.");
         this.save();
@@ -656,6 +677,7 @@ class WorldScene extends Phaser.Scene {
       if(d<150){
         this.mode="land";
         this.player.setPosition(this.landSpawn.x,this.landSpawn.y).setVisible(true);
+        this.syncActorFx();
         this.cameras.main.startFollow(this.player,true,.08,.08);
         this.toast("Débarquement à Ithaque.");
         this.save();
@@ -763,6 +785,8 @@ class WorldScene extends Phaser.Scene {
 
       if(len>.05) this.player.rotation=Math.atan2(y,x)+Math.PI/2;
       this.player.setDepth(72 + this.player.y*0.001);
+      this.playerRing.alpha = 0.10 + ((Math.sin(this.dayT*5)+1)/2)*0.06;
+      this.playerCone.alpha = .18 + Math.min(.16, len*.16);
     } else {
       const stepX=x*this.shipSpeed*delta/1000;
       const stepY=y*this.shipSpeed*delta/1000;
@@ -777,6 +801,7 @@ class WorldScene extends Phaser.Scene {
       this.ship.setDepth(70 + this.ship.y*0.001);
     }
 
+    this.syncActorFx();
     this.hud.setText(`◈ ${this.coins}   🍞 ${this.food}   🪵 ${this.wood}`);
     this.modeText.setText(this.mode==="land" ? "ITHAQUE — TACTICAL TOP-DOWN" : "MER IONIENNE — NAVIGATION");
   }
@@ -787,7 +812,7 @@ const config={
   parent:"game",
   backgroundColor:"#06171e",
   scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH,width:innerWidth,height:innerHeight},
-  render:{antialias:false,pixelArt:true,roundPixels:true},
+  render:{antialias:true,pixelArt:false,roundPixels:false},
   scene:[BootScene,WorldScene]
 };
 
