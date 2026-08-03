@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.1.3 — Farmer arm hotfix</title>
+<title>Odyssée — v1.11.1.3 — Door Kickers arm pose</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -550,40 +550,54 @@ function createFarmerNPC(){
   };
   const leftLeg=buildLeg(-1),rightLeg=buildLeg(1);
   const buildArm=(side)=>{
-    const anchor=new THREE.Group();
-    anchor.position.set(side*.19,.325,-.012);
-    torsoPivot.add(anchor);
+    const shoulder=new THREE.Vector3(side*.185,.335,-.015);
+    const upperLen=.235,foreLen=.215;
 
-    const upperLen=.21,foreLen=.19;
-    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.038,upperLen-.076,6,10),skin);
-    upper.castShadow=true;torsoPivot.add(upper);
-    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.034,foreLen-.068,6,10),skin);
-    fore.castShadow=true;torsoPivot.add(fore);
-    const hand=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),skin);
-    hand.castShadow=true;torsoPivot.add(hand);
+    const sleeve=new THREE.Mesh(new THREE.SphereGeometry(.052,10,8),tunic);
+    sleeve.scale.set(1,.88,1);
+    sleeve.position.copy(shoulder);
+    sleeve.castShadow=true;
+    torsoPivot.add(sleeve);
 
-    return {side,anchor,upper,fore,hand,upperLen,foreLen,base:anchor.position.clone()};
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.043,upperLen-.086,6,10),skin);
+    upper.castShadow=true;
+    torsoPivot.add(upper);
+
+    const elbowJoint=new THREE.Mesh(new THREE.SphereGeometry(.043,10,8),skin);
+    elbowJoint.castShadow=true;
+    torsoPivot.add(elbowJoint);
+
+    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.039,foreLen-.078,6,10),skin);
+    fore.castShadow=true;
+    torsoPivot.add(fore);
+
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.041,10,8),skin);
+    hand.scale.set(1.08,.9,1.05);
+    hand.castShadow=true;
+    torsoPivot.add(hand);
+
+    return {side,shoulder,upper,elbowJoint,fore,hand,upperLen,foreLen,sleeve};
   };
   const leftArm=buildArm(-1),rightArm=buildArm(1);
 
   // Houe tenue à deux mains comme une arme : bras avant plus tendu, bras arrière plus recourbé.
   const hoePivot=new THREE.Group();
-  hoePivot.position.set(.04,.135,-.055);
-  hoePivot.rotation.set(-.04,.04,-.22);
+  hoePivot.position.set(.015,.19,-.205);
+  hoePivot.rotation.set(-.08,-.50,-.08);
   torsoPivot.add(hoePivot);
   const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.019,.023,1.14,10),wood);
   shaft.rotation.z=Math.PI/2;
-  shaft.position.set(.12,-.01,0);
+  shaft.position.set(-.05,-.005,0);
   shaft.castShadow=true;
   hoePivot.add(shaft);
   const blade=new THREE.Mesh(new THREE.BoxGeometry(.30,.05,.15),iron);
-  blade.position.set(.71,-.025,0);
-  blade.rotation.z=.18;
+  blade.position.set(-.69,-.025,0);
+  blade.rotation.z=-.18;
   blade.castShadow=true;
   hoePivot.add(blade);
   const leftGripBand=new THREE.Mesh(new THREE.TorusGeometry(.035,.009,6,12),leather);
-  leftGripBand.rotation.y=Math.PI/2;leftGripBand.position.set(.18,0,0);hoePivot.add(leftGripBand);
-  const rightGripBand=leftGripBand.clone();rightGripBand.position.x=-.24;hoePivot.add(rightGripBand);
+  leftGripBand.rotation.y=Math.PI/2;leftGripBand.position.set(-.26,0,0);hoePivot.add(leftGripBand);
+  const rightGripBand=leftGripBand.clone();rightGripBand.position.x=.07;hoePivot.add(rightGripBand);
 
   root.userData={
     state:'walk',stateTime:0,targetIndex:1,rounds:0,walkCycle:0,idleCycle:0,dialogIndex:0,playerNear:false,
@@ -600,26 +614,33 @@ function orientSegment(mesh,start,end){
   mesh.position.copy(start).addScaledVector(dir,.5);
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
 }
-function solveFarmerArm(arm,targetLocal,poseBias=0){
-  const shoulder=arm.base.clone();
+function solveFarmerArm(arm,targetLocal,bend=1){
+  const shoulder=arm.shoulder.clone();
   const upperLen=arm.upperLen,foreLen=arm.foreLen;
   const toTarget=targetLocal.clone().sub(shoulder);
-  let dist=toTarget.length();
-  if(dist<1e-4)dist=1e-4;
-  const maxReach=upperLen+foreLen-.002;
-  if(dist>maxReach)toTarget.multiplyScalar(maxReach/dist),dist=maxReach;
+  let dist=Math.max(toTarget.length(),1e-4);
+  const maxReach=upperLen+foreLen-.006;
+  const minReach=Math.abs(upperLen-foreLen)+.012;
+  if(dist>maxReach){toTarget.multiplyScalar(maxReach/dist);dist=maxReach;}
+  if(dist<minReach){toTarget.multiplyScalar(minReach/dist);dist=minReach;}
   const dir=toTarget.clone().normalize();
-  let pole=new THREE.Vector3(arm.side*.42,.08+poseBias*.04,-.62-poseBias*.08);
+
+  // Le coude sort sur le côté du corps, comme les personnages vus du dessus.
+  let pole=new THREE.Vector3(arm.side*.95,.10,.48*bend);
   pole.sub(dir.clone().multiplyScalar(pole.dot(dir)));
-  if(pole.lengthSq()<1e-5)pole.set(arm.side*.4,.12,-.5);
+  if(pole.lengthSq()<1e-5)pole.set(arm.side,.05,.35);
   pole.normalize();
-  const cosShoulder=THREE.MathUtils.clamp((upperLen*upperLen+dist*dist-foreLen*foreLen)/(2*upperLen*dist),-1,1);
-  const along=cosShoulder*upperLen;
+
+  const cosA=THREE.MathUtils.clamp((upperLen*upperLen+dist*dist-foreLen*foreLen)/(2*upperLen*dist),-1,1);
+  const along=cosA*upperLen;
   const away=Math.sqrt(Math.max(0,upperLen*upperLen-along*along));
   const elbow=shoulder.clone().addScaledVector(dir,along).addScaledVector(pole,away);
+
   orientSegment(arm.upper,shoulder,elbow);
   orientSegment(arm.fore,elbow,targetLocal);
+  arm.elbowJoint.position.copy(elbow);
   arm.hand.position.copy(targetLocal);
+  arm.sleeve.position.copy(shoulder);
 }
 
 function showFarmerBubble(message,duration=2.8){
@@ -705,32 +726,33 @@ function updateFarmerNPC(dt){
   if(workAmount){
     const chop=(Math.sin(d.idleCycle*5.4)+1)*.5;
     r.torsoPivot.rotation.x=.14+chop*.10;
-    r.hoePivot.rotation.x=-.10-chop*.42;
-    r.hoePivot.rotation.y=.04;
-    r.hoePivot.rotation.z=-.26;
+    r.hoePivot.rotation.x=-.10-chop*.34;
+    r.hoePivot.rotation.y=-.50+chop*.06;
+    r.hoePivot.rotation.z=-.08-chop*.05;
   }else{
-    r.hoePivot.rotation.x=-.04+Math.sin(d.idleCycle*1.4)*.01;
-    r.hoePivot.rotation.y=.04;
-    r.hoePivot.rotation.z=-.22;
+    r.hoePivot.rotation.x=-.08+Math.sin(d.idleCycle*1.4)*.012;
+    r.hoePivot.rotation.y=-.50+Math.sin(d.idleCycle*1.1)*.015;
+    r.hoePivot.rotation.z=-.08;
     if(d.state!=='rest'&&d.state!=='talk')r.torsoPivot.rotation.x=.04+Math.sin(d.idleCycle*1.6)*.01;
   }
 
-  const leftGripWorld=r.hoePivot.localToWorld(new THREE.Vector3(.18,0,0));
-  const rightGripWorld=r.hoePivot.localToWorld(new THREE.Vector3(-.24,0,0));
-  const leftGripLocal=r.torsoPivot.worldToLocal(leftGripWorld.clone());
-  const rightGripLocal=r.torsoPivot.worldToLocal(rightGripWorld.clone());
+  // Les deux points de prise sont transformés dans l'espace local du torse.
+  r.hoePivot.updateMatrix();
+  const leftGripLocal=new THREE.Vector3(-.26,0,0).applyMatrix4(r.hoePivot.matrix);
+  const rightGripLocal=new THREE.Vector3(.07,0,0).applyMatrix4(r.hoePivot.matrix);
 
+  // Main gauche en avant, main droite proche du corps : posture type arme/outil.
   if(moving){
-    leftGripLocal.y+=Math.abs(swing)*.012; rightGripLocal.y+=Math.abs(swing)*.009;
-    leftGripLocal.z-=.004; rightGripLocal.z+=.006;
+    leftGripLocal.y+=Math.abs(swing)*.008;
+    rightGripLocal.y+=Math.abs(swing)*.006;
   }
   if(workAmount){
-    leftGripLocal.y+=.018; rightGripLocal.y-=.006;
-    leftGripLocal.z+=.012; rightGripLocal.z-=.010;
+    leftGripLocal.y+=.012;
+    rightGripLocal.y-=.004;
   }
 
-  solveFarmerArm(r.leftArm,leftGripLocal,.8*workAmount+.15);
-  solveFarmerArm(r.rightArm,rightGripLocal,.9*workAmount+.05);
+  solveFarmerArm(r.leftArm,leftGripLocal,1.0);
+  solveFarmerArm(r.rightArm,rightGripLocal,.72);
 
   updateFarmerBubble();
   updateActionButtons();
