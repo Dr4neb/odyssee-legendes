@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.09.2.1 — Shield parallel patch</title>
+<title>Odyssée — v1.09.2.2 — Shield rotated patch</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -50,7 +50,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.09.2.1 — SHIELD PARALLEL PATCH</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Lancer le hoplite — patch bouclier</button><div id="menuNote">Bouclier plus grand, mieux aligné et parallèle au corps du personnage.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.09.2.2 — SHIELD ROTATED PATCH</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Lancer le hoplite — patch bouclier</button><div id="menuNote">Bouclier plus grand, mieux aligné et parallèle au corps du personnage.</div></div></div>
 </div>
 <div id="orientationGate"><div class="orientationCard"><h2>Tourne l’iPhone</h2><p>Le prototype 3D se joue exclusivement en paysage.</p><button id="rotateBtn" type="button">Activer le paysage</button></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE CORRIGÉ</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • COLLISIONS • DÉCORS PERSONNALISÉS</div></div>
@@ -243,7 +243,7 @@ function loadCharacter(){
     greekGear=addGreekGear(character);
     loaded=true;
     els.loading.classList.remove('visible');
-    els.loaderText.textContent='Patch bouclier prêt.';
+    els.loaderText.textContent='Patch bouclier aligné prêt.';
   },120);
 }
 
@@ -314,8 +314,8 @@ function addGreekGear(root){
   }
   const leftArm=buildArm(-1), rightArm=buildArm(1);
 
-  const shieldPivot=new THREE.Group(); shieldPivot.position.set(-.17,-.06,.03); leftArm.elbow.add(shieldPivot);
-  shieldPivot.rotation.x=Math.PI/2; shieldPivot.rotation.z=0; shieldPivot.rotation.y=0;
+  const shieldPivot=new THREE.Group(); shieldPivot.position.set(-.16,-.06,.03); leftArm.elbow.add(shieldPivot);
+  shieldPivot.rotation.x=Math.PI/2; shieldPivot.rotation.z=Math.PI/2; shieldPivot.rotation.y=0;
   const shield=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.062,28), matBlack); shield.castShadow=true; shield.receiveShadow=true; shield.scale.set(.82,1.62,1.00); shieldPivot.add(shield);
   const rim=new THREE.Mesh(new THREE.TorusGeometry(.258,.018,8,26), matSteel); rim.position.z=.034; rim.scale.set(.82,1.62,1); shieldPivot.add(rim);
   rim.rotation.x=Math.PI/2;
@@ -403,12 +403,12 @@ function update(){
       g.rightArm.shoulder.rotation.z=-0.01 - turnLean*0.10;
       g.rightArm.elbow.rotation.x=0.08 + Math.sin(walkCycle+1.2)*0.02*speedNorm;
 
-      g.shieldPivot.position.x=-.17;
+      g.shieldPivot.position.x=-.16;
       g.shieldPivot.position.y=-.06 + Math.abs(Math.sin(walkCycle))*0.003*speedNorm;
       g.shieldPivot.position.z=.03;
       g.shieldPivot.rotation.x=Math.PI/2 + Math.sin(walkCycle+.4)*0.006*speedNorm;
       g.shieldPivot.rotation.y=0;
-      g.shieldPivot.rotation.z=0 + Math.sin(walkCycle+.2)*0.003*speedNorm;
+      g.shieldPivot.rotation.z=Math.PI/2 + Math.sin(walkCycle+.2)*0.003*speedNorm;
       g.spearPivot.rotation.z=.03 + Math.sin(walkCycle+Math.PI)*0.04*speedNorm;
       g.spearPivot.rotation.y=.04 + Math.sin(walkCycle*1.3+0.7)*0.018*speedNorm;
       g.spearPivot.position.z=.05 + Math.sin(walkCycle*2)*0.010*speedNorm;
