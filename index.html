@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.06.2.5</title>
+  <title>Odyssée — Légendes de l’Égée v1.06.2.7</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
@@ -126,7 +126,7 @@
   <div id="titleContent">
     <h1 class="gameTitle">ODYSSÉE</h1>
     <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
-    <div class="gameVersion">ALPHA v1.06.2.5</div>
+    <div class="gameVersion">ALPHA v1.06.2.7</div>
     <button id="startButton" type="button">COMMENCER</button>
     <button id="eraseButton" type="button">Effacer la sauvegarde</button>
   </div>
@@ -221,6 +221,10 @@ class WorldScene extends Phaser.Scene {
     this.decorTrees=[];
     this.obstacles=[];
     this.footstepTimer=0;
+    this.playerVel={x:0,y:0};
+    this.shipVel={x:0,y:0};
+    this.walkCycle=0;
+    this.idleCycle=0;
 
     // Hotfix v1.06.2.2.1 : pas de moteur physique Phaser utilisé dans cette version.
     this.cameras.main.setBounds(0,0,W,H);
@@ -241,53 +245,54 @@ class WorldScene extends Phaser.Scene {
     this.scale.on("resize",()=>{ this.layout(); this.updateResponsiveView(); });
 
     this.input.keyboard?.on("keydown-E",()=>this.actionUse());
-    this.toast("v1.06.2.5 : héros plus incarné, avec plus de volume et une meilleure lecture du corps.");
+    this.toast("v1.06.2.7 : lecture du dessus améliorée, corps plus crédible et mouvement affiné.");
   }
 
   createTextures(){
     const g=this.make.graphics({add:false});
 
-    // HERO — pseudo-volume top-down, less flat and more human
+    // HERO PARTS — better top-down anatomy, less flat, more "standing human seen from above"
     g.clear();
-    g.fillStyle(0x000000,.24).fillEllipse(48,64,38,18);                  // ground shadow
-    g.fillStyle(0xa5cbd1,.12).fillEllipse(48,40,38,28);                  // subtle ambient halo
+    g.fillStyle(0x000000,.22).fillEllipse(34,12,36,14);
+    g.generateTexture("heroShadowTop",68,24);
 
-    // shield side first (left side from top view)
-    g.fillStyle(0x7a623d,1).fillEllipse(29,42,16,20);
-    g.lineStyle(2,0xd0bc8e,.95).strokeEllipse(29,42,16,20);
-    g.fillStyle(0x5c462d,1).fillCircle(29,42,3);
+    // Pelvis / legs base from above
+    g.clear();
+    g.fillStyle(0x9d6f49,1).fillRoundedRect(6,4,10,18,4);
+    g.fillStyle(0x6b472a,1).fillRect(5,19,12,4);
+    g.lineStyle(1,0x523526,1).strokeRoundedRect(6,4,10,18,4);
+    g.generateTexture("heroLegTop",22,26);
 
-    // spear side (right)
-    g.fillStyle(0xc5ad78,1).fillRect(62,18,3,34);
-    g.fillStyle(0xe6deca,1).fillTriangle(63,12,58,20,68,20);
+    // Torso / shoulders from above
+    g.clear();
+    g.fillStyle(0x7c3229,1).fillEllipse(32,32,32,30);      // lower torso / tunic mass
+    g.fillStyle(0xa34739,1).fillEllipse(32,24,30,20);      // upper torso
+    g.fillStyle(0xa44c3d,1).fillEllipse(20,22,12,12);      // left shoulder
+    g.fillStyle(0xa44c3d,1).fillEllipse(44,22,12,12);      // right shoulder
+    g.fillStyle(0xc49256,1).fillEllipse(32,36,12,7);       // belt / waist
+    g.lineStyle(2,0x2b1a12,1).strokeEllipse(32,31,32,32);
+    g.generateTexture("heroTorsoTop",64,60);
 
-    // body / cloak, drawn with perspective
-    g.fillStyle(0x7a241d,1).fillEllipse(48,43,28,34);                    // lower cloak mass
-    g.fillStyle(0xa13a2d,1).fillEllipse(48,36,24,22);                    // upper torso
-    g.fillStyle(0xc38f52,1).fillEllipse(48,50,10,8);                     // belt / waist accent
+    // Arms from above
+    g.clear();
+    g.fillStyle(0xc08661,1).fillEllipse(9,9,12,14);
+    g.lineStyle(1,0x6a4734,.9).strokeEllipse(9,9,12,14);
+    g.generateTexture("heroArmTop",18,18);
 
-    // shoulders / upper arms
-    g.fillStyle(0x8f3428,1).fillEllipse(38,34,10,12);
-    g.fillStyle(0x8f3428,1).fillEllipse(58,34,10,12);
+    // Head from above with crown/hair and neck hint
+    g.clear();
+    g.fillStyle(0x7a563a,.55).fillEllipse(18,8,12,6);      // crown hair shadow
+    g.fillStyle(0x2b2321,1).fillEllipse(18,10,18,10);      // top hair / crown
+    g.fillStyle(0xd0ad80,1).fillEllipse(18,19,15,15);      // top of head / face area
+    g.fillStyle(0xe9d2aa,.28).fillEllipse(15,21,5,4);      // highlight
+    g.fillStyle(0x915941,.32).fillRect(14,25,8,4);         // neck connection hint
+    g.generateTexture("heroHeadTop",36,32);
 
-    // head and helmet with more shape
-    g.fillStyle(0xd0ab7a,1).fillCircle(48,23,8);                         // head
-    g.fillStyle(0x8a7752,1).fillEllipse(48,18,18,10);                    // helmet dome
-    g.fillStyle(0xcdbd94,1).fillTriangle(48,9,38,22,58,22);             // helmet front / nose direction
-    g.fillStyle(0x7c6844,1).fillRect(44,13,8,3);                         // crest base
-    g.fillStyle(0xd8cba6,.85).fillRect(47,10,2,10);                      // nose guard feel
-
-    // feet / legs separated so he feels standing, not lying
-    g.fillStyle(0xa97048,1).fillRect(41,56,5,10);
-    g.fillStyle(0xa97048,1).fillRect(50,56,5,10);
-    g.fillStyle(0x654632,1).fillRect(40,65,6,3);
-    g.fillStyle(0x654632,1).fillRect(49,65,6,3);
-
-    // outlines
-    g.lineStyle(2,0x2b1a12,1).strokeEllipse(48,43,28,34);
-    g.lineStyle(1,0x2b1a12,.9).strokeEllipse(48,23,16,16);
-
-    g.generateTexture("heroTop",96,84);
+    // Small cape tail to make the body feel vertical, not lying flat
+    g.clear();
+    g.fillStyle(0x68251f,.95).fillEllipse(12,16,20,22);
+    g.fillStyle(0x7f2d26,.6).fillEllipse(12,10,14,10);
+    g.generateTexture("heroCapeTop",24,28);
 
     // Ship
     g.clear();
@@ -549,19 +554,35 @@ class WorldScene extends Phaser.Scene {
   createActors(){
     this.ship=this.add.image(this.shipPoint.x,this.shipPoint.y,"shipTop").setDepth(70);
 
-    // Player group: refined ring + tighter cone + more present character
-    this.playerRing=this.add.circle(this.landSpawn.x,this.landSpawn.y,18,0xeff5f4,.10)
-      .setStrokeStyle(2,0xe8f1ef,.65).setDepth(70);
-    this.playerCone=this.add.triangle(this.landSpawn.x,this.landSpawn.y-22,0,34,12,0,24,34,0xbfe9f0,.18)
-      .setOrigin(.5,.82).setDepth(71);
-    this.player=this.add.image(this.landSpawn.x,this.landSpawn.y,"heroTop").setDepth(72).setScale(1.02);
+    this.playerRing=this.add.circle(this.landSpawn.x,this.landSpawn.y,18,0xeff5f4,.08)
+      .setStrokeStyle(2,0xe8f1ef,.52).setDepth(70);
+    this.playerCone=this.add.triangle(this.landSpawn.x,this.landSpawn.y-18,0,28,9,0,18,28,0xbfe9f0,.10)
+      .setOrigin(.5,.80).setDepth(71);
+
+    this.playerShadow=this.add.image(0,27,"heroShadowTop").setAlpha(.68);
+    this.playerCape=this.add.image(0,14,"heroCapeTop").setAlpha(.95);
+    this.playerLegL=this.add.image(-6,20,"heroLegTop");
+    this.playerLegR=this.add.image(6,20,"heroLegTop");
+    this.playerArmL=this.add.image(-16,2,"heroArmTop").setAlpha(.95);
+    this.playerArmR=this.add.image(16,2,"heroArmTop").setAlpha(.95);
+    this.playerTorso=this.add.image(0,2,"heroTorsoTop");
+    this.playerHead=this.add.image(0,-13,"heroHeadTop");
+
+    this.player=this.add.container(this.landSpawn.x,this.landSpawn.y,[
+      this.playerShadow,
+      this.playerCape,
+      this.playerLegL, this.playerLegR,
+      this.playerArmL, this.playerArmR,
+      this.playerTorso, this.playerHead
+    ]).setDepth(72).setScale(1.04);
+
     this.player.rotation=0;
   }
 
   syncActorFx(){
     if(this.player){
-      this.playerRing.setPosition(this.player.x,this.player.y);
-      this.playerCone.setPosition(this.player.x,this.player.y-2);
+      this.playerRing.setPosition(this.player.x,this.player.y+3);
+      this.playerCone.setPosition(this.player.x,this.player.y+1);
       this.playerCone.rotation=this.player.rotation;
       this.playerRing.setVisible(this.mode==="land" && this.player.visible);
       this.playerCone.setVisible(this.mode==="land" && this.player.visible);
@@ -780,6 +801,7 @@ class WorldScene extends Phaser.Scene {
 
   update(time,delta){
     this.dayT += delta*0.00003;
+    this.idleCycle += delta*0.003;
 
     for(const wave of this.waves){
       wave.x += wave.speed*delta/1000;
@@ -798,30 +820,99 @@ class WorldScene extends Phaser.Scene {
     if(len>1){ x/=len; y/=len; }
 
     if(this.mode==="land"){
-      const stepX=x*this.speed*delta/1000;
-      const stepY=y*this.speed*delta/1000;
+      const dt=delta/1000;
+      const inputPower=Math.min(1,len);
+      const targetVX=x*this.speed*inputPower;
+      const targetVY=y*this.speed*inputPower;
+      const blend=1 - Math.exp(-(len>.05 ? 10 : 7.5) * dt);
+
+      this.playerVel.x = Phaser.Math.Linear(this.playerVel.x,targetVX,blend);
+      this.playerVel.y = Phaser.Math.Linear(this.playerVel.y,targetVY,blend);
+
+      const stepX=this.playerVel.x*dt;
+      const stepY=this.playerVel.y*dt;
 
       const nextX=this.player.x+stepX;
       if(this.canPlayerOccupy(nextX,this.player.y)) this.player.x=nextX;
+      else this.playerVel.x=0;
 
       const nextY=this.player.y+stepY;
       if(this.canPlayerOccupy(this.player.x,nextY)) this.player.y=nextY;
+      else this.playerVel.y=0;
 
-      if(len>.05) this.player.rotation=Math.atan2(y,x)+Math.PI/2;
+      const moveMag=Math.hypot(this.playerVel.x,this.playerVel.y);
+      const moveRatio=Math.min(1, moveMag/this.speed);
+
+      if(moveMag>6){
+        const targetRot=Math.atan2(this.playerVel.y,this.playerVel.x)+Math.PI/2;
+        this.player.rotation = Phaser.Math.Angle.RotateTo(this.player.rotation,targetRot,5.1*dt);
+      }
+
+      if(moveMag>10) this.walkCycle += delta * (0.010 + moveRatio*0.010);
+      else this.walkCycle += delta * 0.0024;
+
+      const idle = moveMag<=10;
+      const cycle = idle ? this.idleCycle : this.walkCycle;
+      const bob = idle ? Math.sin(cycle)*0.9 : Math.sin(cycle)*2.1;
+      const sway = idle ? Math.sin(cycle*0.8)*0.02 : Math.sin(cycle)*0.07*moveRatio;
+      const legA = Math.sin(cycle);
+      const legB = Math.sin(cycle + Math.PI);
+
+      // global body read
+      this.playerShadow.scaleX = 1 + moveRatio*0.05;
+      this.playerShadow.scaleY = 1 - moveRatio*0.04;
+      this.playerShadow.alpha = 0.56 + moveRatio*0.10;
+
+      this.playerCape.y = 14 + Math.max(0,-bob)*0.18;
+      this.playerCape.rotation = sway*0.22;
+
+      this.playerTorso.y = 2 + bob*0.20;
+      this.playerTorso.rotation = sway*0.16;
+
+      this.playerHead.y = -13 + bob*0.40;
+      this.playerHead.rotation = sway*0.10;
+
+      this.playerArmL.x = -16 + sway*10;
+      this.playerArmR.x = 16 - sway*10;
+      this.playerArmL.y = 2 + bob*0.10;
+      this.playerArmR.y = 2 + bob*0.10;
+
+      this.playerLegL.x = -6 + legA*1.6;
+      this.playerLegR.x = 6 + legB*1.6;
+      this.playerLegL.y = 20 + Math.max(0,legA)*2.0 + bob*0.10;
+      this.playerLegR.y = 20 + Math.max(0,legB)*2.0 + bob*0.10;
+      this.playerLegL.rotation = legA*0.08;
+      this.playerLegR.rotation = legB*0.08;
+
       this.player.setDepth(72 + this.player.y*0.001);
-      this.playerRing.alpha = 0.08 + ((Math.sin(this.dayT*5)+1)/2)*0.04;
-      this.playerCone.alpha = .14 + Math.min(.10, len*.10);
+      this.playerRing.alpha = 0.06 + ((Math.sin(this.dayT*5)+1)/2)*0.03;
+      this.playerCone.alpha = 0.09 + Math.min(0.06, moveRatio*0.06);
     } else {
-      const stepX=x*this.shipSpeed*delta/1000;
-      const stepY=y*this.shipSpeed*delta/1000;
+      const dt=delta/1000;
+      const inputPower=Math.min(1,len);
+      const targetVX=x*this.shipSpeed*inputPower;
+      const targetVY=y*this.shipSpeed*inputPower;
+      const blend=1 - Math.exp(-(len>.05 ? 7 : 5) * dt);
+
+      this.shipVel.x = Phaser.Math.Linear(this.shipVel.x,targetVX,blend);
+      this.shipVel.y = Phaser.Math.Linear(this.shipVel.y,targetVY,blend);
+
+      const stepX=this.shipVel.x*dt;
+      const stepY=this.shipVel.y*dt;
 
       const nextX=this.ship.x+stepX;
       if(!this.isShipBlocked(nextX,this.ship.y)) this.ship.x=nextX;
+      else this.shipVel.x=0;
 
       const nextY=this.ship.y+stepY;
       if(!this.isShipBlocked(this.ship.x,nextY)) this.ship.y=nextY;
+      else this.shipVel.y=0;
 
-      if(len>.05) this.ship.rotation=Math.atan2(y,x)+Math.PI/2;
+      const moveMag=Math.hypot(this.shipVel.x,this.shipVel.y);
+      if(moveMag>8){
+        const targetRot=Math.atan2(this.shipVel.y,this.shipVel.x)+Math.PI/2;
+        this.ship.rotation = Phaser.Math.Angle.RotateTo(this.ship.rotation,targetRot,4.2*dt);
+      }
       this.ship.setDepth(70 + this.ship.y*0.001);
     }
 
