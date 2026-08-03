@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.1 — Farmer actions</title>
+<title>Odyssée — v1.11.1.1 — Farmer two-hand hoe</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -559,24 +559,24 @@ function createFarmerNPC(){
   };
   const leftArm=buildArm(-1),rightArm=buildArm(1);
 
-  // Houe centrale tenue à deux mains : le manche traverse les deux paumes.
+  // Houe tenue à deux mains comme une arme : bras avant plus tendu, bras arrière plus recourbé.
   const hoePivot=new THREE.Group();
-  hoePivot.position.set(0,.155,-.07);
-  hoePivot.rotation.set(-.12,0,-.03);
+  hoePivot.position.set(.03,.18,-.08);
+  hoePivot.rotation.set(-.10,.06,-.36);
   torsoPivot.add(hoePivot);
-  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.019,.023,1.08,10),wood);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.019,.023,1.14,10),wood);
   shaft.rotation.z=Math.PI/2;
-  shaft.position.set(.08,0,0);
+  shaft.position.set(.12,-.01,0);
   shaft.castShadow=true;
   hoePivot.add(shaft);
-  const blade=new THREE.Mesh(new THREE.BoxGeometry(.28,.05,.15),iron);
-  blade.position.set(.64,-.02,0);
-  blade.rotation.z=.16;
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(.30,.05,.15),iron);
+  blade.position.set(.71,-.025,0);
+  blade.rotation.z=.18;
   blade.castShadow=true;
   hoePivot.add(blade);
   const leftGripBand=new THREE.Mesh(new THREE.TorusGeometry(.035,.009,6,12),leather);
-  leftGripBand.rotation.y=Math.PI/2;leftGripBand.position.set(-.27,0,0);hoePivot.add(leftGripBand);
-  const rightGripBand=leftGripBand.clone();rightGripBand.position.x=.27;hoePivot.add(rightGripBand);
+  leftGripBand.rotation.y=Math.PI/2;leftGripBand.position.set(.18,0,0);hoePivot.add(leftGripBand);
+  const rightGripBand=leftGripBand.clone();rightGripBand.position.x=-.24;hoePivot.add(rightGripBand);
 
   root.userData={
     state:'walk',stateTime:0,targetIndex:1,rounds:0,walkCycle:0,idleCycle:0,dialogIndex:0,playerNear:false,
@@ -664,27 +664,30 @@ function updateFarmerNPC(dt){
   const swing=Math.sin(d.walkCycle),speed=moving?1:0;
   r.motion.position.y=.015+Math.abs(swing)*.025*speed+Math.sin(d.idleCycle*1.5)*.003;
   r.leftLeg.pivot.rotation.x=-swing*.48*speed;r.rightLeg.pivot.rotation.x=swing*.48*speed;
-  r.leftArm.shoulder.rotation.x=-.16+swing*.07*speed;
-  r.rightArm.shoulder.rotation.x=-.18-swing*.07*speed;
-  r.leftArm.shoulder.rotation.z=-.16;
-  r.rightArm.shoulder.rotation.z=.16;
-  r.leftArm.elbow.rotation.x=.34;
-  r.rightArm.elbow.rotation.x=.34;
+  // Bras avant (gauche) plus loin sur le manche, bras arrière (droit) plus recourbé près du corps.
+  r.leftArm.shoulder.rotation.x=-.30+swing*.05*speed;
+  r.rightArm.shoulder.rotation.x=-.20-swing*.04*speed;
+  r.leftArm.shoulder.rotation.z=-.52;
+  r.rightArm.shoulder.rotation.z=.28;
+  r.leftArm.elbow.rotation.x=.12;
+  r.rightArm.elbow.rotation.x=.82;
   r.hips.rotation.z=Math.sin(d.walkCycle)*.015*speed;
   if(workAmount){
     const chop=(Math.sin(d.idleCycle*5.4)+1)*.5;
     r.torsoPivot.rotation.x=.16+chop*.11;
-    r.leftArm.shoulder.rotation.x=-.46-chop*.36;
-    r.rightArm.shoulder.rotation.x=-.50-chop*.39;
-    r.leftArm.elbow.rotation.x=.42+chop*.20;
-    r.rightArm.elbow.rotation.x=.42+chop*.20;
-    r.hoePivot.rotation.x=-.20-chop*.72;
-    r.hoePivot.rotation.y=0;
-    r.hoePivot.rotation.z=-.03;
+    r.leftArm.shoulder.rotation.x=-.54-chop*.32;
+    r.rightArm.shoulder.rotation.x=-.32-chop*.20;
+    r.leftArm.shoulder.rotation.z=-.58;
+    r.rightArm.shoulder.rotation.z=.22;
+    r.leftArm.elbow.rotation.x=.10+chop*.08;
+    r.rightArm.elbow.rotation.x=.88+chop*.16;
+    r.hoePivot.rotation.x=-.18-chop*.60;
+    r.hoePivot.rotation.y=.04;
+    r.hoePivot.rotation.z=-.40;
   }else{
-    r.hoePivot.rotation.x=-.16+Math.sin(d.idleCycle*1.4)*.008;
-    r.hoePivot.rotation.y=0;
-    r.hoePivot.rotation.z=-.03;
+    r.hoePivot.rotation.x=-.10+Math.sin(d.idleCycle*1.4)*.01;
+    r.hoePivot.rotation.y=.06;
+    r.hoePivot.rotation.z=-.36;
     if(d.state!=='rest'&&d.state!=='talk')r.torsoPivot.rotation.x=.04+Math.sin(d.idleCycle*1.6)*.01;
   }
   updateFarmerBubble();
