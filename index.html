@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.2 — Shield block</title>
+<title>Odyssée — v1.11.2.1 — Shield free tilt</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.2 — SHIELD BLOCK</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A pour parler. Maintiens le bouton B pour lever le bouclier devant le hoplite et bloquer.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.2.1 — SHIELD FREE TILT</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A pour parler. Maintiens B : le bouclier se déplace librement devant le hoplite, change de face et s’incline pour bloquer.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -839,20 +839,25 @@ function addGreekGear(root){
   }
   const leftArm=buildArm(-1), rightArm=buildArm(1);
 
-  const shieldPivot=new THREE.Group(); shieldPivot.position.set(-.16,-.06,.03); leftArm.elbow.add(shieldPivot);
-  shieldPivot.rotation.x=Math.PI/2; shieldPivot.rotation.z=Math.PI/2; shieldPivot.rotation.y=0;
-  const shield=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.062,28), matBlack); shield.castShadow=true; shield.receiveShadow=true; shield.scale.set(.82,1.62,1.00); shieldPivot.add(shield);
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(.258,.018,8,26), matSteel); rim.position.z=.034; rim.scale.set(.82,1.62,1); shieldPivot.add(rim);
-  rim.rotation.x=Math.PI/2;
-  const grip=new THREE.Mesh(new THREE.BoxGeometry(.05,.42,.05), matLeather); grip.position.z=.022; shieldPivot.add(grip);
-  const handStrap=new THREE.Mesh(new THREE.BoxGeometry(.13,.055,.05), matLeather); handStrap.position.set(.00,.04,.022); shieldPivot.add(handStrap);
+  // Bouclier indépendant : il ne tourne plus autour d’un point de maintien visible.
+  // Le groupe complet se déplace devant le corps, puis change de face et s’incline.
+  const shieldPivot=new THREE.Group();
+  torsoPivot.add(shieldPivot);
+  const shieldRestPosition=new THREE.Vector3(-.41,-.055,.085);
+  const shieldBlockPosition=new THREE.Vector3(-.025,.285,-.465);
+  const shieldRestQuaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,Math.PI/2,'XYZ'));
+  const shieldBlockQuaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(.30,-.22,.14,'XYZ'));
+  shieldPivot.position.copy(shieldRestPosition);
+  shieldPivot.quaternion.copy(shieldRestQuaternion);
 
-  // Le bouclier garde sa pose de repos, mais devient indépendant du coude pour pouvoir être levé proprement devant le corps.
-  torsoPivot.attach(shieldPivot);
-  const shieldRestPosition=shieldPivot.position.clone();
-  const shieldRestQuaternion=shieldPivot.quaternion.clone();
-  const shieldBlockPosition=new THREE.Vector3(-.015,.31,-.39);
-  const shieldBlockQuaternion=shieldRestQuaternion.clone();
+  const shield=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.062,28), matBlack);
+  shield.castShadow=true; shield.receiveShadow=true; shield.scale.set(.82,1.62,1.00); shieldPivot.add(shield);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.258,.018,8,26), matSteel);
+  rim.position.y=.034; rim.rotation.x=Math.PI/2; rim.scale.set(.82,1.62,1); shieldPivot.add(rim);
+  const grip=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.42), matLeather);
+  grip.position.y=-.020; shieldPivot.add(grip);
+  const handStrap=new THREE.Mesh(new THREE.BoxGeometry(.13,.05,.055), matLeather);
+  handStrap.position.set(.00,-.022,.04); shieldPivot.add(handStrap);
 
   // Lance sanglée dans le dos, remontée au niveau du dos et bien en biais derrière l'épaule droite.
   const backSpearPivot=new THREE.Group();
@@ -1026,10 +1031,17 @@ function update(){
       g.rightArm.shoulder.rotation.z=THREE.MathUtils.lerp(-0.01-turnLean*.08,-.10,blockBlend);
       g.rightArm.elbow.rotation.x=THREE.MathUtils.lerp(0.06+Math.sin(walkCycle+1.2)*0.022*speedNorm,.28,blockBlend);
 
+      const shieldT=blockBlend*blockBlend*(3-2*blockBlend);
+      const shieldArc=Math.sin(Math.PI*shieldT);
       const shieldRestBob=g.shieldRestPosition.clone();
       shieldRestBob.y+=Math.abs(Math.sin(walkCycle))*0.003*speedNorm;
-      g.shieldPivot.position.lerpVectors(shieldRestBob,g.shieldBlockPosition,blockBlend);
-      g.shieldPivot.quaternion.copy(g.shieldRestQuaternion).slerp(g.shieldBlockQuaternion,blockBlend);
+      g.shieldPivot.position.lerpVectors(shieldRestBob,g.shieldBlockPosition,shieldT);
+      // Trajectoire courbe : aucun effet de charnière ou de point fixe.
+      g.shieldPivot.position.x+=shieldArc*.055;
+      g.shieldPivot.position.y+=shieldArc*.035;
+      g.shieldPivot.position.z-=shieldArc*.025;
+      // Rotation complète : le bouclier présente sa face devant le personnage et s’incline légèrement.
+      g.shieldPivot.quaternion.copy(g.shieldRestQuaternion).slerp(g.shieldBlockQuaternion,shieldT);
       g.backSpearPivot.position.x=.11;
       g.backSpearPivot.position.y=.49;
       g.backSpearPivot.position.z=.30;
