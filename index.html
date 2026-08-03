@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.1.1 — Farmer two-hand hoe</title>
+<title>Odyssée — v1.11.1.2 — Farmer elbow offset</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -550,11 +550,34 @@ function createFarmerNPC(){
   };
   const leftLeg=buildLeg(-1),rightLeg=buildLeg(1);
   const buildArm=(side)=>{
-    const shoulder=new THREE.Group();shoulder.position.set(side*.215,.38,-.015);torsoPivot.add(shoulder);
-    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.038,.17,6,10),skin);upper.rotation.z=side<0?Math.PI/2:Math.PI/2;upper.position.set(side*.065,-.07,.01);upper.castShadow=true;shoulder.add(upper);
-    const elbow=new THREE.Group();elbow.position.set(side*.105,-.13,-.015);shoulder.add(elbow);
-    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.034,.16,6,10),skin);fore.rotation.z=Math.PI/2;fore.position.set(side*.06,-.06,.01);fore.castShadow=true;elbow.add(fore);
-    const hand=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),skin);hand.position.set(side*.075,-.10,-.035);hand.castShadow=true;elbow.add(hand);
+    const shoulder=new THREE.Group();
+    shoulder.position.set(side*.205,.35,-.02);
+    torsoPivot.add(shoulder);
+
+    // Bras montés en diagonale : plus aucun effet "bras à l'horizontale".
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.038,.17,6,10),skin);
+    upper.rotation.z=side<0?1.06:-1.06;
+    upper.rotation.x=.18;
+    upper.position.set(side*.045,-.095,.016);
+    upper.castShadow=true;
+    shoulder.add(upper);
+
+    // Coude désaxé : articulation légèrement décalée pour une pose plus naturelle.
+    const elbow=new THREE.Group();
+    elbow.position.set(side*.055,-.195,side*.028-.01);
+    shoulder.add(elbow);
+
+    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.034,.16,6,10),skin);
+    fore.rotation.z=side<0?0.92:-0.92;
+    fore.rotation.x=.10;
+    fore.position.set(side*.040,-.092,.008);
+    fore.castShadow=true;
+    elbow.add(fore);
+
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),skin);
+    hand.position.set(side*.050,-.145,-.018);
+    hand.castShadow=true;
+    elbow.add(hand);
     return {shoulder,elbow,hand};
   };
   const leftArm=buildArm(-1),rightArm=buildArm(1);
@@ -663,24 +686,30 @@ function updateFarmerNPC(dt){
   }
   const swing=Math.sin(d.walkCycle),speed=moving?1:0;
   r.motion.position.y=.015+Math.abs(swing)*.025*speed+Math.sin(d.idleCycle*1.5)*.003;
-  r.leftLeg.pivot.rotation.x=-swing*.48*speed;r.rightLeg.pivot.rotation.x=swing*.48*speed;
-  // Bras avant (gauche) plus loin sur le manche, bras arrière (droit) plus recourbé près du corps.
-  r.leftArm.shoulder.rotation.x=-.30+swing*.05*speed;
-  r.rightArm.shoulder.rotation.x=-.20-swing*.04*speed;
-  r.leftArm.shoulder.rotation.z=-.52;
-  r.rightArm.shoulder.rotation.z=.28;
-  r.leftArm.elbow.rotation.x=.12;
-  r.rightArm.elbow.rotation.x=.82;
+  r.leftLeg.pivot.rotation.x=-swing*.48*speed;
+  r.rightLeg.pivot.rotation.x=swing*.48*speed;
+
+  // Bras non horizontaux + coudes désaxés pour une vraie lecture d'articulation.
+  r.leftArm.shoulder.rotation.x=-.42+swing*.05*speed;
+  r.rightArm.shoulder.rotation.x=-.26-swing*.04*speed;
+  r.leftArm.shoulder.rotation.z=-.88;
+  r.rightArm.shoulder.rotation.z=.58;
+  r.leftArm.elbow.rotation.x=.30;
+  r.rightArm.elbow.rotation.x=.98;
+  r.leftArm.elbow.rotation.z=-.22;
+  r.rightArm.elbow.rotation.z=.18;
   r.hips.rotation.z=Math.sin(d.walkCycle)*.015*speed;
   if(workAmount){
     const chop=(Math.sin(d.idleCycle*5.4)+1)*.5;
     r.torsoPivot.rotation.x=.16+chop*.11;
-    r.leftArm.shoulder.rotation.x=-.54-chop*.32;
-    r.rightArm.shoulder.rotation.x=-.32-chop*.20;
-    r.leftArm.shoulder.rotation.z=-.58;
-    r.rightArm.shoulder.rotation.z=.22;
-    r.leftArm.elbow.rotation.x=.10+chop*.08;
-    r.rightArm.elbow.rotation.x=.88+chop*.16;
+    r.leftArm.shoulder.rotation.x=-.62-chop*.26;
+    r.rightArm.shoulder.rotation.x=-.40-chop*.18;
+    r.leftArm.shoulder.rotation.z=-.96;
+    r.rightArm.shoulder.rotation.z=.52;
+    r.leftArm.elbow.rotation.x=.26+chop*.10;
+    r.rightArm.elbow.rotation.x=1.02+chop*.18;
+    r.leftArm.elbow.rotation.z=-.25;
+    r.rightArm.elbow.rotation.z=.22;
     r.hoePivot.rotation.x=-.18-chop*.60;
     r.hoePivot.rotation.y=.04;
     r.hoePivot.rotation.z=-.40;
