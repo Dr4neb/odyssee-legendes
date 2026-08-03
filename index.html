@@ -6,16 +6,54 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.04 Alpha</title>
+  <title>Odyssée — Légendes de l’Égée v1.04.1 Hotfix</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
     canvas{display:block}
-    #boot{position:fixed;inset:0;display:grid;place-items:center;background:#06171e;color:#f4df9b;z-index:10;font-weight:800;letter-spacing:.08em}
+    #boot{position:fixed;inset:0;display:grid;place-items:center;background:#06171e;color:#f4df9b;z-index:100;font-weight:800;letter-spacing:.08em}
+    #titleScreen{
+      position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:calc(28px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));
+      background:
+        repeating-linear-gradient(0deg,transparent 0 61px,rgba(24,77,89,.22) 62px 65px),
+        #06171e;color:white;text-align:center;box-sizing:border-box;
+    }
+    #titleScreen.hidden{display:none}
+    .gameTitle{
+      margin:0;color:#f2d58a;font:900 clamp(48px,14vw,72px)/.95 Georgia,serif;
+      text-shadow:-3px 0 #301e13,0 3px #301e13,3px 0 #301e13,0 -3px #301e13,0 7px 0 rgba(0,0,0,.35);
+    }
+    .gameSubtitle{margin:24px 0 0;color:#d5e0de;font-size:clamp(17px,5vw,23px);font-weight:900;letter-spacing:.2em}
+    .gameVersion{margin:48px 0 0;color:#819ba0;font-size:15px;font-weight:800}
+    #startButton{
+      width:min(86vw,360px);min-height:72px;margin-top:54px;border:4px solid #f1d889;border-radius:2px;
+      background:#98483a;color:#fff;font:900 22px system-ui,-apple-system,sans-serif;
+      box-shadow:0 7px 0 #50251e;touch-action:manipulation;-webkit-appearance:none;appearance:none;
+    }
+    #startButton:active{transform:translateY(4px);box-shadow:0 3px 0 #50251e}
+    #eraseButton{
+      margin-top:30px;padding:12px 18px;border:0;background:transparent;color:#b7c5c5;
+      font:600 15px system-ui,-apple-system,sans-serif;touch-action:manipulation;
+    }
+    .credit{position:absolute;bottom:calc(30px + env(safe-area-inset-bottom));color:#637a7e;font-size:13px}
+    #fatalError{
+      display:none;position:fixed;inset:0;z-index:200;padding:40px 24px;background:#260d0d;color:#fff;
+      white-space:pre-wrap;overflow:auto;font:15px/1.5 monospace;
+    }
   </style>
 </head>
 <body>
 <div id="boot">OUVERTURE DES PORTES D’ITHAQUE…</div>
+<div id="titleScreen">
+  <h1 class="gameTitle">ODYSSÉE</h1>
+  <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
+  <div class="gameVersion">ALPHA v1.04.1</div>
+  <button id="startButton" type="button">COMMENCER</button>
+  <button id="eraseButton" type="button">Effacer la sauvegarde</button>
+  <div class="credit">Prototype mobile — Dr4neb</div>
+</div>
+<div id="fatalError"></div>
 <div id="game"></div>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script>
@@ -26,45 +64,10 @@ const W=2600,H=1900;
 const SAVE_KEY="odyssee_v104_alpha";
 const clamp=Phaser.Math.Clamp;
 
-class TitleScene extends Phaser.Scene{
-  constructor(){super("Title")}
+class BootScene extends Phaser.Scene{
+  constructor(){super("Boot")}
   create(){
     document.getElementById("boot").style.display="none";
-    this.cameras.main.setBackgroundColor("#06171e");
-    const cx=this.scale.width/2, cy=this.scale.height/2;
-
-    const g=this.add.graphics();
-    for(let i=0;i<40;i++){
-      g.lineStyle(2,i%2?0x0d3844:0x124854,.35);
-      const y=Phaser.Math.Between(0,this.scale.height);
-      g.lineBetween(0,y,this.scale.width,y+Phaser.Math.Between(-6,6));
-    }
-
-    this.add.text(cx,cy-145,"ODYSSÉE",{
-      fontFamily:"Georgia,serif",fontSize:"44px",fontStyle:"bold",color:"#f2d58a",
-      stroke:"#301e13",strokeThickness:5
-    }).setOrigin(.5);
-    this.add.text(cx,cy-92,"LÉGENDES DE L’ÉGÉE",{
-      fontFamily:"system-ui",fontSize:"17px",fontStyle:"bold",color:"#b8d9d4",letterSpacing:3
-    }).setOrigin(.5);
-    this.add.text(cx,cy-45,"ALPHA v1.04",{
-      fontFamily:"system-ui",fontSize:"13px",color:"#89a9a9"
-    }).setOrigin(.5);
-
-    const play=this.add.rectangle(cx,cy+45,250,62,0x9e3f32,.95).setStrokeStyle(3,0xf0d78b,1).setInteractive();
-    this.add.text(cx,cy+45,"COMMENCER",{fontFamily:"system-ui",fontSize:"18px",fontStyle:"bold",color:"#fff"}).setOrigin(.5);
-    play.on("pointerdown",()=>this.scene.start("World"));
-
-    const erase=this.add.text(cx,cy+105,"Effacer la sauvegarde",{fontFamily:"system-ui",fontSize:"13px",color:"#9eb8b7"})
-      .setOrigin(.5).setInteractive();
-    erase.on("pointerdown",()=>{
-      localStorage.removeItem(SAVE_KEY);
-      erase.setText("Sauvegarde effacée");
-    });
-
-    this.add.text(cx,this.scale.height-42,"Prototype mobile — Dr4neb",{
-      fontFamily:"system-ui",fontSize:"12px",color:"#668185"
-    }).setOrigin(.5);
   }
 }
 
@@ -386,9 +389,54 @@ const config={
   scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH,width:innerWidth,height:innerHeight},
   physics:{default:"arcade",arcade:{gravity:{x:0,y:0},debug:false}},
   render:{antialias:false,pixelArt:true,roundPixels:true},
-  scene:[TitleScene,WorldScene]
+  scene:[BootScene,WorldScene]
 };
-new Phaser.Game(config);
+const game=new Phaser.Game(config);
+let gameStarted=false;
+
+function startGame(event){
+  if(event){
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if(gameStarted)return;
+  gameStarted=true;
+
+  const title=document.getElementById("titleScreen");
+  title.classList.add("hidden");
+
+  try{
+    game.scene.start("World");
+  }catch(error){
+    gameStarted=false;
+    title.classList.remove("hidden");
+    showFatal(error);
+  }
+}
+
+function showFatal(error){
+  const box=document.getElementById("fatalError");
+  box.style.display="block";
+  box.textContent="Le jeu a rencontré une erreur :\n\n"+(error?.stack||error);
+}
+
+const startButton=document.getElementById("startButton");
+startButton.addEventListener("pointerup",startGame,{passive:false});
+startButton.addEventListener("touchend",startGame,{passive:false});
+startButton.addEventListener("click",startGame,{passive:false});
+
+document.getElementById("eraseButton").addEventListener("click",(event)=>{
+  event.preventDefault();
+  localStorage.removeItem(SAVE_KEY);
+  event.currentTarget.textContent="Sauvegarde effacée";
+});
+
+window.addEventListener("error",(event)=>{
+  if(gameStarted)showFatal(event.error||event.message);
+});
+window.addEventListener("unhandledrejection",(event)=>{
+  if(gameStarted)showFatal(event.reason||"Erreur inconnue");
+});
 })();
 </script>
 </body>
