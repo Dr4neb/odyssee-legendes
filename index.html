@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.06.2.7</title>
+  <title>Odyssée — Légendes de l’Égée v1.06.2.8</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
@@ -126,7 +126,7 @@
   <div id="titleContent">
     <h1 class="gameTitle">ODYSSÉE</h1>
     <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
-    <div class="gameVersion">ALPHA v1.06.2.7</div>
+    <div class="gameVersion">ALPHA v1.06.2.8</div>
     <button id="startButton" type="button">COMMENCER</button>
     <button id="eraseButton" type="button">Effacer la sauvegarde</button>
   </div>
@@ -245,7 +245,7 @@ class WorldScene extends Phaser.Scene {
     this.scale.on("resize",()=>{ this.layout(); this.updateResponsiveView(); });
 
     this.input.keyboard?.on("keydown-E",()=>this.actionUse());
-    this.toast("v1.06.2.7 : lecture du dessus améliorée, corps plus crédible et mouvement affiné.");
+    this.toast("v1.06.2.8 : personnage toujours debout à l’écran, axe du corps fixe dans toutes les directions.");
   }
 
   createTextures(){
@@ -583,7 +583,8 @@ class WorldScene extends Phaser.Scene {
     if(this.player){
       this.playerRing.setPosition(this.player.x,this.player.y+3);
       this.playerCone.setPosition(this.player.x,this.player.y+1);
-      this.playerCone.rotation=this.player.rotation;
+      // v1.06.2.8 : le personnage reste debout à l'écran, donc pas de rotation globale.
+      this.playerCone.rotation=0;
       this.playerRing.setVisible(this.mode==="land" && this.player.visible);
       this.playerCone.setVisible(this.mode==="land" && this.player.visible);
     }
@@ -843,10 +844,8 @@ class WorldScene extends Phaser.Scene {
       const moveMag=Math.hypot(this.playerVel.x,this.playerVel.y);
       const moveRatio=Math.min(1, moveMag/this.speed);
 
-      if(moveMag>6){
-        const targetRot=Math.atan2(this.playerVel.y,this.playerVel.x)+Math.PI/2;
-        this.player.rotation = Phaser.Math.Angle.RotateTo(this.player.rotation,targetRot,5.1*dt);
-      }
+      // v1.06.2.8 : le corps reste toujours sur le même axe à l'écran.
+      this.player.rotation = 0;
 
       if(moveMag>10) this.walkCycle += delta * (0.010 + moveRatio*0.010);
       else this.walkCycle += delta * 0.0024;
@@ -858,35 +857,38 @@ class WorldScene extends Phaser.Scene {
       const legA = Math.sin(cycle);
       const legB = Math.sin(cycle + Math.PI);
 
-      // global body read
+      // Per-direction emphasis while keeping the body upright
+      const strafe = this.playerVel.x / Math.max(1,this.speed);
+      const vertical = this.playerVel.y / Math.max(1,this.speed);
+
       this.playerShadow.scaleX = 1 + moveRatio*0.05;
       this.playerShadow.scaleY = 1 - moveRatio*0.04;
       this.playerShadow.alpha = 0.56 + moveRatio*0.10;
 
-      this.playerCape.y = 14 + Math.max(0,-bob)*0.18;
-      this.playerCape.rotation = sway*0.22;
+      this.playerCape.y = 14 + Math.max(0,-bob)*0.18 + Math.max(0,vertical)*0.2;
+      this.playerCape.rotation = sway*0.10 + strafe*0.04;
 
       this.playerTorso.y = 2 + bob*0.20;
-      this.playerTorso.rotation = sway*0.16;
+      this.playerTorso.rotation = strafe*0.05;
 
       this.playerHead.y = -13 + bob*0.40;
-      this.playerHead.rotation = sway*0.10;
+      this.playerHead.rotation = strafe*0.03;
 
-      this.playerArmL.x = -16 + sway*10;
-      this.playerArmR.x = 16 - sway*10;
-      this.playerArmL.y = 2 + bob*0.10;
-      this.playerArmR.y = 2 + bob*0.10;
+      this.playerArmL.x = -16 + sway*8 + strafe*3;
+      this.playerArmR.x = 16 - sway*8 + strafe*3;
+      this.playerArmL.y = 2 + bob*0.10 + Math.max(0,-vertical)*0.2;
+      this.playerArmR.y = 2 + bob*0.10 + Math.max(0,-vertical)*0.2;
 
       this.playerLegL.x = -6 + legA*1.6;
       this.playerLegR.x = 6 + legB*1.6;
-      this.playerLegL.y = 20 + Math.max(0,legA)*2.0 + bob*0.10;
-      this.playerLegR.y = 20 + Math.max(0,legB)*2.0 + bob*0.10;
-      this.playerLegL.rotation = legA*0.08;
-      this.playerLegR.rotation = legB*0.08;
+      this.playerLegL.y = 20 + Math.max(0,legA)*2.0 + bob*0.10 + Math.max(0,vertical)*0.5;
+      this.playerLegR.y = 20 + Math.max(0,legB)*2.0 + bob*0.10 + Math.max(0,vertical)*0.5;
+      this.playerLegL.rotation = legA*0.08 + strafe*0.03;
+      this.playerLegR.rotation = legB*0.08 + strafe*0.03;
 
       this.player.setDepth(72 + this.player.y*0.001);
       this.playerRing.alpha = 0.06 + ((Math.sin(this.dayT*5)+1)/2)*0.03;
-      this.playerCone.alpha = 0.09 + Math.min(0.06, moveRatio*0.06);
+      this.playerCone.alpha = 0.04 + Math.min(0.03, moveRatio*0.03);
     } else {
       const dt=delta/1000;
       const inputPower=Math.min(1,len);
@@ -920,6 +922,7 @@ class WorldScene extends Phaser.Scene {
     this.hud.setText(`◈ ${this.coins}   🍞 ${this.food}   🪵 ${this.wood}`);
     this.modeText.setText(this.mode==="land" ? "ITHAQUE — TACTICAL TOP-DOWN" : "MER IONIENNE — NAVIGATION");
   }
+
 }
 
 const config={
