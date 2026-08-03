@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.2.1 — Shield free tilt</title>
+<title>Odyssée — v1.11.2.2 — Round shield visible arm</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.2.1 — SHIELD FREE TILT</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A pour parler. Maintiens B : le bouclier se déplace librement devant le hoplite, change de face et s’incline pour bloquer.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.2.2 — ROUND SHIELD VISIBLE ARM</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A pour parler. Maintiens B : le bouclier se déplace librement devant le hoplite, change de face et s’incline pour bloquer.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -839,25 +839,45 @@ function addGreekGear(root){
   }
   const leftArm=buildArm(-1), rightArm=buildArm(1);
 
-  // Bouclier indépendant : il ne tourne plus autour d’un point de maintien visible.
+  // Le bras gauche standard est masqué : on le remplace par un bras articulé visible,
+  // construit comme celui de Démos et verrouillé sur la poignée du bouclier.
+  leftArm.shoulder.visible=false;
+  const buildShieldArm=()=>{
+    const shoulder=new THREE.Vector3(-.205,.285,.015);
+    const upperLen=.255,foreLen=.235;
+    const sleeve=new THREE.Mesh(new THREE.SphereGeometry(.058,12,10),matBlackSoft);
+    sleeve.scale.set(1.10,.90,1.05);sleeve.position.copy(shoulder);sleeve.castShadow=true;torsoPivot.add(sleeve);
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.048,upperLen-.096,6,10),matSkin);upper.castShadow=true;torsoPivot.add(upper);
+    const elbowJoint=new THREE.Mesh(new THREE.SphereGeometry(.047,10,8),matSkin);elbowJoint.castShadow=true;torsoPivot.add(elbowJoint);
+    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.043,foreLen-.086,6,10),matSkin);fore.castShadow=true;torsoPivot.add(fore);
+    const bracer=new THREE.Mesh(new THREE.CapsuleGeometry(.049,.075,5,9),matBlackSoft);bracer.castShadow=true;torsoPivot.add(bracer);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.042,10,8),matSkin);hand.scale.set(1.08,.90,1.05);hand.castShadow=true;torsoPivot.add(hand);
+    return {side:-1,shoulder,upper,elbowJoint,fore,bracer,hand,upperLen,foreLen,sleeve};
+  };
+  const shieldArm=buildShieldArm();
+
+  // Bouclier indépendant, mais la main et le bras suivent réellement sa poignée.
   // Le groupe complet se déplace devant le corps, puis change de face et s’incline.
   const shieldPivot=new THREE.Group();
   torsoPivot.add(shieldPivot);
-  const shieldRestPosition=new THREE.Vector3(-.41,-.055,.085);
-  const shieldBlockPosition=new THREE.Vector3(-.025,.285,-.465);
-  const shieldRestQuaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI/2,0,Math.PI/2,'XYZ'));
-  const shieldBlockQuaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(.30,-.22,.14,'XYZ'));
+  const shieldRestPosition=new THREE.Vector3(-.405,.035,.090);
+  const shieldBlockPosition=new THREE.Vector3(-.030,.255,-.445);
+  // Axe du cylindre conservé vers la caméra : le bouclier reste parfaitement rond vu du dessus.
+  const shieldRestQuaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,.08,0,'XYZ'));
+  const shieldBlockQuaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(0,-.10,0,'XYZ'));
   shieldPivot.position.copy(shieldRestPosition);
   shieldPivot.quaternion.copy(shieldRestQuaternion);
 
-  const shield=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.062,28), matBlack);
-  shield.castShadow=true; shield.receiveShadow=true; shield.scale.set(.82,1.62,1.00); shieldPivot.add(shield);
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(.258,.018,8,26), matSteel);
-  rim.position.y=.034; rim.rotation.x=Math.PI/2; rim.scale.set(.82,1.62,1); shieldPivot.add(rim);
-  const grip=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.42), matLeather);
-  grip.position.y=-.020; shieldPivot.add(grip);
-  const handStrap=new THREE.Mesh(new THREE.BoxGeometry(.13,.05,.055), matLeather);
-  handStrap.position.set(.00,-.022,.04); shieldPivot.add(handStrap);
+  const shield=new THREE.Mesh(new THREE.CylinderGeometry(.285,.285,.070,32), matBlack);
+  shield.castShadow=true; shield.receiveShadow=true; shieldPivot.add(shield);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.274,.019,10,32), matSteel);
+  rim.position.y=.038; rim.rotation.x=Math.PI/2; shieldPivot.add(rim);
+  const boss=new THREE.Mesh(new THREE.SphereGeometry(.072,14,10),matSteel);
+  boss.scale.set(1,.34,1);boss.position.y=.045;boss.castShadow=true;shieldPivot.add(boss);
+  const grip=new THREE.Mesh(new THREE.BoxGeometry(.055,.055,.30), matLeather);
+  grip.position.set(.00,-.035,.015); shieldPivot.add(grip);
+  const handStrap=new THREE.Mesh(new THREE.BoxGeometry(.14,.045,.060), matLeather);
+  handStrap.position.set(.00,-.038,.035); shieldPivot.add(handStrap);
 
   // Lance sanglée dans le dos, remontée au niveau du dos et bien en biais derrière l'épaule droite.
   const backSpearPivot=new THREE.Group();
@@ -941,7 +961,7 @@ function addGreekGear(root){
   pommel.castShadow=true;
   swordPivot.add(pommel);
 
-  gear.userData={gear,motion,hips,torsoPivot,headPivot,capeAnchor,cape,crest,leftLeg,rightLeg,leftArm,rightArm,shieldPivot,shieldRestPosition,shieldRestQuaternion,shieldBlockPosition,shieldBlockQuaternion,backSpearPivot,swordPivot};
+  gear.userData={gear,motion,hips,torsoPivot,headPivot,capeAnchor,cape,crest,leftLeg,rightLeg,leftArm,rightArm,shieldArm,shieldPivot,shieldRestPosition,shieldRestQuaternion,shieldBlockPosition,shieldBlockQuaternion,backSpearPivot,swordPivot};
   return gear;
 }
 
@@ -1019,13 +1039,6 @@ function update(){
       g.rightLeg.foot.rotation.x=-Math.max(0,swing)*0.18*speedNorm;
 
       const armSwing=swing*0.085*speedNorm*(1-blockBlend*.7);
-      const leftShoulderX=0.03 + armSwing;
-      const leftShoulderZ=0.01 - turnLean*0.16;
-      const leftElbowX=0.10 + Math.sin(walkCycle+.3)*0.024*speedNorm;
-      g.leftArm.shoulder.rotation.x=THREE.MathUtils.lerp(leftShoulderX,-.58,blockBlend);
-      g.leftArm.shoulder.rotation.z=THREE.MathUtils.lerp(leftShoulderZ,.36,blockBlend);
-      g.leftArm.elbow.rotation.x=THREE.MathUtils.lerp(leftElbowX,.88,blockBlend);
-      g.leftArm.elbow.rotation.z=.16*blockBlend;
       const rightShoulderX=-0.02-armSwing*.9;
       g.rightArm.shoulder.rotation.x=THREE.MathUtils.lerp(rightShoulderX,-.20,blockBlend);
       g.rightArm.shoulder.rotation.z=THREE.MathUtils.lerp(-0.01-turnLean*.08,-.10,blockBlend);
@@ -1040,8 +1053,19 @@ function update(){
       g.shieldPivot.position.x+=shieldArc*.055;
       g.shieldPivot.position.y+=shieldArc*.035;
       g.shieldPivot.position.z-=shieldArc*.025;
-      // Rotation complète : le bouclier présente sa face devant le personnage et s’incline légèrement.
+      // Le bouclier garde sa surface parallèle au sol : il reste rond depuis la caméra tactique.
       g.shieldPivot.quaternion.copy(g.shieldRestQuaternion).slerp(g.shieldBlockQuaternion,shieldT);
+
+      // La main se verrouille derrière le bord intérieur du bouclier. Le coude reste visible et plié.
+      const gripRest=new THREE.Vector3(-.325,.125,.105);
+      const gripBlock=new THREE.Vector3(-.155,.245,-.245);
+      const shieldHandTarget=gripRest.clone().lerp(gripBlock,shieldT);
+      shieldHandTarget.y+=Math.abs(Math.sin(walkCycle))*0.004*speedNorm*(1-shieldT);
+      solveFarmerArm(g.shieldArm,shieldHandTarget,THREE.MathUtils.lerp(.45,1.12,shieldT));
+      // Brassard placé sur le dernier tiers de l'avant-bras.
+      g.shieldArm.bracer.position.copy(g.shieldArm.fore.position).lerp(g.shieldArm.hand.position,.38);
+      g.shieldArm.bracer.quaternion.copy(g.shieldArm.fore.quaternion);
+
       g.backSpearPivot.position.x=.11;
       g.backSpearPivot.position.y=.49;
       g.backSpearPivot.position.z=.30;
