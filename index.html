@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.1.2 — Farmer elbow offset</title>
+<title>Odyssée — v1.11.1.3 — Farmer arm hotfix</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -550,42 +550,26 @@ function createFarmerNPC(){
   };
   const leftLeg=buildLeg(-1),rightLeg=buildLeg(1);
   const buildArm=(side)=>{
-    const shoulder=new THREE.Group();
-    shoulder.position.set(side*.205,.35,-.02);
-    torsoPivot.add(shoulder);
+    const anchor=new THREE.Group();
+    anchor.position.set(side*.19,.325,-.012);
+    torsoPivot.add(anchor);
 
-    // Bras montés en diagonale : plus aucun effet "bras à l'horizontale".
-    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.038,.17,6,10),skin);
-    upper.rotation.z=side<0?1.06:-1.06;
-    upper.rotation.x=.18;
-    upper.position.set(side*.045,-.095,.016);
-    upper.castShadow=true;
-    shoulder.add(upper);
-
-    // Coude désaxé : articulation légèrement décalée pour une pose plus naturelle.
-    const elbow=new THREE.Group();
-    elbow.position.set(side*.055,-.195,side*.028-.01);
-    shoulder.add(elbow);
-
-    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.034,.16,6,10),skin);
-    fore.rotation.z=side<0?0.92:-0.92;
-    fore.rotation.x=.10;
-    fore.position.set(side*.040,-.092,.008);
-    fore.castShadow=true;
-    elbow.add(fore);
-
+    const upperLen=.21,foreLen=.19;
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.038,upperLen-.076,6,10),skin);
+    upper.castShadow=true;torsoPivot.add(upper);
+    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.034,foreLen-.068,6,10),skin);
+    fore.castShadow=true;torsoPivot.add(fore);
     const hand=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),skin);
-    hand.position.set(side*.050,-.145,-.018);
-    hand.castShadow=true;
-    elbow.add(hand);
-    return {shoulder,elbow,hand};
+    hand.castShadow=true;torsoPivot.add(hand);
+
+    return {side,anchor,upper,fore,hand,upperLen,foreLen,base:anchor.position.clone()};
   };
   const leftArm=buildArm(-1),rightArm=buildArm(1);
 
   // Houe tenue à deux mains comme une arme : bras avant plus tendu, bras arrière plus recourbé.
   const hoePivot=new THREE.Group();
-  hoePivot.position.set(.03,.18,-.08);
-  hoePivot.rotation.set(-.10,.06,-.36);
+  hoePivot.position.set(.04,.135,-.055);
+  hoePivot.rotation.set(-.04,.04,-.22);
   torsoPivot.add(hoePivot);
   const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.019,.023,1.14,10),wood);
   shaft.rotation.z=Math.PI/2;
@@ -607,6 +591,35 @@ function createFarmerNPC(){
     rig:{motion,hips,torsoPivot,headPivot,leftLeg,rightLeg,leftArm,rightArm,hoePivot},
     bubbleUntil:0
   };
+}
+
+
+function orientSegment(mesh,start,end){
+  const dir=end.clone().sub(start);
+  if(dir.lengthSq()<1e-8)return;
+  mesh.position.copy(start).addScaledVector(dir,.5);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
+}
+function solveFarmerArm(arm,targetLocal,poseBias=0){
+  const shoulder=arm.base.clone();
+  const upperLen=arm.upperLen,foreLen=arm.foreLen;
+  const toTarget=targetLocal.clone().sub(shoulder);
+  let dist=toTarget.length();
+  if(dist<1e-4)dist=1e-4;
+  const maxReach=upperLen+foreLen-.002;
+  if(dist>maxReach)toTarget.multiplyScalar(maxReach/dist),dist=maxReach;
+  const dir=toTarget.clone().normalize();
+  let pole=new THREE.Vector3(arm.side*.42,.08+poseBias*.04,-.62-poseBias*.08);
+  pole.sub(dir.clone().multiplyScalar(pole.dot(dir)));
+  if(pole.lengthSq()<1e-5)pole.set(arm.side*.4,.12,-.5);
+  pole.normalize();
+  const cosShoulder=THREE.MathUtils.clamp((upperLen*upperLen+dist*dist-foreLen*foreLen)/(2*upperLen*dist),-1,1);
+  const along=cosShoulder*upperLen;
+  const away=Math.sqrt(Math.max(0,upperLen*upperLen-along*along));
+  const elbow=shoulder.clone().addScaledVector(dir,along).addScaledVector(pole,away);
+  orientSegment(arm.upper,shoulder,elbow);
+  orientSegment(arm.fore,elbow,targetLocal);
+  arm.hand.position.copy(targetLocal);
 }
 
 function showFarmerBubble(message,duration=2.8){
@@ -652,8 +665,6 @@ function updateFarmerNPC(dt){
   d.stateTime-=dt;d.idleCycle+=dt;
   const dxp=player.x-farmerNPC.position.x,dzp=player.z-farmerNPC.position.z;
   let moving=false,workAmount=0;
-  r.leftArm.shoulder.rotation.z=0;
-  r.rightArm.shoulder.rotation.z=0;
   if(d.state==='talk'){
     const targetRot=Math.atan2(dxp,dzp)+Math.PI;
     farmerNPC.rotation.y=normalizeAngle(farmerNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-farmerNPC.rotation.y),-dt*4.2,dt*4.2));
@@ -661,7 +672,6 @@ function updateFarmerNPC(dt){
     if(d.stateTime<=0)d.state='walk';
   }else if(d.state==='rest'){
     r.torsoPivot.rotation.x=.08+Math.sin(d.idleCycle*1.8)*.015;
-    r.rightArm.shoulder.rotation.z=.18;
     if(d.stateTime<=0){d.state='walk';d.targetIndex=(d.targetIndex+1)%d.route.length;}
   }else if(d.state==='work'){
     workAmount=1;
@@ -684,41 +694,44 @@ function updateFarmerNPC(dt){
       const proposed=farmerNPC.position.clone();proposed.addScaledVector(dir,.52*dt);resolveCollisions(proposed,.20);farmerNPC.position.copy(proposed);
     }
   }
+
   const swing=Math.sin(d.walkCycle),speed=moving?1:0;
   r.motion.position.y=.015+Math.abs(swing)*.025*speed+Math.sin(d.idleCycle*1.5)*.003;
   r.leftLeg.pivot.rotation.x=-swing*.48*speed;
   r.rightLeg.pivot.rotation.x=swing*.48*speed;
-
-  // Bras non horizontaux + coudes désaxés pour une vraie lecture d'articulation.
-  r.leftArm.shoulder.rotation.x=-.42+swing*.05*speed;
-  r.rightArm.shoulder.rotation.x=-.26-swing*.04*speed;
-  r.leftArm.shoulder.rotation.z=-.88;
-  r.rightArm.shoulder.rotation.z=.58;
-  r.leftArm.elbow.rotation.x=.30;
-  r.rightArm.elbow.rotation.x=.98;
-  r.leftArm.elbow.rotation.z=-.22;
-  r.rightArm.elbow.rotation.z=.18;
   r.hips.rotation.z=Math.sin(d.walkCycle)*.015*speed;
+  r.headPivot.rotation.z=Math.sin(d.idleCycle*1.4)*.015;
+
   if(workAmount){
     const chop=(Math.sin(d.idleCycle*5.4)+1)*.5;
-    r.torsoPivot.rotation.x=.16+chop*.11;
-    r.leftArm.shoulder.rotation.x=-.62-chop*.26;
-    r.rightArm.shoulder.rotation.x=-.40-chop*.18;
-    r.leftArm.shoulder.rotation.z=-.96;
-    r.rightArm.shoulder.rotation.z=.52;
-    r.leftArm.elbow.rotation.x=.26+chop*.10;
-    r.rightArm.elbow.rotation.x=1.02+chop*.18;
-    r.leftArm.elbow.rotation.z=-.25;
-    r.rightArm.elbow.rotation.z=.22;
-    r.hoePivot.rotation.x=-.18-chop*.60;
+    r.torsoPivot.rotation.x=.14+chop*.10;
+    r.hoePivot.rotation.x=-.10-chop*.42;
     r.hoePivot.rotation.y=.04;
-    r.hoePivot.rotation.z=-.40;
+    r.hoePivot.rotation.z=-.26;
   }else{
-    r.hoePivot.rotation.x=-.10+Math.sin(d.idleCycle*1.4)*.01;
-    r.hoePivot.rotation.y=.06;
-    r.hoePivot.rotation.z=-.36;
+    r.hoePivot.rotation.x=-.04+Math.sin(d.idleCycle*1.4)*.01;
+    r.hoePivot.rotation.y=.04;
+    r.hoePivot.rotation.z=-.22;
     if(d.state!=='rest'&&d.state!=='talk')r.torsoPivot.rotation.x=.04+Math.sin(d.idleCycle*1.6)*.01;
   }
+
+  const leftGripWorld=r.hoePivot.localToWorld(new THREE.Vector3(.18,0,0));
+  const rightGripWorld=r.hoePivot.localToWorld(new THREE.Vector3(-.24,0,0));
+  const leftGripLocal=r.torsoPivot.worldToLocal(leftGripWorld.clone());
+  const rightGripLocal=r.torsoPivot.worldToLocal(rightGripWorld.clone());
+
+  if(moving){
+    leftGripLocal.y+=Math.abs(swing)*.012; rightGripLocal.y+=Math.abs(swing)*.009;
+    leftGripLocal.z-=.004; rightGripLocal.z+=.006;
+  }
+  if(workAmount){
+    leftGripLocal.y+=.018; rightGripLocal.y-=.006;
+    leftGripLocal.z+=.012; rightGripLocal.z-=.010;
+  }
+
+  solveFarmerArm(r.leftArm,leftGripLocal,.8*workAmount+.15);
+  solveFarmerArm(r.rightArm,rightGripLocal,.9*workAmount+.05);
+
   updateFarmerBubble();
   updateActionButtons();
 }
