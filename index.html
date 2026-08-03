@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.06.1</title>
+  <title>Odyssée — Légendes de l’Égée v1.06.2</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
@@ -181,7 +181,7 @@
   <div id="titleContent">
     <h1 class="gameTitle">ODYSSÉE</h1>
     <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
-    <div class="gameVersion">ALPHA v1.06.1</div>
+    <div class="gameVersion">ALPHA v1.06.2</div>
     <button id="startButton" type="button">COMMENCER</button>
     <button id="eraseButton" type="button">Effacer la sauvegarde</button>
   </div>
@@ -194,6 +194,7 @@
   <button id="domInventoryButton" class="domGameButton" type="button" aria-label="Inventaire">🎒</button>
   <button id="domActionButton" class="domGameButton" type="button">ACTION</button>
 </div>
+<audio id="menuTheme" src="./odyssee_theme_v2.mp3" preload="auto" loop playsinline></audio>
 <div id="game"></div>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script>
@@ -205,368 +206,52 @@ const SAVE_KEY="odyssee_v105_alpha";
 
 class AudioDirector{
   constructor(){
-    this.ctx=null;
-    this.master=null;
-    this.musicGain=null;
-    this.ambienceGain=null;
-    this.reverbGain=null;
+    this.audio=document.getElementById("menuTheme");
     this.started=false;
-    this.loopTimer=null;
-    this.loopStart=0;
-    this.bar=0;
     this.mode="menu";
-    this.droneNodes=[];
+    this.fadeTimer=null;
+    this.targetVolume=.72;
   }
 
   async start(){
+    if(!this.audio) return;
+    this.audio.playsInline=true;
+    this.audio.loop=true;
+
     if(this.started){
-      await this.ctx?.resume?.();
+      await this.audio.play();
       return;
     }
 
-    const Context=window.AudioContext||window.webkitAudioContext;
-    if(!Context) return;
-
-    this.ctx=new Context();
-    await this.ctx.resume();
-
-    this.master=this.ctx.createGain();
-    this.musicGain=this.ctx.createGain();
-    this.ambienceGain=this.ctx.createGain();
-    this.reverbGain=this.ctx.createGain();
-
-    this.master.gain.value=.74;
-    this.musicGain.gain.value=.22;
-    this.ambienceGain.gain.value=.10;
-    this.reverbGain.gain.value=.16;
-
-    const compressor=this.ctx.createDynamicsCompressor();
-    compressor.threshold.value=-20;
-    compressor.knee.value=18;
-    compressor.ratio.value=3;
-    compressor.attack.value=.02;
-    compressor.release.value=.25;
-
-    this.musicGain.connect(compressor);
-    this.ambienceGain.connect(compressor);
-    this.reverbGain.connect(compressor);
-    compressor.connect(this.master);
-    this.master.connect(this.ctx.destination);
-
-    this.createSea();
-    this.createAulosDrone();
-    this.playLogoSting();
-
-    // Boucle de 8 mesures à 76 BPM : chill, mais avec un vrai thème.
-    this.loopStart=this.ctx.currentTime+2.5;
-    this.scheduleBars();
-    this.loopTimer=setInterval(()=>this.scheduleBars(),6000);
-
+    this.audio.volume=.01;
+    await this.audio.play();
     this.started=true;
+    this.fadeTo(.72,1200);
   }
 
-  createSea(){
-    const seconds=4;
-    const buffer=this.ctx.createBuffer(1,this.ctx.sampleRate*seconds,this.ctx.sampleRate);
-    const data=buffer.getChannelData(0);
-    let last=0;
+  fadeTo(target,duration=1200){
+    if(!this.audio) return;
+    clearInterval(this.fadeTimer);
 
-    for(let i=0;i<data.length;i++){
-      const white=Math.random()*2-1;
-      last=last*.986+white*.014;
-      data[i]=last*.72;
-    }
+    const startVolume=this.audio.volume;
+    const startTime=performance.now();
 
-    const source=this.ctx.createBufferSource();
-    source.buffer=buffer;
-    source.loop=true;
+    this.fadeTimer=setInterval(()=>{
+      const progress=Math.min(1,(performance.now()-startTime)/duration);
+      const eased=progress*progress*(3-2*progress);
+      this.audio.volume=startVolume+(target-startVolume)*eased;
 
-    const low=this.ctx.createBiquadFilter();
-    low.type="lowpass";
-    low.frequency.value=460;
-
-    const high=this.ctx.createBiquadFilter();
-    high.type="highpass";
-    high.frequency.value=62;
-
-    const swell=this.ctx.createGain();
-    swell.gain.value=.45;
-
-    const lfo=this.ctx.createOscillator();
-    const lfoGain=this.ctx.createGain();
-    lfo.frequency.value=.095;
-    lfoGain.gain.value=.17;
-
-    lfo.connect(lfoGain).connect(swell.gain);
-    source.connect(low).connect(high).connect(swell).connect(this.ambienceGain);
-
-    source.start();
-    lfo.start();
-  }
-
-  createAulosDrone(){
-    [146.83,220].forEach((frequency,index)=>{
-      const oscillator=this.ctx.createOscillator();
-      oscillator.type=index===0?"sine":"triangle";
-      oscillator.frequency.value=frequency;
-
-      const filter=this.ctx.createBiquadFilter();
-      filter.type="lowpass";
-      filter.frequency.value=index===0?680:520;
-      filter.Q.value=1.6;
-
-      const gain=this.ctx.createGain();
-      gain.gain.value=index===0?.021:.009;
-
-      const vibrato=this.ctx.createOscillator();
-      const vibratoGain=this.ctx.createGain();
-      vibrato.frequency.value=index===0?4.5:3.8;
-      vibratoGain.gain.value=index===0?1.0:.65;
-
-      vibrato.connect(vibratoGain).connect(oscillator.frequency);
-      oscillator.connect(filter).connect(gain).connect(this.musicGain);
-
-      oscillator.start();
-      vibrato.start();
-      this.droneNodes.push(oscillator,vibrato);
-    });
-  }
-
-  createImpulse(duration=1.7,decay=2.3){
-    const length=this.ctx.sampleRate*duration;
-    const impulse=this.ctx.createBuffer(2,length,this.ctx.sampleRate);
-
-    for(let channel=0;channel<2;channel++){
-      const data=impulse.getChannelData(channel);
-      for(let i=0;i<length;i++){
-        data[i]=(Math.random()*2-1)*Math.pow(1-i/length,decay);
+      if(progress>=1){
+        clearInterval(this.fadeTimer);
+        this.audio.volume=target;
       }
-    }
-    return impulse;
-  }
-
-  pluck(frequency,when,duration=.9,volume=.07,pan=0){
-    const osc=this.ctx.createOscillator();
-    const overtone=this.ctx.createOscillator();
-    const filter=this.ctx.createBiquadFilter();
-    const gain=this.ctx.createGain();
-    const overtoneGain=this.ctx.createGain();
-    const panner=this.ctx.createStereoPanner?.();
-
-    osc.type="triangle";
-    osc.frequency.setValueAtTime(frequency,when);
-
-    overtone.type="sine";
-    overtone.frequency.setValueAtTime(frequency*2.01,when);
-    overtoneGain.gain.value=.18;
-
-    filter.type="lowpass";
-    filter.frequency.setValueAtTime(2600,when);
-    filter.frequency.exponentialRampToValueAtTime(620,when+duration);
-
-    gain.gain.setValueAtTime(.0001,when);
-    gain.gain.exponentialRampToValueAtTime(volume,when+.012);
-    gain.gain.exponentialRampToValueAtTime(.0001,when+duration);
-
-    osc.connect(filter);
-    overtone.connect(overtoneGain).connect(filter);
-    filter.connect(gain);
-
-    if(panner){
-      panner.pan.value=pan;
-      gain.connect(panner).connect(this.musicGain);
-    }else{
-      gain.connect(this.musicGain);
-    }
-
-    osc.start(when);
-    overtone.start(when);
-    osc.stop(when+duration+.06);
-    overtone.stop(when+duration+.06);
-  }
-
-  aulos(frequency,when,duration=.8,volume=.045){
-    const osc=this.ctx.createOscillator();
-    const breath=this.ctx.createBufferSource();
-    const breathBuffer=this.ctx.createBuffer(1,this.ctx.sampleRate*duration,this.ctx.sampleRate);
-    const breathData=breathBuffer.getChannelData(0);
-
-    for(let i=0;i<breathData.length;i++){
-      breathData[i]=(Math.random()*2-1)*.16;
-    }
-    breath.buffer=breathBuffer;
-
-    const filter=this.ctx.createBiquadFilter();
-    filter.type="bandpass";
-    filter.frequency.value=frequency*2.2;
-    filter.Q.value=2.5;
-
-    const gain=this.ctx.createGain();
-    gain.gain.setValueAtTime(.0001,when);
-    gain.gain.linearRampToValueAtTime(volume,when+.08);
-    gain.gain.setValueAtTime(volume,when+Math.max(.1,duration-.16));
-    gain.gain.exponentialRampToValueAtTime(.0001,when+duration);
-
-    const vibrato=this.ctx.createOscillator();
-    const vibratoGain=this.ctx.createGain();
-    vibrato.frequency.value=5.1;
-    vibratoGain.gain.value=1.8;
-
-    osc.type="sawtooth";
-    osc.frequency.setValueAtTime(frequency,when);
-    vibrato.connect(vibratoGain).connect(osc.frequency);
-
-    osc.connect(filter);
-    breath.connect(filter);
-    filter.connect(gain).connect(this.musicGain);
-
-    osc.start(when);
-    breath.start(when);
-    vibrato.start(when);
-    osc.stop(when+duration+.05);
-    breath.stop(when+duration+.05);
-    vibrato.stop(when+duration+.05);
-  }
-
-  frameDrum(when,volume=.045,accent=false){
-    const osc=this.ctx.createOscillator();
-    const noise=this.ctx.createBufferSource();
-    const noiseBuffer=this.ctx.createBuffer(1,this.ctx.sampleRate*.18,this.ctx.sampleRate);
-    const data=noiseBuffer.getChannelData(0);
-
-    for(let i=0;i<data.length;i++){
-      data[i]=(Math.random()*2-1)*Math.pow(1-i/data.length,2);
-    }
-    noise.buffer=noiseBuffer;
-
-    const gain=this.ctx.createGain();
-    gain.gain.setValueAtTime(accent?volume*1.45:volume,when);
-    gain.gain.exponentialRampToValueAtTime(.0001,when+.22);
-
-    const filter=this.ctx.createBiquadFilter();
-    filter.type="lowpass";
-    filter.frequency.value=accent?220:170;
-
-    osc.type="sine";
-    osc.frequency.setValueAtTime(accent?92:76,when);
-    osc.frequency.exponentialRampToValueAtTime(48,when+.18);
-
-    osc.connect(filter);
-    noise.connect(filter);
-    filter.connect(gain).connect(this.musicGain);
-
-    osc.start(when);
-    noise.start(when);
-    osc.stop(when+.24);
-    noise.stop(when+.24);
-  }
-
-  playLogoSting(){
-    const now=this.ctx.currentTime+.06;
-
-    // Signature : Ré – La – Fa – Sol – Ré.
-    // C'est volontairement simple pour être immédiatement reconnaissable.
-    const notes=[
-      [293.66,0,.11],
-      [440.00,.30,.09],
-      [349.23,.60,.08],
-      [392.00,.88,.09],
-      [587.33,1.22,.13]
-    ];
-
-    notes.forEach(([frequency,offset,volume],index)=>{
-      this.pluck(frequency,now+offset,index===4?1.5:.85,volume,index%2===0?-.22:.22);
-    });
-
-    this.frameDrum(now,.055,true);
-    this.frameDrum(now+.88,.035,false);
-    this.aulos(293.66,now+1.28,1.25,.038);
-  }
-
-  scheduleBars(){
-    if(!this.ctx) return;
-
-    const beat=60/76;
-    const barLength=beat*4;
-    const horizon=this.ctx.currentTime+7;
-
-    while(this.loopStart<horizon){
-      const barIndex=this.bar%8;
-      this.scheduleBar(this.loopStart,barIndex,beat);
-      this.loopStart+=barLength;
-      this.bar++;
-    }
-  }
-
-  scheduleBar(start,bar,beat){
-    // Thème principal en Ré dorien.
-    const motifs=[
-      [293.66,440.00,349.23,392.00],
-      [293.66,440.00,523.25,440.00],
-      [349.23,392.00,440.00,293.66],
-      [261.63,293.66,349.23,392.00],
-      [293.66,440.00,349.23,392.00],
-      [587.33,523.25,440.00,392.00],
-      [349.23,293.66,261.63,293.66],
-      [392.00,349.23,293.66,293.66]
-    ];
-
-    const bassRoots=[146.83,146.83,174.61,130.81,146.83,196.00,130.81,146.83];
-    const motif=motifs[bar];
-
-    // Battement discret, mais structurant.
-    this.frameDrum(start,.035,bar===0||bar===4);
-    this.frameDrum(start+beat*2,.022,false);
-
-    // Ostinato de lyre.
-    for(let i=0;i<4;i++){
-      const note=motif[i];
-      const offset=i*beat;
-      const accent=i===0?.070:.047;
-      this.pluck(note,start+offset,.72,accent,i%2===0?-.28:.22);
-
-      // Réponse grave pour donner du poids au thème.
-      if(i===0||i===2){
-        this.pluck(note/2,start+offset+.12,1.05,.024,-.08);
-      }
-    }
-
-    // Basse de kithara.
-    this.pluck(bassRoots[bar],start,1.35,.035,-.18);
-
-    // Réponse d’aulos à la fin de chaque deuxième mesure.
-    if(bar===1){
-      this.aulos(392.00,start+beat*2.5,beat*.7,.040);
-      this.aulos(440.00,start+beat*3.25,beat*.55,.046);
-    }
-    if(bar===3){
-      this.aulos(349.23,start+beat*2.25,beat*.7,.039);
-      this.aulos(293.66,start+beat*3.05,beat*.78,.048);
-    }
-    if(bar===5){
-      this.aulos(523.25,start+beat*2.25,beat*.58,.043);
-      this.aulos(440.00,start+beat*3.0,beat*.75,.044);
-    }
-    if(bar===7){
-      this.aulos(392.00,start+beat*2.2,beat*.55,.036);
-      this.aulos(293.66,start+beat*3.0,beat*.9,.052);
-      this.frameDrum(start+beat*3.45,.030,false);
-    }
+    },40);
   }
 
   setMode(mode){
-    if(!this.ctx||!this.started) return;
     this.mode=mode;
-
-    const now=this.ctx.currentTime;
-    const musicTarget=mode==="menu"?.22:.11;
-    const ambienceTarget=mode==="menu"?.10:.075;
-
-    this.musicGain.gain.cancelScheduledValues(now);
-    this.ambienceGain.gain.cancelScheduledValues(now);
-
-    this.musicGain.gain.linearRampToValueAtTime(musicTarget,now+1.8);
-    this.ambienceGain.gain.linearRampToValueAtTime(ambienceTarget,now+1.8);
+    this.targetVolume=mode==="menu"?.72:.28;
+    this.fadeTo(this.targetVolume,1500);
   }
 }
 
@@ -1341,7 +1026,7 @@ async function activateTitleMusic(event){
   try{
     await audioDirector.start();
     audioDirector.setMode("menu");
-    soundPrompt.textContent="♪ Musique active";
+    soundPrompt.textContent="♪ Thème actif";
     soundPrompt.classList.add("active");
   }catch(error){
     soundPrompt.textContent="Son indisponible";
