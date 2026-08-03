@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.06.2.2</title>
+  <title>Odyssée — Légendes de l’Égée v1.06.2.2.1</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
@@ -126,7 +126,7 @@
   <div id="titleContent">
     <h1 class="gameTitle">ODYSSÉE</h1>
     <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
-    <div class="gameVersion">ALPHA v1.06.2.2</div>
+    <div class="gameVersion">ALPHA v1.06.2.2.1</div>
     <button id="startButton" type="button">COMMENCER</button>
     <button id="eraseButton" type="button">Effacer la sauvegarde</button>
   </div>
@@ -222,7 +222,7 @@ class WorldScene extends Phaser.Scene {
     this.obstacles=[];
     this.footstepTimer=0;
 
-    this.physics.world.setBounds(0,0,W,H);
+    // Hotfix v1.06.2.2.1 : pas de moteur physique Phaser utilisé dans cette version.
     this.cameras.main.setBounds(0,0,W,H);
     this.cameras.main.setBackgroundColor("#0a2430");
 
