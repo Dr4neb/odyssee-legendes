@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.04.2 Hotfix</title>
+  <title>Odyssée — Légendes de l’Égée v1.04.3 Landscape</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
@@ -41,6 +41,52 @@
       display:none;position:fixed;inset:0;z-index:200;padding:40px 24px;background:#260d0d;color:#fff;
       white-space:pre-wrap;overflow:auto;font:15px/1.5 monospace;
     }
+    #rotateHint{
+      display:none;position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;z-index:1600;
+      transform:translateX(-50%);padding:9px 14px;border:1px solid rgba(241,216,137,.8);
+      border-radius:999px;background:rgba(6,23,30,.92);color:#f4df9b;
+      font:800 12px system-ui,-apple-system,sans-serif;pointer-events:none;white-space:nowrap;
+    }
+    #mobileControls{display:none;position:fixed;inset:0;z-index:1500;pointer-events:none}
+    #mobileControls.visible{display:block}
+    #joystickBase{
+      position:absolute;left:calc(28px + env(safe-area-inset-left));bottom:calc(24px + env(safe-area-inset-bottom));
+      width:142px;height:142px;border:4px solid rgba(229,207,135,.9);border-radius:50%;
+      background:rgba(6,23,30,.58);box-shadow:inset 0 0 0 2px rgba(255,255,255,.05);
+      pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;
+    }
+    #joystickKnob{
+      position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;
+      background:rgba(229,207,135,.9);box-shadow:0 5px 14px rgba(0,0,0,.35);pointer-events:none;
+      transform:translate3d(0,0,0);
+    }
+    .domGameButton{
+      position:absolute;right:calc(30px + env(safe-area-inset-right));border-radius:50%;
+      display:grid;place-items:center;border:4px solid #f1d889;color:#fff;font-weight:900;
+      pointer-events:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none;
+      box-shadow:0 7px 16px rgba(0,0,0,.35);
+    }
+    #domActionButton{
+      bottom:calc(25px + env(safe-area-inset-bottom));width:124px;height:124px;
+      background:rgba(158,63,50,.92);font-size:18px;
+    }
+    #domInventoryButton{
+      right:calc(58px + env(safe-area-inset-right));bottom:calc(166px + env(safe-area-inset-bottom));
+      width:62px;height:62px;border-width:3px;background:rgba(37,78,86,.95);font-size:25px;
+    }
+    .domGameButton:active{transform:scale(.94)}
+    @media (orientation:portrait){
+      #rotateHint{display:block}
+      #joystickBase{width:132px;height:132px;left:18px;bottom:calc(18px + env(safe-area-inset-bottom))}
+      #domActionButton{width:116px;height:116px;right:18px;bottom:calc(18px + env(safe-area-inset-bottom))}
+      #domInventoryButton{right:45px;bottom:calc(152px + env(safe-area-inset-bottom))}
+    }
+    @media (orientation:landscape) and (max-height:500px){
+      #joystickBase{width:124px;height:124px;left:calc(20px + env(safe-area-inset-left));bottom:calc(15px + env(safe-area-inset-bottom))}
+      #joystickKnob{width:56px;height:56px;margin:-28px 0 0 -28px}
+      #domActionButton{width:106px;height:106px;right:calc(22px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));font-size:16px}
+      #domInventoryButton{width:54px;height:54px;right:calc(48px + env(safe-area-inset-right));bottom:calc(132px + env(safe-area-inset-bottom))}
+    }
   </style>
 </head>
 <body>
@@ -48,12 +94,18 @@
 <div id="titleScreen">
   <h1 class="gameTitle">ODYSSÉE</h1>
   <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
-  <div class="gameVersion">ALPHA v1.04.2</div>
+  <div class="gameVersion">ALPHA v1.04.3</div>
   <button id="startButton" type="button">COMMENCER</button>
   <button id="eraseButton" type="button">Effacer la sauvegarde</button>
   <div class="credit">Prototype mobile — Dr4neb</div>
 </div>
 <div id="fatalError"></div>
+<div id="rotateHint">↻ Tourne l’iPhone en paysage</div>
+<div id="mobileControls">
+  <div id="joystickBase" aria-label="Joystick de déplacement"><div id="joystickKnob"></div></div>
+  <button id="domInventoryButton" class="domGameButton" type="button" aria-label="Inventaire">🎒</button>
+  <button id="domActionButton" class="domGameButton" type="button">ACTION</button>
+</div>
 <div id="game"></div>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script>
@@ -89,14 +141,16 @@ class WorldScene extends Phaser.Scene{
     this.createTextures();
     this.createActors();
     this.createUI();
-    this.createJoystick();
-    this.createButtons();
+    this.setupDomControls();
     this.loadSave();
 
     this.cameras.main.startFollow(this.player,true,.08,.08);
-    this.cameras.main.setZoom(this.scale.width<500?1.12:1);
+    this.updateResponsiveView();
     this.layout();
-    this.scale.on("resize",()=>this.layout());
+    this.scale.on("resize",()=>{
+      this.layout();
+      this.updateResponsiveView();
+    });
 
     this.input.keyboard?.on("keydown-E",()=>this.actionUse());
     this.toast("Explore Ithaque. Le navire t’attend au port.");
@@ -238,6 +292,108 @@ class WorldScene extends Phaser.Scene{
       .setOrigin(.5).setScrollFactor(0).setDepth(1301).setVisible(false);
   }
 
+  setupDomControls(){
+    const controls=document.getElementById("mobileControls");
+    const base=document.getElementById("joystickBase");
+    const knob=document.getElementById("joystickKnob");
+    const action=document.getElementById("domActionButton");
+    const inventory=document.getElementById("domInventoryButton");
+
+    controls.classList.add("visible");
+    this.domControls={controls,base,knob,action,inventory};
+
+    const updateFromPoint=(clientX,clientY)=>{
+      const rect=base.getBoundingClientRect();
+      const cx=rect.left+rect.width/2;
+      const cy=rect.top+rect.height/2;
+      const dx=clientX-cx;
+      const dy=clientY-cy;
+      const length=Math.hypot(dx,dy)||1;
+      const max=rect.width*.34;
+      const distance=Math.min(length,max);
+      const nx=dx/length;
+      const ny=dy/length;
+
+      this.joy.x=nx*(distance/max);
+      this.joy.y=ny*(distance/max);
+      knob.style.transform=`translate3d(${nx*distance}px,${ny*distance}px,0)`;
+    };
+
+    const resetJoystick=()=>{
+      this.joy.active=false;
+      this.joy.id=null;
+      this.joy.x=0;
+      this.joy.y=0;
+      knob.style.transform="translate3d(0,0,0)";
+    };
+
+    const pointerDown=(event)=>{
+      event.preventDefault();
+      event.stopPropagation();
+      this.joy.active=true;
+      this.joy.id=event.pointerId;
+      base.setPointerCapture?.(event.pointerId);
+      updateFromPoint(event.clientX,event.clientY);
+    };
+    const pointerMove=(event)=>{
+      if(!this.joy.active||event.pointerId!==this.joy.id)return;
+      event.preventDefault();
+      updateFromPoint(event.clientX,event.clientY);
+    };
+    const pointerEnd=(event)=>{
+      if(event.pointerId!==this.joy.id)return;
+      event.preventDefault();
+      resetJoystick();
+    };
+
+    base.addEventListener("pointerdown",pointerDown,{passive:false});
+    base.addEventListener("pointermove",pointerMove,{passive:false});
+    base.addEventListener("pointerup",pointerEnd,{passive:false});
+    base.addEventListener("pointercancel",pointerEnd,{passive:false});
+    base.addEventListener("lostpointercapture",resetJoystick);
+
+    // Fallback tactile spécifique à Safari iOS.
+    base.addEventListener("touchstart",(event)=>{
+      event.preventDefault();
+      const touch=event.changedTouches[0];
+      this.joy.active=true;
+      this.joy.id="touch";
+      updateFromPoint(touch.clientX,touch.clientY);
+    },{passive:false});
+    base.addEventListener("touchmove",(event)=>{
+      if(!this.joy.active)return;
+      event.preventDefault();
+      const touch=event.changedTouches[0];
+      updateFromPoint(touch.clientX,touch.clientY);
+    },{passive:false});
+    base.addEventListener("touchend",(event)=>{
+      event.preventDefault();
+      resetJoystick();
+    },{passive:false});
+    base.addEventListener("touchcancel",resetJoystick,{passive:false});
+
+    const actionHandler=(event)=>{
+      event.preventDefault();
+      event.stopPropagation();
+      this.actionUse();
+    };
+    const inventoryHandler=(event)=>{
+      event.preventDefault();
+      event.stopPropagation();
+      this.toggleInventory();
+    };
+    action.addEventListener("pointerup",actionHandler,{passive:false});
+    action.addEventListener("touchend",actionHandler,{passive:false});
+    inventory.addEventListener("pointerup",inventoryHandler,{passive:false});
+    inventory.addEventListener("touchend",inventoryHandler,{passive:false});
+  }
+
+  updateResponsiveView(){
+    const landscape=this.scale.width>this.scale.height;
+    const zoom=landscape ? (this.scale.height<500?.78:.88) : .72;
+    this.cameras.main.setZoom(zoom);
+  }
+
   createJoystick(){
     this.joyBase=this.add.circle(94,this.scale.height-112,68,0x06171e,.6).setStrokeStyle(3,0xe5cf87,.78).setScrollFactor(0).setDepth(1100);
     this.joyKnob=this.add.circle(94,this.scale.height-112,30,0xe5cf87,.84).setScrollFactor(0).setDepth(1101);
@@ -275,13 +431,10 @@ class WorldScene extends Phaser.Scene{
 
   layout(){
     const w=this.scale.width,h=this.scale.height;
-    this.joyBase.setPosition(94,h-112);
-    if(!this.joy.active)this.joyKnob.setPosition(this.joyBase.x,this.joyBase.y);
-    this.actionBtn.setPosition(w-78,h-112);this.actionTxt.setPosition(this.actionBtn.x,this.actionBtn.y);
-    this.invBtn.setPosition(w-78,h-205);this.invTxt.setPosition(this.invBtn.x,this.invBtn.y);
-    this.messageBg.setPosition(w/2,112).setSize(Math.min(350,w-24),64);
-    this.message.setPosition(w/2,112);
-    this.inventoryPanel.setPosition(w/2,h/2);
+    const landscape=w>h;
+    this.messageBg.setPosition(w/2,landscape?68:112).setSize(Math.min(420,w-24),58);
+    this.message.setPosition(w/2,landscape?68:112);
+    this.inventoryPanel.setPosition(w/2,h/2).setSize(Math.min(420,w-40),Math.min(280,h-40));
     this.inventoryText.setPosition(w/2,h/2);
   }
 
@@ -418,6 +571,9 @@ function startGame(event){
   const title=document.getElementById("titleScreen");
   title.classList.add("hidden");
 
+  document.documentElement.requestFullscreen?.().catch?.(()=>{});
+  screen.orientation?.lock?.("landscape").catch?.(()=>{});
+
   try{
     game.scene.start("World");
   }catch(error){
@@ -430,6 +586,7 @@ function startGame(event){
 function showFatal(error){
   const box=document.getElementById("fatalError");
   box.style.display="block";
+  document.getElementById("mobileControls")?.classList.remove("visible");
   box.textContent="Le jeu a rencontré une erreur :\n\n"+(error?.stack||error);
 }
 
