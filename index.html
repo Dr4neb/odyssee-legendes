@@ -3,343 +3,392 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#071b23">
-  <title>Odyssée — Légendes de l’Égée v1.03.1</title>
+  <meta name="theme-color" content="#06171e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Odyssée — Légendes de l’Égée v1.04 Alpha</title>
   <style>
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071b23;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
     canvas{display:block}
-    #loading{position:fixed;inset:0;display:grid;place-items:center;color:#f4df9b;background:#071b23;z-index:10;font-weight:800;letter-spacing:.08em}
+    #boot{position:fixed;inset:0;display:grid;place-items:center;background:#06171e;color:#f4df9b;z-index:10;font-weight:800;letter-spacing:.08em}
   </style>
 </head>
 <body>
-<div id="loading">CHARGEMENT DE L’ÉGÉE…</div>
+<div id="boot">OUVERTURE DES PORTES D’ITHAQUE…</div>
 <div id="game"></div>
-
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
 <script>
 (() => {
-  "use strict";
+"use strict";
 
-  const WORLD_W = 2400, WORLD_H = 1800;
-  const clamp = Phaser.Math.Clamp;
+const W=2600,H=1900;
+const SAVE_KEY="odyssee_v104_alpha";
+const clamp=Phaser.Math.Clamp;
 
-  class MainScene extends Phaser.Scene {
-    constructor(){ super("MainScene"); }
+class TitleScene extends Phaser.Scene{
+  constructor(){super("Title")}
+  create(){
+    document.getElementById("boot").style.display="none";
+    this.cameras.main.setBackgroundColor("#06171e");
+    const cx=this.scale.width/2, cy=this.scale.height/2;
 
-    create(){
-      document.getElementById("loading").style.display = "none";
-      this.mode = "land";
-      this.speed = 210;
-      this.shipSpeed = 270;
-      this.joy = {x:0,y:0,active:false,pointerId:null};
-      this.coins = 120;
-      this.wood = 8;
-      this.food = 16;
-
-      this.physics.world.setBounds(0,0,WORLD_W,WORLD_H);
-      this.cameras.main.setBounds(0,0,WORLD_W,WORLD_H);
-      this.cameras.main.setBackgroundColor("#082b36");
-
-      this.drawWorld();
-      this.createActors();
-      this.createUI();
-      this.createJoystick();
-      this.createActionButton();
-
-      this.cameras.main.startFollow(this.player, true, 0.09, 0.09);
-      this.cameras.main.setZoom(this.scale.width < 500 ? 1.16 : 1.0);
-      this.scale.on("resize", () => this.layoutUI());
-
-      this.input.keyboard?.on("keydown-E", () => this.doAction());
-      this.input.keyboard?.addKeys("W,A,S,D,UP,DOWN,LEFT,RIGHT");
-      this.toast("Explore Ithaque puis rejoins le navire");
+    const g=this.add.graphics();
+    for(let i=0;i<40;i++){
+      g.lineStyle(2,i%2?0x0d3844:0x124854,.35);
+      const y=Phaser.Math.Between(0,this.scale.height);
+      g.lineBetween(0,y,this.scale.width,y+Phaser.Math.Between(-6,6));
     }
 
-    drawWorld(){
-      const g = this.add.graphics();
+    this.add.text(cx,cy-145,"ODYSSÉE",{
+      fontFamily:"Georgia,serif",fontSize:"44px",fontStyle:"bold",color:"#f2d58a",
+      stroke:"#301e13",strokeThickness:5
+    }).setOrigin(.5);
+    this.add.text(cx,cy-92,"LÉGENDES DE L’ÉGÉE",{
+      fontFamily:"system-ui",fontSize:"17px",fontStyle:"bold",color:"#b8d9d4",letterSpacing:3
+    }).setOrigin(.5);
+    this.add.text(cx,cy-45,"ALPHA v1.04",{
+      fontFamily:"system-ui",fontSize:"13px",color:"#89a9a9"
+    }).setOrigin(.5);
 
-      // Mer profonde
-      g.fillStyle(0x082b36,1).fillRect(0,0,WORLD_W,WORLD_H);
+    const play=this.add.rectangle(cx,cy+45,250,62,0x9e3f32,.95).setStrokeStyle(3,0xf0d78b,1).setInteractive();
+    this.add.text(cx,cy+45,"COMMENCER",{fontFamily:"system-ui",fontSize:"18px",fontStyle:"bold",color:"#fff"}).setOrigin(.5);
+    play.on("pointerdown",()=>this.scene.start("World"));
 
-      // Courants / variations d’eau
-      for(let i=0;i<160;i++){
-        const x = Phaser.Math.Between(0,WORLD_W);
-        const y = Phaser.Math.Between(0,WORLD_H);
-        const w = Phaser.Math.Between(25,100);
-        g.lineStyle(2, i%3===0 ? 0x174956 : 0x0d3945, .35);
-        g.beginPath(); g.moveTo(x,y); g.lineTo(x+w,y+Phaser.Math.Between(-8,8)); g.strokePath();
-      }
+    const erase=this.add.text(cx,cy+105,"Effacer la sauvegarde",{fontFamily:"system-ui",fontSize:"13px",color:"#9eb8b7"})
+      .setOrigin(.5).setInteractive();
+    erase.on("pointerdown",()=>{
+      localStorage.removeItem(SAVE_KEY);
+      erase.setText("Sauvegarde effacée");
+    });
 
-      // Île irrégulière : plusieurs ellipses superposées, sans grille.
-      g.fillStyle(0x3c6f55,1);
-      const islandParts = [
-        [620,770,830,690],[900,660,720,620],[1120,820,660,720],
-        [760,1030,650,520],[1160,1080,550,440],[480,980,360,350]
-      ];
-      islandParts.forEach(p=>g.fillEllipse(...p));
+    this.add.text(cx,this.scale.height-42,"Prototype mobile — Dr4neb",{
+      fontFamily:"system-ui",fontSize:"12px",color:"#668185"
+    }).setOrigin(.5);
+  }
+}
 
-      // Plage périphérique visuelle
-      g.lineStyle(48,0xcdb77b,1);
-      g.beginPath();
-      g.moveTo(290,750);
-      g.bezierCurveTo(330,390,790,310,1190,440);
-      g.bezierCurveTo(1510,540,1510,1030,1260,1310);
-      g.bezierCurveTo(1020,1510,520,1430,300,1170);
-      g.bezierCurveTo(170,1020,180,850,290,750);
-      g.strokePath();
+class WorldScene extends Phaser.Scene{
+  constructor(){super("World")}
+  create(){
+    this.mode="land";
+    this.speed=230; this.shipSpeed=285;
+    this.coins=120; this.food=18; this.wood=10;
+    this.inventory={sword:false,shield:false,helmet:false};
+    this.joy={x:0,y:0,active:false,id:null};
+    this.dayT=0;
 
-      // Re-remplissage intérieur pour garder une côte fine
-      g.fillStyle(0x4f815e,1);
-      g.beginPath();
-      g.moveTo(305,750);
-      g.bezierCurveTo(350,430,790,345,1175,470);
-      g.bezierCurveTo(1450,565,1465,1015,1230,1280);
-      g.bezierCurveTo(1010,1450,550,1390,330,1150);
-      g.bezierCurveTo(210,1010,210,850,305,750);
-      g.closePath(); g.fillPath();
+    this.physics.world.setBounds(0,0,W,H);
+    this.cameras.main.setBounds(0,0,W,H);
+    this.cameras.main.setBackgroundColor("#072935");
 
-      // Chemins organiques
-      g.lineStyle(54,0xb89d61,1);
-      g.beginPath(); g.moveTo(470,1120); g.bezierCurveTo(620,1000,760,900,940,760); g.strokePath();
-      g.beginPath(); g.moveTo(930,760); g.bezierCurveTo(1090,720,1200,760,1320,880); g.strokePath();
-      g.beginPath(); g.moveTo(800,900); g.bezierCurveTo(720,770,660,650,610,540); g.strokePath();
+    this.drawWorld();
+    this.createTextures();
+    this.createActors();
+    this.createUI();
+    this.createJoystick();
+    this.createButtons();
+    this.loadSave();
 
-      // Falaises et collines
-      for(let i=0;i<26;i++){
-        const x=Phaser.Math.Between(430,1280), y=Phaser.Math.Between(480,1280);
-        if(i%2===0){
-          g.fillStyle(0x365e48,1).fillEllipse(x,y,Phaser.Math.Between(80,170),Phaser.Math.Between(45,90));
-          g.fillStyle(0x6f9165,.55).fillEllipse(x-10,y-12,Phaser.Math.Between(45,110),Phaser.Math.Between(20,45));
-        }
-      }
+    this.cameras.main.startFollow(this.player,true,.08,.08);
+    this.cameras.main.setZoom(this.scale.width<500?1.12:1);
+    this.layout();
+    this.scale.on("resize",()=>this.layout());
 
-      // Port
-      g.fillStyle(0x6c4d2d,1).fillRect(350,1110,270,38);
-      g.fillRect(520,1080,38,150);
-      g.fillStyle(0x9b7444,1);
-      for(let x=360;x<610;x+=35) g.fillRect(x,1116,4,26);
+    this.input.keyboard?.on("keydown-E",()=>this.actionUse());
+    this.toast("Explore Ithaque. Le navire t’attend au port.");
+  }
 
-      // Bâtiments extérieurs, non visitables
-      this.buildings = [
-        {x:720,y:845,w:150,h:105,name:"Forgeron"},
-        {x:1030,y:680,w:165,h:115,name:"Marché"},
-        {x:860,y:530,w:190,h:125,name:"Temple"}
-      ];
-      this.buildings.forEach((b,i)=>{
-        g.fillStyle(i===2?0xd8cfad:0xd9c28f,1).fillRoundedRect(b.x,b.y,b.w,b.h,8);
-        g.fillStyle(i===2?0xb7aa82:0x9a6238,1).fillTriangle(b.x-10,b.y+8,b.x+b.w/2,b.y-58,b.x+b.w+10,b.y+8);
-        g.fillStyle(0x4c3224,1).fillRect(b.x+b.w/2-15,b.y+b.h-42,30,42);
-      });
+  drawWorld(){
+    this.worldG=this.add.graphics();
 
-      // Arbres / rochers
-      for(let i=0;i<50;i++){
-        const x=Phaser.Math.Between(330,1330), y=Phaser.Math.Between(430,1320);
-        if((x>650&&x<1220&&y>480&&y<980) || (x<650&&y>1040)) continue;
-        g.fillStyle(0x65452a,1).fillRect(x-5,y,10,25);
-        g.fillStyle(0x28503a,1).fillCircle(x,y-10,20);
-        g.fillStyle(0x3f7550,.8).fillCircle(x-10,y-14,12);
-      }
+    // Mer profonde
+    this.worldG.fillStyle(0x072935,1).fillRect(0,0,W,H);
 
-      // Zone collision approximative de l’île
-      this.landZone = new Phaser.Geom.Ellipse(820,900,1180,980);
-      this.dockPoint = new Phaser.Math.Vector2(510,1085);
-      this.shipPoint = new Phaser.Math.Vector2(490,1225);
+    // Courants statiques
+    for(let i=0;i<210;i++){
+      const x=Phaser.Math.Between(0,W),y=Phaser.Math.Between(0,H),len=Phaser.Math.Between(35,120);
+      this.worldG.lineStyle(2,i%3===0?0x174d5b:0x0b3946,.28);
+      this.worldG.lineBetween(x,y,x+len,y+Phaser.Math.Between(-8,8));
     }
 
-    createActors(){
-      // Navire procédural
-      const sg = this.make.graphics({x:0,y:0,add:false});
-      sg.fillStyle(0x6d3e22).fillEllipse(42,28,82,34);
-      sg.fillStyle(0x9a6334).fillTriangle(4,25,80,25,42,54);
-      sg.fillStyle(0xe8ddbb).fillTriangle(42,25,42,-18,73,20);
-      sg.lineStyle(4,0x3b2518).lineBetween(42,-22,42,28);
-      sg.generateTexture("ship",86,64); sg.destroy();
+    // Hauts-fonds autour de l’île
+    this.worldG.fillStyle(0x16606a,.42).fillEllipse(900,940,1500,1250);
+    this.worldG.fillStyle(0x2f8581,.45).fillEllipse(900,940,1320,1080);
+    this.worldG.fillStyle(0xbda96f,1).fillEllipse(900,940,1220,980);
+    this.worldG.fillStyle(0x4c8059,1).fillEllipse(900,920,1120,880);
 
-      // Héros procédural, pixel-like
-      const pg = this.make.graphics({x:0,y:0,add:false});
-      pg.fillStyle(0x20252a).fillCircle(18,10,9);
-      pg.fillStyle(0xd5a06f).fillCircle(18,17,8);
-      pg.fillStyle(0xb94b39).fillRect(9,24,18,21);
-      pg.fillStyle(0xe3c47d).fillRect(7,44,8,16);
-      pg.fillRect(21,44,8,16);
-      pg.fillStyle(0x61402a).fillRect(4,28,5,22);
-      pg.generateTexture("hero",36,64); pg.destroy();
+    // Déformations naturelles de la côte
+    const shoreCuts=[[350,700,230,210],[1420,820,240,260],[690,1430,310,210],[1180,470,270,220]];
+    shoreCuts.forEach(([x,y,w,h])=>{
+      this.worldG.fillStyle(0x2b7880,1).fillEllipse(x,y,w,h);
+      this.worldG.fillStyle(0x0c3b48,.8).fillEllipse(x,y,w-60,h-60);
+    });
 
-      this.ship = this.physics.add.image(this.shipPoint.x,this.shipPoint.y,"ship")
-        .setDepth(20).setImmovable(true);
-      this.ship.body.setCircle(25,18,7);
+    // Chemins
+    this.worldG.lineStyle(58,0xb69a5d,1);
+    this.worldG.beginPath();this.worldG.moveTo(475,1160);this.worldG.bezierCurveTo(650,1040,760,920,930,760);this.worldG.strokePath();
+    this.worldG.beginPath();this.worldG.moveTo(925,760);this.worldG.bezierCurveTo(1110,710,1240,790,1360,930);this.worldG.strokePath();
+    this.worldG.beginPath();this.worldG.moveTo(800,930);this.worldG.bezierCurveTo(720,780,670,650,625,520);this.worldG.strokePath();
 
-      this.player = this.physics.add.image(520,1045,"hero")
-        .setDepth(30).setCollideWorldBounds(true);
-      this.player.body.setCircle(15,3,26);
-
-      this.physics.add.collider(this.player,this.ship);
+    // Collines
+    for(let i=0;i<36;i++){
+      const x=Phaser.Math.Between(390,1370),y=Phaser.Math.Between(460,1390);
+      if((x>620&&x<1290&&y>500&&y<1040)||(x<650&&y>1080))continue;
+      this.worldG.fillStyle(0x315f45,1).fillEllipse(x,y,Phaser.Math.Between(90,180),Phaser.Math.Between(42,90));
+      this.worldG.fillStyle(0x72956a,.45).fillEllipse(x-12,y-12,Phaser.Math.Between(45,115),Phaser.Math.Between(20,45));
     }
 
-    createUI(){
-      const style = {fontFamily:"system-ui",fontSize:"16px",color:"#f7e6ae",fontStyle:"bold"};
-      this.hudBg = this.add.rectangle(12,12,230,66,0x071b23,.78).setOrigin(0).setScrollFactor(0).setDepth(1000);
-      this.hud = this.add.text(24,22,"",style).setScrollFactor(0).setDepth(1001);
-      this.modeText = this.add.text(24,50,"", {...style,fontSize:"13px",color:"#a9d8d0"}).setScrollFactor(0).setDepth(1001);
+    // Port
+    this.worldG.fillStyle(0x674527,1).fillRect(355,1120,300,42);
+    this.worldG.fillRect(540,1085,42,175);
+    this.worldG.fillStyle(0xa17a48,1);
+    for(let x=365;x<645;x+=36)this.worldG.fillRect(x,1126,5,28);
 
-      this.messageBg = this.add.rectangle(0,0,10,10,0x071b23,.88).setScrollFactor(0).setDepth(1000).setVisible(false);
-      this.message = this.add.text(0,0,"",{fontFamily:"system-ui",fontSize:"15px",color:"#ffffff",align:"center",wordWrap:{width:300}})
-        .setOrigin(.5).setScrollFactor(0).setDepth(1001).setVisible(false);
+    // Bâtiments
+    this.buildings=[
+      {x:700,y:850,w:165,h:112,name:"Forgeron",type:"forge"},
+      {x:1040,y:690,w:180,h:120,name:"Marché",type:"market"},
+      {x:835,y:515,w:215,h:135,name:"Temple d’Athéna",type:"temple"}
+    ];
+    this.buildings.forEach((b,i)=>{
+      this.worldG.fillStyle(i===2?0xd6cfaf:0xd7bd87,1).fillRoundedRect(b.x,b.y,b.w,b.h,8);
+      this.worldG.fillStyle(i===2?0xb4a47a:0x955c35,1).fillTriangle(b.x-12,b.y+8,b.x+b.w/2,b.y-62,b.x+b.w+12,b.y+8);
+      this.worldG.fillStyle(0x422b20,1).fillRect(b.x+b.w/2-16,b.y+b.h-45,32,45);
+      this.add.text(b.x+b.w/2,b.y+b.h+12,b.name,{fontFamily:"system-ui",fontSize:"13px",color:"#f4e3ad",backgroundColor:"#071b23aa",padding:{x:5,y:3}})
+        .setOrigin(.5).setDepth(6);
+    });
 
-      this.layoutUI();
+    // Arbres
+    for(let i=0;i<62;i++){
+      const x=Phaser.Math.Between(360,1400),y=Phaser.Math.Between(430,1410);
+      if((x>610&&x<1290&&y>470&&y<1040)||(x<680&&y>1060))continue;
+      this.worldG.fillStyle(0x62432a,1).fillRect(x-5,y,10,28);
+      this.worldG.fillStyle(0x234b34,1).fillCircle(x,y-12,22);
+      this.worldG.fillStyle(0x3d744e,.8).fillCircle(x-10,y-16,13);
     }
 
-    createJoystick(){
-      this.joyBase = this.add.circle(92,this.scale.height-105,66,0x071b23,.58)
-        .setStrokeStyle(3,0xe5d08d,.75).setScrollFactor(0).setDepth(1100).setInteractive();
-      this.joyKnob = this.add.circle(92,this.scale.height-105,29,0xe5d08d,.82)
-        .setScrollFactor(0).setDepth(1101);
+    this.landZone=new Phaser.Geom.Ellipse(900,940,1160,900);
+    this.dockPoint=new Phaser.Math.Vector2(550,1080);
+    this.shipPoint=new Phaser.Math.Vector2(520,1265);
 
-      const start = p => {
-        if(p.x > this.scale.width*.55) return;
-        this.joy.active=true; this.joy.pointerId=p.id;
-        this.updateJoy(p);
-      };
-      const move = p => { if(this.joy.active && p.id===this.joy.pointerId) this.updateJoy(p); };
-      const end = p => {
-        if(p.id!==this.joy.pointerId) return;
-        this.joy.active=false; this.joy.pointerId=null; this.joy.x=this.joy.y=0;
-        this.joyKnob.setPosition(this.joyBase.x,this.joyBase.y);
-      };
-      this.input.on("pointerdown",start);
-      this.input.on("pointermove",move);
-      this.input.on("pointerup",end);
-      this.input.on("pointerupoutside",end);
-    }
-
-    updateJoy(p){
-      const dx=p.x-this.joyBase.x, dy=p.y-this.joyBase.y;
-      const len=Math.hypot(dx,dy)||1, max=48;
-      const dist=Math.min(len,max);
-      const nx=dx/len, ny=dy/len;
-      this.joy.x=nx*(dist/max); this.joy.y=ny*(dist/max);
-      this.joyKnob.setPosition(this.joyBase.x+nx*dist,this.joyBase.y+ny*dist);
-    }
-
-    createActionButton(){
-      this.action = this.add.circle(this.scale.width-82,this.scale.height-105,55,0x9d3b32,.86)
-        .setStrokeStyle(3,0xf5dda0,1).setScrollFactor(0).setDepth(1100).setInteractive();
-      this.actionLabel = this.add.text(this.action.x,this.action.y,"ACTION",{
-        fontFamily:"system-ui",fontSize:"13px",fontStyle:"bold",color:"#fff"
-      }).setOrigin(.5).setScrollFactor(0).setDepth(1101);
-      this.action.on("pointerdown",()=>this.doAction());
-    }
-
-    layoutUI(){
-      if(!this.joyBase) return;
-      const h=this.scale.height,w=this.scale.width;
-      this.joyBase.setPosition(92,h-105); this.joyKnob.setPosition(this.joyBase.x,this.joyBase.y);
-      this.action.setPosition(w-82,h-105); this.actionLabel.setPosition(this.action.x,this.action.y);
-      this.messageBg.setPosition(w/2,112).setSize(Math.min(340,w-30),62);
-      this.message.setPosition(w/2,112);
-    }
-
-    doAction(){
-      if(this.mode==="land"){
-        const d=Phaser.Math.Distance.Between(this.player.x,this.player.y,this.ship.x,this.ship.y);
-        if(d<115){
-          this.mode="sea";
-          this.player.setVisible(false).body.enable=false;
-          this.ship.body.immovable=false;
-          this.cameras.main.startFollow(this.ship,true,.08,.08);
-          this.toast("Embarquement — navigue librement");
-          return;
-        }
-        const nearForge=Phaser.Math.Distance.Between(this.player.x,this.player.y,795,900)<120;
-        if(nearForge){
-          if(this.coins>=50){this.coins-=50;this.toast("Épée de bronze équipée — 50 drachmes");}
-          else this.toast("Il te faut 50 drachmes");
-          return;
-        }
-        this.toast("Approche-toi du navire ou du forgeron");
-      } else {
-        const d=Phaser.Math.Distance.Between(this.ship.x,this.ship.y,this.dockPoint.x,this.dockPoint.y);
-        if(d<135){
-          this.mode="land";
-          this.ship.setVelocity(0,0);
-          this.ship.body.immovable=true;
-          this.player.setPosition(520,1045).setVisible(true); this.player.body.enable=true;
-          this.cameras.main.startFollow(this.player,true,.09,.09);
-          this.toast("Débarquement à Ithaque");
-        } else this.toast("Reviens près du ponton pour débarquer");
-      }
-    }
-
-    toast(txt){
-      this.message.setText(txt).setVisible(true);
-      this.messageBg.setVisible(true);
-      clearTimeout(this.toastTimer);
-      this.toastTimer=setTimeout(()=>{
-        if(this.message){this.message.setVisible(false);this.messageBg.setVisible(false);}
-      },2200);
-    }
-
-    update(){
-      const keys=this.input.keyboard;
-      let x=this.joy.x, y=this.joy.y;
-      if(keys){
-        if(keys.keys[Phaser.Input.Keyboard.KeyCodes.A]?.isDown || keys.keys[Phaser.Input.Keyboard.KeyCodes.LEFT]?.isDown) x=-1;
-        if(keys.keys[Phaser.Input.Keyboard.KeyCodes.D]?.isDown || keys.keys[Phaser.Input.Keyboard.KeyCodes.RIGHT]?.isDown) x=1;
-        if(keys.keys[Phaser.Input.Keyboard.KeyCodes.W]?.isDown || keys.keys[Phaser.Input.Keyboard.KeyCodes.UP]?.isDown) y=-1;
-        if(keys.keys[Phaser.Input.Keyboard.KeyCodes.S]?.isDown || keys.keys[Phaser.Input.Keyboard.KeyCodes.DOWN]?.isDown) y=1;
-      }
-      const len=Math.hypot(x,y);
-      if(len>1){x/=len;y/=len;}
-
-      if(this.mode==="land"){
-        this.player.setVelocity(x*this.speed,y*this.speed);
-        if(Math.abs(x)>.05) this.player.setFlipX(x<0);
-
-        // Limite organique simplifiée : empêche d’aller dans la mer.
-        if(!this.landZone.contains(this.player.x,this.player.y)){
-          const c=new Phaser.Math.Vector2(820,900);
-          const p=new Phaser.Math.Vector2(this.player.x,this.player.y);
-          p.subtract(c).normalize();
-          this.player.setPosition(this.player.x-p.x*7,this.player.y-p.y*7);
-          this.player.setVelocity(0,0);
-        }
-
-        // Collisions simples bâtiments.
-        this.buildings.forEach(b=>{
-          const r=new Phaser.Geom.Rectangle(b.x-18,b.y-70,b.w+36,b.h+90);
-          if(r.contains(this.player.x,this.player.y)){
-            this.player.x-=x*8; this.player.y-=y*8;
-            this.player.setVelocity(0,0);
-          }
-        });
-      } else {
-        this.ship.setVelocity(x*this.shipSpeed,y*this.shipSpeed);
-        if(len>.08){
-          this.ship.rotation=Math.atan2(y,x)+Math.PI/2;
-        }
-        // Le bateau ne traverse pas l’île.
-        if(this.landZone.contains(this.ship.x,this.ship.y) && Phaser.Math.Distance.Between(this.ship.x,this.ship.y,this.shipPoint.x,this.shipPoint.y)>150){
-          this.ship.x-=x*10;this.ship.y-=y*10;this.ship.setVelocity(0,0);
-        }
-      }
-
-      this.hud.setText(`◈ ${this.coins}   🍞 ${this.food}   🪵 ${this.wood}`);
-      this.modeText.setText(this.mode==="land" ? "ITHAQUE — À PIED" : "MER IONIENNE — À BORD");
+    // Vagues animées
+    this.waves=[];
+    for(let i=0;i<45;i++){
+      const wave=this.add.arc(Phaser.Math.Between(0,W),Phaser.Math.Between(0,H),Phaser.Math.Between(14,34),200,340,false,0x8bd0d0,.16)
+        .setDepth(1);
+      wave.speed=Phaser.Math.FloatBetween(8,20);
+      this.waves.push(wave);
     }
   }
 
-  const config = {
-    type: Phaser.AUTO,
-    parent: "game",
-    backgroundColor: "#071b23",
-    scale: {mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH, width: window.innerWidth, height: window.innerHeight},
-    physics: {default:"arcade", arcade:{gravity:{x:0,y:0},debug:false}},
-    render: {antialias:false, pixelArt:true, roundPixels:true},
-    scene: [MainScene]
-  };
+  createTextures(){
+    const sg=this.make.graphics({add:false});
+    sg.fillStyle(0x6b3d22).fillEllipse(44,32,88,38);
+    sg.fillStyle(0x9d6738).fillTriangle(4,29,84,29,44,59);
+    sg.fillStyle(0xe8ddba).fillTriangle(44,27,44,-20,78,22);
+    sg.lineStyle(4,0x3b2518).lineBetween(44,-24,44,31);
+    sg.generateTexture("ship",90,68);sg.destroy();
 
-  new Phaser.Game(config);
+    const pg=this.make.graphics({add:false});
+    pg.fillStyle(0x20252a).fillCircle(20,10,10);
+    pg.fillStyle(0xd7a170).fillCircle(20,18,8);
+    pg.fillStyle(0xb64c3a).fillRect(10,25,20,23);
+    pg.fillStyle(0xe1c179).fillRect(7,48,8,17);
+    pg.fillRect(25,48,8,17);
+    pg.fillStyle(0x61402a).fillRect(4,30,5,24);
+    pg.generateTexture("hero",40,68);pg.destroy();
+  }
+
+  createActors(){
+    this.ship=this.physics.add.image(this.shipPoint.x,this.shipPoint.y,"ship").setDepth(20).setImmovable(true);
+    this.ship.body.setCircle(27,18,7);
+    this.player=this.physics.add.image(540,1060,"hero").setDepth(30).setCollideWorldBounds(true);
+    this.player.body.setCircle(16,4,27);
+    this.physics.add.collider(this.player,this.ship);
+  }
+
+  createUI(){
+    this.hudBg=this.add.rectangle(12,12,250,70,0x06171e,.82).setOrigin(0).setScrollFactor(0).setDepth(1000);
+    this.hud=this.add.text(24,22,"",{fontFamily:"system-ui",fontSize:"16px",fontStyle:"bold",color:"#f4df9b"}).setScrollFactor(0).setDepth(1001);
+    this.modeText=this.add.text(24,51,"",{fontFamily:"system-ui",fontSize:"13px",fontStyle:"bold",color:"#a6d3ce"}).setScrollFactor(0).setDepth(1001);
+
+    this.messageBg=this.add.rectangle(0,0,10,10,0x06171e,.9).setScrollFactor(0).setDepth(1200).setVisible(false);
+    this.message=this.add.text(0,0,"",{fontFamily:"system-ui",fontSize:"15px",color:"#fff",align:"center",wordWrap:{width:320}})
+      .setOrigin(.5).setScrollFactor(0).setDepth(1201).setVisible(false);
+
+    this.inventoryPanel=this.add.rectangle(0,0,320,260,0x06171e,.96).setStrokeStyle(3,0xd9c279,1).setScrollFactor(0).setDepth(1300).setVisible(false);
+    this.inventoryText=this.add.text(0,0,"",{fontFamily:"system-ui",fontSize:"16px",color:"#f6e6b3",lineSpacing:12})
+      .setOrigin(.5).setScrollFactor(0).setDepth(1301).setVisible(false);
+  }
+
+  createJoystick(){
+    this.joyBase=this.add.circle(94,this.scale.height-112,68,0x06171e,.6).setStrokeStyle(3,0xe5cf87,.78).setScrollFactor(0).setDepth(1100);
+    this.joyKnob=this.add.circle(94,this.scale.height-112,30,0xe5cf87,.84).setScrollFactor(0).setDepth(1101);
+
+    this.input.on("pointerdown",p=>{
+      if(p.x>this.scale.width*.58)return;
+      this.joy.active=true;this.joy.id=p.id;this.updateJoy(p);
+    });
+    this.input.on("pointermove",p=>{if(this.joy.active&&p.id===this.joy.id)this.updateJoy(p)});
+    const end=p=>{
+      if(p.id!==this.joy.id)return;
+      this.joy.active=false;this.joy.id=null;this.joy.x=this.joy.y=0;
+      this.joyKnob.setPosition(this.joyBase.x,this.joyBase.y);
+    };
+    this.input.on("pointerup",end);this.input.on("pointerupoutside",end);
+  }
+
+  updateJoy(p){
+    const dx=p.x-this.joyBase.x,dy=p.y-this.joyBase.y,len=Math.hypot(dx,dy)||1,max=50;
+    const dist=Math.min(len,max),nx=dx/len,ny=dy/len;
+    this.joy.x=nx*(dist/max);this.joy.y=ny*(dist/max);
+    this.joyKnob.setPosition(this.joyBase.x+nx*dist,this.joyBase.y+ny*dist);
+  }
+
+  createButtons(){
+    this.actionBtn=this.add.circle(this.scale.width-78,this.scale.height-112,55,0x9e3f32,.9).setStrokeStyle(3,0xf1d889,1).setScrollFactor(0).setDepth(1100).setInteractive();
+    this.actionTxt=this.add.text(this.actionBtn.x,this.actionBtn.y,"ACTION",{fontFamily:"system-ui",fontSize:"13px",fontStyle:"bold",color:"#fff"})
+      .setOrigin(.5).setScrollFactor(0).setDepth(1101);
+    this.actionBtn.on("pointerdown",()=>this.actionUse());
+
+    this.invBtn=this.add.circle(this.scale.width-78,this.scale.height-205,34,0x254e56,.92).setStrokeStyle(2,0xbcd9d3,1).setScrollFactor(0).setDepth(1100).setInteractive();
+    this.invTxt=this.add.text(this.invBtn.x,this.invBtn.y,"🎒",{fontSize:"20px"}).setOrigin(.5).setScrollFactor(0).setDepth(1101);
+    this.invBtn.on("pointerdown",()=>this.toggleInventory());
+  }
+
+  layout(){
+    const w=this.scale.width,h=this.scale.height;
+    this.joyBase.setPosition(94,h-112);
+    if(!this.joy.active)this.joyKnob.setPosition(this.joyBase.x,this.joyBase.y);
+    this.actionBtn.setPosition(w-78,h-112);this.actionTxt.setPosition(this.actionBtn.x,this.actionBtn.y);
+    this.invBtn.setPosition(w-78,h-205);this.invTxt.setPosition(this.invBtn.x,this.invBtn.y);
+    this.messageBg.setPosition(w/2,112).setSize(Math.min(350,w-24),64);
+    this.message.setPosition(w/2,112);
+    this.inventoryPanel.setPosition(w/2,h/2);
+    this.inventoryText.setPosition(w/2,h/2);
+  }
+
+  toggleInventory(){
+    const show=!this.inventoryPanel.visible;
+    this.inventoryPanel.setVisible(show);this.inventoryText.setVisible(show);
+    this.inventoryText.setText(
+      "INVENTAIRE\n\n"+
+      `Épée de bronze : ${this.inventory.sword?"équipée":"—"}\n`+
+      `Bouclier rond : ${this.inventory.shield?"équipé":"—"}\n`+
+      `Casque corinthien : ${this.inventory.helmet?"équipé":"—"}\n\n`+
+      `Drachmes : ${this.coins}\nVivres : ${this.food}\nBois : ${this.wood}\n\nTouchez 🎒 pour fermer`
+    );
+  }
+
+  actionUse(){
+    if(this.inventoryPanel.visible){this.toggleInventory();return}
+    if(this.mode==="land"){
+      const ds=Phaser.Math.Distance.Between(this.player.x,this.player.y,this.ship.x,this.ship.y);
+      if(ds<120){
+        this.mode="sea";
+        this.player.setVisible(false);this.player.body.enable=false;
+        this.ship.body.immovable=false;
+        this.cameras.main.startFollow(this.ship,true,.08,.08);
+        this.toast("Tu prends la mer. Reviens au ponton pour débarquer.");
+        this.save();return;
+      }
+      const forge=Phaser.Math.Distance.Between(this.player.x,this.player.y,780,905)<135;
+      if(forge){
+        if(!this.inventory.sword&&this.coins>=50){this.coins-=50;this.inventory.sword=true;this.toast("Épée de bronze achetée et équipée.");}
+        else if(this.inventory.sword)this.toast("Le forgeron prépare bientôt de nouvelles armes.");
+        else this.toast("Il te faut 50 drachmes.");
+        this.save();return;
+      }
+      const market=Phaser.Math.Distance.Between(this.player.x,this.player.y,1130,810)<145;
+      if(market){
+        if(this.coins>=20){this.coins-=20;this.food+=8;this.toast("8 vivres achetés pour 20 drachmes.");}
+        else this.toast("Pas assez de drachmes.");
+        this.save();return;
+      }
+      const temple=Phaser.Math.Distance.Between(this.player.x,this.player.y,942,620)<150;
+      if(temple){this.toast("Athéna veille peut-être sur toi… ou peut-être pas.");return}
+      this.toast("Approche-toi d’un lieu ou du navire.");
+    }else{
+      const d=Phaser.Math.Distance.Between(this.ship.x,this.ship.y,this.dockPoint.x,this.dockPoint.y);
+      if(d<150){
+        this.mode="land";this.ship.setVelocity(0,0);this.ship.body.immovable=true;
+        this.player.setPosition(545,1060).setVisible(true);this.player.body.enable=true;
+        this.cameras.main.startFollow(this.player,true,.08,.08);
+        this.toast("Débarquement à Ithaque.");this.save();
+      }else this.toast("Reviens près du ponton.");
+    }
+  }
+
+  save(){
+    const data={coins:this.coins,food:this.food,wood:this.wood,inventory:this.inventory};
+    localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+  }
+
+  loadSave(){
+    try{
+      const d=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
+      if(!d)return;
+      this.coins=d.coins??this.coins;this.food=d.food??this.food;this.wood=d.wood??this.wood;
+      this.inventory={...this.inventory,...(d.inventory||{})};
+    }catch(e){}
+  }
+
+  toast(t){
+    this.message.setText(t).setVisible(true);this.messageBg.setVisible(true);
+    clearTimeout(this.toastTimer);
+    this.toastTimer=setTimeout(()=>{if(this.message){this.message.setVisible(false);this.messageBg.setVisible(false)}},2300);
+  }
+
+  update(time,delta){
+    this.dayT+=delta*.00002;
+    const darkness=(Math.sin(this.dayT)+1)/2;
+    this.cameras.main.setAlpha(1);
+
+    this.waves.forEach(w=>{
+      w.x+=w.speed*delta/1000;
+      if(w.x>W+40)w.x=-40;
+    });
+
+    let x=this.joy.x,y=this.joy.y;
+    const len=Math.hypot(x,y);if(len>1){x/=len;y/=len}
+
+    if(this.mode==="land"){
+      this.player.setVelocity(x*this.speed,y*this.speed);
+      if(Math.abs(x)>.05)this.player.setFlipX(x<0);
+
+      if(!this.landZone.contains(this.player.x,this.player.y)){
+        const c=new Phaser.Math.Vector2(900,940),p=new Phaser.Math.Vector2(this.player.x,this.player.y).subtract(c).normalize();
+        this.player.x-=p.x*9;this.player.y-=p.y*9;this.player.setVelocity(0,0);
+      }
+
+      this.buildings.forEach(b=>{
+        const r=new Phaser.Geom.Rectangle(b.x-20,b.y-75,b.w+40,b.h+100);
+        if(r.contains(this.player.x,this.player.y)){
+          this.player.x-=x*9;this.player.y-=y*9;this.player.setVelocity(0,0);
+        }
+      });
+    }else{
+      this.ship.setVelocity(x*this.shipSpeed,y*this.shipSpeed);
+      if(len>.07)this.ship.rotation=Math.atan2(y,x)+Math.PI/2;
+      if(this.landZone.contains(this.ship.x,this.ship.y)&&Phaser.Math.Distance.Between(this.ship.x,this.ship.y,this.shipPoint.x,this.shipPoint.y)>160){
+        this.ship.x-=x*12;this.ship.y-=y*12;this.ship.setVelocity(0,0);
+      }
+    }
+
+    this.hud.setText(`◈ ${this.coins}   🍞 ${this.food}   🪵 ${this.wood}`);
+    this.modeText.setText(this.mode==="land"?"ITHAQUE — EXPLORATION":"MER IONIENNE — NAVIGATION");
+  }
+}
+
+const config={
+  type:Phaser.AUTO,parent:"game",backgroundColor:"#06171e",
+  scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH,width:innerWidth,height:innerHeight},
+  physics:{default:"arcade",arcade:{gravity:{x:0,y:0},debug:false}},
+  render:{antialias:false,pixelArt:true,roundPixels:true},
+  scene:[TitleScene,WorldScene]
+};
+new Phaser.Game(config);
 })();
 </script>
 </body>
