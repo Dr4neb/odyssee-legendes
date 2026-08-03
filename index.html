@@ -39,7 +39,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 #controls{display:none;position:fixed;inset:0;z-index:2500;pointer-events:none}#controls.visible{display:block}
 #stick{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(18px + env(safe-area-inset-bottom));width:124px;height:124px;border:2px solid rgba(191,151,91,.58);border-radius:50%;background:radial-gradient(circle,rgba(25,30,29,.76) 0 43%,rgba(7,10,10,.72) 45%);box-shadow:0 14px 35px rgba(0,0,0,.4);pointer-events:auto;touch-action:none}#stick:before,#stick:after{content:"";position:absolute;background:rgba(191,151,91,.18)}#stick:before{left:50%;top:12%;bottom:12%;width:1px}#stick:after{top:50%;left:12%;right:12%;height:1px}#knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border:1px solid #b88b53;border-radius:50%;background:radial-gradient(circle at 35% 30%,#a98655,#503e27 72%);box-shadow:0 9px 22px rgba(0,0,0,.48)}
 #actionPad{position:absolute;right:calc(23px + env(safe-area-inset-right));bottom:calc(19px + env(safe-area-inset-bottom));width:160px;height:132px;pointer-events:none}
-.actionBtn{position:absolute;display:grid;place-items:center;width:70px;height:70px;padding:0;border:2px solid rgba(191,151,91,.54);border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(115,92,59,.94),rgba(29,31,28,.96) 72%);color:#e5d3ad;box-shadow:0 13px 30px rgba(0,0,0,.46),inset 0 0 0 4px rgba(0,0,0,.18);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s ease,filter .15s ease,border-color .15s ease,opacity .15s ease}.actionBtn:active{transform:scale(.93)}.actionBtn .letter{display:block;font:950 25px/1 system-ui}.actionBtn .label{display:block;margin-top:3px;font:900 8px/1 system-ui;letter-spacing:.12em}.actionBtnA{right:73px;top:0;opacity:.58;filter:saturate(.55)}.actionBtnA.available{opacity:1;filter:none;border-color:#ddb369;box-shadow:0 0 0 4px rgba(191,137,70,.18),0 13px 30px rgba(0,0,0,.48),0 0 24px rgba(213,159,79,.28)}.actionBtnB{right:0;bottom:0;opacity:1;filter:none;border-color:rgba(151,179,190,.72)}.actionBtnB .label{color:#c5d0d2}.actionBtnB.blocking{transform:scale(.94);border-color:#d6e3e7;background:radial-gradient(circle at 34% 28%,rgba(105,129,139,.98),rgba(22,28,31,.98) 72%);box-shadow:0 0 0 5px rgba(131,166,180,.20),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(154,196,212,.34)}
+.actionBtn{position:absolute;display:grid;place-items:center;width:70px;height:70px;padding:0;border:2px solid rgba(191,151,91,.54);border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(115,92,59,.94),rgba(29,31,28,.96) 72%);color:#e5d3ad;box-shadow:0 13px 30px rgba(0,0,0,.46),inset 0 0 0 4px rgba(0,0,0,.18);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s ease,filter .15s ease,border-color .15s ease,opacity .15s ease}.actionBtn:active{transform:scale(.93)}.actionBtn .letter{display:block;font:950 25px/1 system-ui}.actionBtn .label{display:block;margin-top:3px;font:900 8px/1 system-ui;letter-spacing:.12em}.actionBtnA{right:73px;top:0;opacity:1;filter:none;border-color:#b88b52}.actionBtnA.available{opacity:1;filter:none}.actionBtnA.interact{border-color:#ddb369;box-shadow:0 0 0 4px rgba(191,137,70,.18),0 13px 30px rgba(0,0,0,.48),0 0 24px rgba(213,159,79,.28)}.actionBtnA.attacking{transform:scale(.92);border-color:#f0c77c;background:radial-gradient(circle at 34% 28%,rgba(139,91,47,.98),rgba(31,27,24,.98) 72%);box-shadow:0 0 0 5px rgba(201,137,66,.18),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(220,152,72,.30)}.actionBtnB{right:0;bottom:0;opacity:1;filter:none;border-color:rgba(151,179,190,.72)}.actionBtnB .label{color:#c5d0d2}.actionBtnB.blocking{transform:scale(.94);border-color:#d6e3e7;background:radial-gradient(circle at 34% 28%,rgba(105,129,139,.98),rgba(22,28,31,.98) 72%);box-shadow:0 0 0 5px rgba(131,166,180,.20),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(154,196,212,.34)}
 #credits{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:2550;display:none;padding:7px 9px;background:rgba(4,7,8,.62);color:#8d9694;font:700 8px system-ui;letter-spacing:.05em;pointer-events:none}#credits.visible{display:block}
 #npcBubble{display:none;position:fixed;z-index:2750;max-width:min(58vw,270px);padding:9px 12px;border:1px solid rgba(215,189,134,.62);border-left:4px solid #8b5d32;background:rgba(16,20,18,.93);color:#eadbb9;box-shadow:0 10px 28px rgba(0,0,0,.48);font:700 11px/1.35 system-ui;letter-spacing:.02em;pointer-events:none;transform:translate(-50%,-115%)}#npcBubble.visible{display:block}#npcBubble strong{display:block;margin-bottom:3px;color:#c99b5c;font:900 9px system-ui;letter-spacing:.14em;text-transform:uppercase}
 </style>
@@ -51,13 +51,13 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.2.3 — ROUND SHIELD VISIBLE ARM</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A pour parler. Maintiens B : le bouclier se déplace librement devant le hoplite, change de face et s’incline pour bloquer.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.3 — CONTEXTUAL ATTACK</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
   <div id="stick"><div id="knob"></div></div>
   <div id="actionPad">
-    <button id="actionA" class="actionBtn actionBtnA" type="button" aria-label="Parler"><span><span class="letter">A</span><span class="label">PARLER</span></span></button>
+    <button id="actionA" class="actionBtn actionBtnA available" type="button" aria-label="Attaquer"><span><span class="letter">A</span><span class="label">ATTAQUER</span></span></button>
     <button id="actionB" class="actionBtn actionBtnB" type="button" aria-label="Lever le bouclier" aria-pressed="false"><span><span class="letter">B</span><span class="label">BLOQUER</span></span></button>
   </div>
 </div>
@@ -77,10 +77,11 @@ const FOOTSTEP_URLS=[
   'https://raw.githubusercontent.com/Faisal18Ansari/StarLight-Dash/main/Audio/footstep02.ogg',
   'https://raw.githubusercontent.com/Faisal18Ansari/StarLight-Dash/main/Audio/footstep03.ogg'
 ];
-const els={game:document.getElementById('game'),fatal:document.getElementById('fatal'),loading:document.getElementById('loading3d'),loaderText:document.getElementById('loaderText'),title:document.getElementById('titleScreen'),start:document.getElementById('startBtn'),sound:document.getElementById('soundBtn'),hud:document.getElementById('hud'),controls:document.getElementById('controls'),credits:document.getElementById('credits'),stick:document.getElementById('stick'),knob:document.getElementById('knob'),audio:document.getElementById('menuTheme'),npcBubble:document.getElementById('npcBubble'),npcBubbleText:document.getElementById('npcBubbleText'),actionA:document.getElementById('actionA'),actionB:document.getElementById('actionB')};
+const els={game:document.getElementById('game'),fatal:document.getElementById('fatal'),loading:document.getElementById('loading3d'),loaderText:document.getElementById('loaderText'),title:document.getElementById('titleScreen'),start:document.getElementById('startBtn'),sound:document.getElementById('soundBtn'),hud:document.getElementById('hud'),controls:document.getElementById('controls'),credits:document.getElementById('credits'),stick:document.getElementById('stick'),knob:document.getElementById('knob'),audio:document.getElementById('menuTheme'),npcBubble:document.getElementById('npcBubble'),npcBubbleText:document.getElementById('npcBubbleText'),actionA:document.getElementById('actionA'),actionALabel:document.querySelector('#actionA .label'),actionB:document.getElementById('actionB')};
 window.addEventListener('error',e=>{els.fatal.style.display='block';els.fatal.textContent='Le prototype 3D a rencontré une erreur :\n\n'+(e.error?.stack||e.message||e)});
 
-let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0;
+let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0;
+const attackDuration=.52;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,0), turnVelocity=0, stepParity=0;
 const normalizeAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const keys=new Set();
@@ -662,10 +663,24 @@ function canTalkToFarmer(){
   return Math.hypot(player.x-farmerNPC.position.x,player.z-farmerNPC.position.z)<1.48;
 }
 function updateActionButtons(){
-  const available=canTalkToFarmer();
-  farmerNPC&&(farmerNPC.userData.playerNear=available);
-  els.actionA?.classList.toggle('available',available);
-  els.actionA?.setAttribute('aria-disabled',available?'false':'true');
+  const nearNPC=canTalkToFarmer();
+  farmerNPC&&(farmerNPC.userData.playerNear=nearNPC);
+  els.actionA?.classList.add('available');
+  els.actionA?.classList.toggle('interact',nearNPC);
+  els.actionA?.setAttribute('aria-disabled','false');
+  els.actionA?.setAttribute('aria-label',nearNPC?'Interagir avec Démos':'Attaquer au xiphos');
+  if(els.actionALabel)els.actionALabel.textContent=nearNPC?'INTERAGIR':'ATTAQUER';
+}
+function startSwordAttack(){
+  if(!started||!greekGear||attackTimer>0)return;
+  blocking=false;
+  attackTimer=attackDuration;
+  els.actionA?.classList.add('attacking');
+}
+function performPrimaryAction(){
+  if(!started)return;
+  if(canTalkToFarmer())talkToFarmer();
+  else startSwordAttack();
 }
 function talkToFarmer(){
   if(!canTalkToFarmer())return;
@@ -860,8 +875,8 @@ function addGreekGear(root){
   // Sur le côté comme devant le personnage, il reste une ligne légèrement arrondie et ne se met jamais à plat.
   const shieldPivot=new THREE.Group();
   torsoPivot.add(shieldPivot);
-  const shieldRestPosition=new THREE.Vector3(-.405,.035,.090);
-  const shieldBlockPosition=new THREE.Vector3(-.030,.255,-.445);
+  const shieldRestPosition=new THREE.Vector3(-.345,.050,.080);
+  const shieldBlockPosition=new THREE.Vector3(-.020,.235,-.370);
   const shieldRestNormal=new THREE.Vector3(-1,.055,.06).normalize();
   const shieldBlockNormal=new THREE.Vector3(.02,.055,-1).normalize();
   const shieldLocalNormal=new THREE.Vector3(0,1,0);
@@ -975,7 +990,29 @@ function setupJoystick(){const update=(cx,cy)=>{const r=els.stick.getBoundingCli
 function update(){
   if(!renderer)return;
   const dt=Math.min(clock.getDelta(),.04);
-  const wantsBlock=blocking||keys.has('KeyB');
+  if(attackTimer>0){
+    attackTimer=Math.max(0,attackTimer-dt);
+    if(attackTimer===0)els.actionA?.classList.remove('attacking');
+  }
+  const attackProgress=attackTimer>0?1-attackTimer/attackDuration:0;
+  let attackSweep=0,attackWeight=0;
+  const smoothStep=t=>t*t*(3-2*t);
+  if(attackTimer>0){
+    if(attackProgress<.22){
+      const q=smoothStep(attackProgress/.22);
+      attackSweep=-.82*q;
+      attackWeight=q;
+    }else if(attackProgress<.60){
+      const q=smoothStep((attackProgress-.22)/.38);
+      attackSweep=THREE.MathUtils.lerp(-.82,1.00,q);
+      attackWeight=1;
+    }else{
+      const q=smoothStep((attackProgress-.60)/.40);
+      attackSweep=1-q;
+      attackWeight=1-q;
+    }
+  }
+  const wantsBlock=(blocking||keys.has('KeyB'))&&attackTimer<=0;
   blockBlend=THREE.MathUtils.lerp(blockBlend,wantsBlock?1:0,1-Math.exp(-15*dt));
   els.actionB?.classList.toggle('blocking',blockBlend>.12);
   els.actionB?.setAttribute('aria-pressed',wantsBlock?'true':'false');
@@ -986,7 +1023,7 @@ function update(){
   if(keys.has('ArrowUp')||keys.has('KeyW'))z-=1;
   const l=Math.hypot(x,z);
   if(l>1){x/=l;z/=l}
-  const moveSpeed=THREE.MathUtils.lerp(2.75,1.30,blockBlend);
+  const moveSpeed=THREE.MathUtils.lerp(THREE.MathUtils.lerp(2.75,1.62,attackWeight),1.30,blockBlend);
   const target=new THREE.Vector2(x*moveSpeed,z*moveSpeed);
   velocity.lerp(target,1-Math.exp(-10*dt));
   const proposed=player.clone();
@@ -1041,11 +1078,15 @@ function update(){
       g.leftLeg.foot.rotation.x=-Math.max(0,-swing)*0.18*speedNorm;
       g.rightLeg.foot.rotation.x=-Math.max(0,swing)*0.18*speedNorm;
 
-      const armSwing=swing*0.085*speedNorm*(1-blockBlend*.7);
+      const armSwing=swing*0.085*speedNorm*(1-blockBlend*.7)*(1-attackWeight*.8);
       const rightShoulderX=-0.02-armSwing*.9;
-      g.rightArm.shoulder.rotation.x=THREE.MathUtils.lerp(rightShoulderX,-.20,blockBlend);
-      g.rightArm.shoulder.rotation.z=THREE.MathUtils.lerp(-0.01-turnLean*.08,-.10,blockBlend);
-      g.rightArm.elbow.rotation.x=THREE.MathUtils.lerp(0.06+Math.sin(walkCycle+1.2)*0.022*speedNorm,.28,blockBlend);
+      const attackShoulderX=-.18-attackWeight*.20+Math.max(0,attackSweep)*.16;
+      const attackShoulderZ=-.02+attackSweep*.72;
+      const attackElbow=.18+attackWeight*.42;
+      g.rightArm.shoulder.rotation.x=THREE.MathUtils.lerp(THREE.MathUtils.lerp(rightShoulderX,attackShoulderX,attackWeight),-.20,blockBlend);
+      g.rightArm.shoulder.rotation.z=THREE.MathUtils.lerp(THREE.MathUtils.lerp(-0.01-turnLean*.08,attackShoulderZ,attackWeight),-.10,blockBlend);
+      g.rightArm.elbow.rotation.x=THREE.MathUtils.lerp(THREE.MathUtils.lerp(0.06+Math.sin(walkCycle+1.2)*0.022*speedNorm,attackElbow,attackWeight),.28,blockBlend);
+      g.torsoPivot.rotation.y=attackSweep*.20*attackWeight;
 
       const shieldT=blockBlend*blockBlend*(3-2*blockBlend);
       const shieldArc=Math.sin(Math.PI*shieldT);
@@ -1062,8 +1103,8 @@ function update(){
       g.shieldPivot.quaternion.setFromUnitVectors(g.shieldLocalNormal,shieldNormal);
 
       // La main se verrouille derrière le bord intérieur du bouclier. Le coude reste visible et plié.
-      const gripRest=new THREE.Vector3(-.325,.125,.105);
-      const gripBlock=new THREE.Vector3(-.155,.245,-.245);
+      const gripRest=new THREE.Vector3(-.285,.125,.095);
+      const gripBlock=new THREE.Vector3(-.125,.225,-.205);
       const shieldHandTarget=gripRest.clone().lerp(gripBlock,shieldT);
       shieldHandTarget.y+=Math.abs(Math.sin(walkCycle))*0.004*speedNorm*(1-shieldT);
       solveFarmerArm(g.shieldArm,shieldHandTarget,THREE.MathUtils.lerp(.45,1.12,shieldT));
@@ -1077,9 +1118,9 @@ function update(){
       g.backSpearPivot.rotation.x=-1.22 + Math.sin(walkCycle*1.4)*0.010*speedNorm;
       g.backSpearPivot.rotation.y=.26 + turnLean*0.03;
       g.backSpearPivot.rotation.z=-.54 + Math.sin(walkCycle*1.2)*0.010*speedNorm;
-      g.swordPivot.rotation.x=-1.12 + Math.sin(walkCycle+Math.PI)*0.010*speedNorm;
-      g.swordPivot.rotation.y=.02 + turnLean*0.02;
-      g.swordPivot.rotation.z=.02 + Math.sin(walkCycle*1.3+0.7)*0.008*speedNorm;
+      g.swordPivot.rotation.x=-1.12 + Math.sin(walkCycle+Math.PI)*0.010*speedNorm - attackWeight*.08;
+      g.swordPivot.rotation.y=.02 + turnLean*0.02 + attackWeight*.10;
+      g.swordPivot.rotation.z=.02 + Math.sin(walkCycle*1.3+0.7)*0.008*speedNorm + attackSweep*.48;
       g.crest.rotation.z=Math.sin(walkCycle*1.7)*0.05*speedNorm + Math.sin(idleCycle*1.5)*0.012;
 
       if(g.cape?.geometry?.attributes?.position){
@@ -1143,12 +1184,15 @@ async function start(){
 }
 setupThree();
 setupJoystick();
-addEventListener('keydown',e=>keys.add(e.code));
+addEventListener('keydown',e=>{
+  keys.add(e.code);
+  if(!e.repeat&&(e.code==='Space'||e.code==='KeyF')){e.preventDefault();performPrimaryAction();}
+});
 addEventListener('keyup',e=>keys.delete(e.code));
 addEventListener('resize',onResize);
 document.addEventListener('fullscreenchange',()=>setTimeout(onResize,80));
 els.start.addEventListener('click',start);
-els.actionA?.addEventListener('pointerdown',e=>{e.preventDefault();talkToFarmer()},{passive:false});
+els.actionA?.addEventListener('pointerdown',e=>{e.preventDefault();performPrimaryAction()},{passive:false});
 const setBlocking=value=>{
   blocking=!!value&&started;
   els.actionB?.classList.toggle('blocking',blocking);
