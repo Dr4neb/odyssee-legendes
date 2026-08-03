@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#06171e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Odyssée — Légendes de l’Égée v1.06.2.1</title>
+  <title>Odyssée — Légendes de l’Égée v1.06.2.2</title>
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06171e;font-family:system-ui,-apple-system,sans-serif;touch-action:none}
     #game{width:100%;height:100%}
@@ -32,13 +32,9 @@
       position:absolute;left:50%;top:18%;width:110px;height:110px;border-radius:50%;
       transform:translateX(-50%);
       background:radial-gradient(circle,#fff6c8 0 18%,#edc56e 42%,rgba(237,197,110,.08) 72%,transparent 74%);
-      filter:blur(.2px);opacity:0;animation:sunRise 4s .4s ease forwards;
+      opacity:0;animation:sunRise 4s .4s ease forwards;
     }
-    .menuHorizon{
-      position:absolute;left:-5%;right:-5%;top:46%;height:4px;
-      background:linear-gradient(90deg,transparent,#dfc783 18% 82%,transparent);
-      opacity:.42;
-    }
+    .menuHorizon{position:absolute;left:-5%;right:-5%;top:46%;height:4px;background:linear-gradient(90deg,transparent,#dfc783 18% 82%,transparent);opacity:.42}
     .menuSea{
       position:absolute;left:-8%;right:-8%;top:47%;bottom:-15%;
       background:
@@ -63,92 +59,31 @@
       background:#362417;clip-path:polygon(0 25%,100% 25%,83% 100%,18% 100%);
       animation:boatSail 18s linear infinite,boatBob 2.4s ease-in-out infinite alternate;
     }
-    .menuBoat::before{
-      content:"";position:absolute;left:38px;bottom:16px;width:3px;height:58px;background:#3e2b1a;
-    }
-    .menuBoat::after{
-      content:"";position:absolute;left:41px;bottom:29px;width:41px;height:38px;
-      background:#ded1a7;clip-path:polygon(0 0,0 100%,100% 84%);opacity:.88;
-    }
+    .menuBoat::before{content:"";position:absolute;left:38px;bottom:16px;width:3px;height:58px;background:#3e2b1a;}
+    .menuBoat::after{content:"";position:absolute;left:41px;bottom:29px;width:41px;height:38px;background:#ded1a7;clip-path:polygon(0 0,0 100%,100% 84%);opacity:.88;}
     .menuBird{position:absolute;color:rgba(232,238,228,.65);font:22px Georgia,serif;animation:birdFly 15s linear infinite}
     .bird1{top:25%;left:-10%;animation-delay:1s}
     .bird2{top:31%;left:-15%;animation-delay:6s;transform:scale(.75)}
-    .introVeil{
-      position:absolute;inset:0;background:#02080b;z-index:4;pointer-events:none;
-      animation:veilOpen 2.4s .25s ease forwards;
-    }
+    .introVeil{position:absolute;inset:0;background:#02080b;z-index:4;pointer-events:none;animation:veilOpen 2.4s .25s ease forwards;}
     #titleContent{position:relative;z-index:8;display:flex;flex-direction:column;align-items:center}
-    #soundPrompt{
-      position:absolute;right:calc(18px + env(safe-area-inset-right));top:calc(14px + env(safe-area-inset-top));
-      z-index:10;border:1px solid rgba(241,216,137,.65);border-radius:999px;padding:10px 14px;
-      background:rgba(6,23,30,.72);color:#f1dda1;font:800 12px system-ui;letter-spacing:.03em;
-      touch-action:manipulation;
-    }
-    #soundPrompt.active{border-color:#8ebeb5;color:#c8e5df}
-    @keyframes veilOpen{to{opacity:0;visibility:hidden}}
-    @keyframes sunRise{from{opacity:0;transform:translate(-50%,24px)}to{opacity:.9;transform:translate(-50%,0)}}
-    @keyframes seaBreath{from{transform:scaleY(1)}to{transform:scaleY(1.035)}}
-    @keyframes seaDrift{to{transform:translateX(120px)}}
-    @keyframes boatSail{from{left:10%}to{left:83%}}
-    @keyframes boatBob{from{margin-top:-2px}to{margin-top:5px}}
-    @keyframes birdFly{from{left:-12%}to{left:112%}}
-    .gameTitle{
-      margin:0;color:#f2d58a;opacity:0;transform:translateY(18px);
-      animation:titleReveal 1.5s 1.55s ease forwards;font:900 clamp(48px,14vw,74px)/.95 Georgia,serif;
-      text-shadow:-3px 0 #301e13,0 3px #301e13,3px 0 #301e13,0 -3px #301e13,0 8px 0 rgba(0,0,0,.35);
-    }
+    .gameTitle{margin:0;color:#f2d58a;opacity:0;transform:translateY(18px);animation:titleReveal 1.5s 1.55s ease forwards;font:900 clamp(48px,14vw,74px)/.95 Georgia,serif;text-shadow:-3px 0 #301e13,0 3px #301e13,3px 0 #301e13,0 -3px #301e13,0 8px 0 rgba(0,0,0,.35)}
     .gameSubtitle{margin:24px 0 0;opacity:0;animation:softReveal 1.2s 2.35s ease forwards;color:#d5e0de;font-size:clamp(17px,5vw,23px);font-weight:900;letter-spacing:.2em}
     .gameVersion{margin:32px 0 0;opacity:0;animation:softReveal 1s 2.75s ease forwards;color:#819ba0;font-size:15px;font-weight:800}
-    #startButton{
-      width:min(86vw,360px);min-height:72px;margin-top:54px;border:4px solid #f1d889;border-radius:2px;
-      background:#98483a;color:#fff;font:900 22px system-ui,-apple-system,sans-serif;
-      box-shadow:0 7px 0 #50251e;touch-action:manipulation;opacity:0;
-      animation:buttonReveal .9s 3.15s ease forwards;-webkit-appearance:none;appearance:none;
-    }
+    #startButton{width:min(86vw,360px);min-height:72px;margin-top:54px;border:4px solid #f1d889;border-radius:2px;background:#98483a;color:#fff;font:900 22px system-ui,-apple-system,sans-serif;box-shadow:0 7px 0 #50251e;touch-action:manipulation;opacity:0;animation:buttonReveal .9s 3.15s ease forwards;-webkit-appearance:none;appearance:none}
     #startButton:active{transform:translateY(4px);box-shadow:0 3px 0 #50251e}
-    @keyframes titleReveal{to{opacity:1;transform:translateY(0)}}
-    @keyframes softReveal{to{opacity:1}}
-    @keyframes buttonReveal{to{opacity:1}}
-    #eraseButton{
-      margin-top:30px;padding:12px 18px;border:0;background:transparent;color:#b7c5c5;
-      font:600 15px system-ui,-apple-system,sans-serif;touch-action:manipulation;
-    }
+    #eraseButton{margin-top:30px;padding:12px 18px;border:0;background:transparent;color:#b7c5c5;font:600 15px system-ui,-apple-system,sans-serif;touch-action:manipulation}
     .credit{position:absolute;bottom:calc(30px + env(safe-area-inset-bottom));color:#637a7e;font-size:13px}
-    #fatalError{
-      display:none;position:fixed;inset:0;z-index:3000;padding:40px 24px;background:#260d0d;color:#fff;
-      white-space:pre-wrap;overflow:auto;font:15px/1.5 monospace;
-    }
-    #rotateHint{
-      display:none;position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;z-index:1600;
-      transform:translateX(-50%);padding:9px 14px;border:1px solid rgba(241,216,137,.8);
-      border-radius:999px;background:rgba(6,23,30,.92);color:#f4df9b;
-      font:800 12px system-ui,-apple-system,sans-serif;pointer-events:none;white-space:nowrap;
-    }
+    #soundPrompt{position:absolute;right:calc(18px + env(safe-area-inset-right));top:calc(14px + env(safe-area-inset-top));z-index:10;border:1px solid rgba(241,216,137,.65);border-radius:999px;padding:10px 14px;background:rgba(6,23,30,.72);color:#f1dda1;font:800 12px system-ui;letter-spacing:.03em;touch-action:manipulation}
+    #soundPrompt.active{border-color:#8ebeb5;color:#c8e5df}
+    #fatalError{display:none;position:fixed;inset:0;z-index:3000;padding:40px 24px;background:#260d0d;color:#fff;white-space:pre-wrap;overflow:auto;font:15px/1.5 monospace}
+    #rotateHint{display:none;position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;z-index:1600;transform:translateX(-50%);padding:9px 14px;border:1px solid rgba(241,216,137,.8);border-radius:999px;background:rgba(6,23,30,.92);color:#f4df9b;font:800 12px system-ui,-apple-system,sans-serif;pointer-events:none;white-space:nowrap}
     #mobileControls{display:none;position:fixed;inset:0;z-index:1500;pointer-events:none}
     #mobileControls.visible{display:block}
-    #joystickBase{
-      position:absolute;left:calc(28px + env(safe-area-inset-left));bottom:calc(24px + env(safe-area-inset-bottom));
-      width:142px;height:142px;border:4px solid rgba(229,207,135,.9);border-radius:50%;
-      background:rgba(6,23,30,.58);box-shadow:inset 0 0 0 2px rgba(255,255,255,.05);
-      pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;
-    }
-    #joystickKnob{
-      position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;
-      background:rgba(229,207,135,.92);box-shadow:0 5px 14px rgba(0,0,0,.35);pointer-events:none;transform:translate3d(0,0,0);
-    }
-    .domGameButton{
-      position:absolute;right:calc(30px + env(safe-area-inset-right));border-radius:50%;
-      display:grid;place-items:center;border:4px solid #f1d889;color:#fff;font-weight:900;
-      pointer-events:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none;
-      box-shadow:0 7px 16px rgba(0,0,0,.35);
-    }
-    #domActionButton{
-      bottom:calc(25px + env(safe-area-inset-bottom));width:124px;height:124px;background:rgba(158,63,50,.92);font-size:18px;
-    }
-    #domInventoryButton{
-      right:calc(58px + env(safe-area-inset-right));bottom:calc(166px + env(safe-area-inset-bottom));
-      width:62px;height:62px;border-width:3px;background:rgba(37,78,86,.95);font-size:25px;
-    }
+    #joystickBase{position:absolute;left:calc(28px + env(safe-area-inset-left));bottom:calc(24px + env(safe-area-inset-bottom));width:142px;height:142px;border:4px solid rgba(229,207,135,.9);border-radius:50%;background:rgba(6,23,30,.58);box-shadow:inset 0 0 0 2px rgba(255,255,255,.05);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none}
+    #joystickKnob{position:absolute;left:50%;top:50%;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;background:rgba(229,207,135,.92);box-shadow:0 5px 14px rgba(0,0,0,.35);pointer-events:none;transform:translate3d(0,0,0)}
+    .domGameButton{position:absolute;right:calc(30px + env(safe-area-inset-right));border-radius:50%;display:grid;place-items:center;border:4px solid #f1d889;color:#fff;font-weight:900;pointer-events:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none;box-shadow:0 7px 16px rgba(0,0,0,.35)}
+    #domActionButton{bottom:calc(25px + env(safe-area-inset-bottom));width:124px;height:124px;background:rgba(158,63,50,.92);font-size:18px}
+    #domInventoryButton{right:calc(58px + env(safe-area-inset-right));bottom:calc(166px + env(safe-area-inset-bottom));width:62px;height:62px;border-width:3px;background:rgba(37,78,86,.95);font-size:25px}
     .domGameButton:active{transform:scale(.94)}
     @media (orientation:portrait){
       #rotateHint{display:block}
@@ -162,6 +97,16 @@
       #domActionButton{width:106px;height:106px;right:calc(22px + env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));font-size:16px}
       #domInventoryButton{width:54px;height:54px;right:calc(48px + env(safe-area-inset-right));bottom:calc(132px + env(safe-area-inset-bottom))}
     }
+    @keyframes veilOpen{to{opacity:0;visibility:hidden}}
+    @keyframes sunRise{from{opacity:0;transform:translate(-50%,24px)}to{opacity:.9;transform:translate(-50%,0)}}
+    @keyframes seaBreath{from{transform:scaleY(1)}to{transform:scaleY(1.035)}}
+    @keyframes seaDrift{to{transform:translateX(120px)}}
+    @keyframes boatSail{from{left:10%}to{left:83%}}
+    @keyframes boatBob{from{margin-top:-2px}to{margin-top:5px}}
+    @keyframes birdFly{from{left:-12%}to{left:112%}}
+    @keyframes titleReveal{to{opacity:1;transform:translateY(0)}}
+    @keyframes softReveal{to{opacity:1}}
+    @keyframes buttonReveal{to{opacity:1}}
   </style>
 </head>
 <body>
@@ -181,7 +126,7 @@
   <div id="titleContent">
     <h1 class="gameTitle">ODYSSÉE</h1>
     <div class="gameSubtitle">LÉGENDES DE L’ÉGÉE</div>
-    <div class="gameVersion">ALPHA v1.06.2.1</div>
+    <div class="gameVersion">ALPHA v1.06.2.2</div>
     <button id="startButton" type="button">COMMENCER</button>
     <button id="eraseButton" type="button">Effacer la sauvegarde</button>
   </div>
@@ -201,10 +146,10 @@
 (() => {
 "use strict";
 
-const W=2600,H=1900;
+const W=2400, H=1800;
 const SAVE_KEY="odyssee_v105_alpha";
 
-class AudioDirector{
+class AudioDirector {
   constructor(){
     this.audio=document.getElementById("menuTheme");
     this.started=false;
@@ -215,26 +160,16 @@ class AudioDirector{
 
   async start(){
     if(!this.audio) throw new Error("Élément audio introuvable");
-
     this.audio.playsInline=true;
     this.audio.loop=true;
     this.audio.muted=false;
-
     try{
-      if(this.audio.readyState<2){
-        this.audio.load();
-      }
-
+      if(this.audio.readyState<2) this.audio.load();
       this.audio.volume=this.started ? this.audio.volume : .01;
       const playPromise=this.audio.play();
       if(playPromise) await playPromise;
-
-      if(!this.started){
-        this.started=true;
-        this.fadeTo(.72,1200);
-      }
+      if(!this.started){ this.started=true; this.fadeTo(.72,1200); }
     }catch(error){
-      // Safari peut exiger un second geste utilisateur.
       this.audio.pause();
       this.audio.currentTime=0;
       throw error;
@@ -244,15 +179,12 @@ class AudioDirector{
   fadeTo(target,duration=1200){
     if(!this.audio) return;
     clearInterval(this.fadeTimer);
-
     const startVolume=this.audio.volume;
     const startTime=performance.now();
-
     this.fadeTimer=setInterval(()=>{
       const progress=Math.min(1,(performance.now()-startTime)/duration);
       const eased=progress*progress*(3-2*progress);
       this.audio.volume=startVolume+(target-startVolume)*eased;
-
       if(progress>=1){
         clearInterval(this.fadeTimer);
         this.audio.volume=target;
@@ -262,37 +194,37 @@ class AudioDirector{
 
   setMode(mode){
     this.mode=mode;
-    this.targetVolume=mode==="menu"?.72:.28;
+    this.targetVolume=mode==="menu" ? .72 : .28;
     this.fadeTo(this.targetVolume,1500);
   }
 }
-
 const audioDirector=new AudioDirector();
 
-
-class BootScene extends Phaser.Scene{
-  constructor(){super("Boot")}
+class BootScene extends Phaser.Scene {
+  constructor(){ super("Boot"); }
   create(){ document.getElementById("boot").style.display="none"; }
 }
 
-class WorldScene extends Phaser.Scene{
-  constructor(){super("World")}
+class WorldScene extends Phaser.Scene {
+  constructor(){ super("World"); }
+
   create(){
     this.mode="land";
-    this.speed=235;
-    this.shipSpeed=290;
+    this.speed=245;
+    this.shipSpeed=305;
     this.coins=120;
     this.food=18;
     this.wood=10;
     this.inventory={sword:false,shield:false,helmet:false};
     this.joy={x:0,y:0,active:false,id:null};
     this.dayT=0;
-    this.trees=[];
-    this.rocks=[];
+    this.decorTrees=[];
+    this.obstacles=[];
+    this.footstepTimer=0;
 
     this.physics.world.setBounds(0,0,W,H);
     this.cameras.main.setBounds(0,0,W,H);
-    this.cameras.main.setBackgroundColor("#082734");
+    this.cameras.main.setBackgroundColor("#0a2430");
 
     this.createTextures();
     this.drawWorld();
@@ -302,374 +234,266 @@ class WorldScene extends Phaser.Scene{
     this.setupDomControls();
     this.loadSave();
 
-    this.cameras.main.startFollow(this.player,true,.08,.08);
+    this.cameras.main.startFollow(this.player,true,.09,.09);
     this.updateResponsiveView();
     this.layout();
-    this.scale.on("resize",()=>{
-      this.layout();
-      this.updateResponsiveView();
-    });
+    this.scale.on("resize",()=>{ this.layout(); this.updateResponsiveView(); });
 
     this.input.keyboard?.on("keydown-E",()=>this.actionUse());
-    this.toast("Bienvenue à Ithaque. Le point de départ du ponton est corrigé.");
+    this.toast("Refonte top-down en place. Déplace-toi comme dans un vrai jeu tactique.");
   }
 
   createTextures(){
-    // Hero
-    const pg=this.make.graphics({add:false});
-    pg.fillStyle(0x1c2230,1).fillCircle(18,9,10);
-    pg.fillStyle(0xc88f61,1).fillCircle(18,19,9);
-    pg.fillStyle(0xb44634,1).fillRect(8,28,20,25);
-    pg.fillStyle(0x6a432a,1).fillRect(4,31,5,23);
-    pg.fillStyle(0xdbc37f,1).fillRect(9,53,7,16);
-    pg.fillStyle(0xd7c17a,1).fillRect(21,53,7,16);
-    pg.fillStyle(0x7a5432,1).fillRect(8,66,8,4);
-    pg.fillStyle(0x7a5432,1).fillRect(20,66,8,4);
-    pg.fillStyle(0x75502f,1).fillRect(30,32,4,22);
-    pg.generateTexture("hero",36,72);
-    pg.destroy();
+    const g=this.make.graphics({add:false});
 
-    // Ship
-    const sg=this.make.graphics({add:false});
-    sg.fillStyle(0x000000,.18).fillEllipse(54,60,84,18);
-    sg.fillStyle(0x61381d,1).fillEllipse(54,38,100,40);
-    sg.fillStyle(0x8a5731,1).fillTriangle(8,38,100,38,54,68);
-    sg.fillStyle(0x4a2a16,1).fillRect(10,36,88,6);
-    sg.fillStyle(0xece4c9,1).fillTriangle(54,34,54,-14,92,26);
-    sg.fillStyle(0xc9b88a,1).fillRect(51,-18,6,56);
-    sg.fillStyle(0xffffff,.45).fillRect(55,0,2,28);
-    sg.generateTexture("ship",108,72);
-    sg.destroy();
+    // Hero - top-down tactical style
+    g.clear();
+    g.fillStyle(0x000000,.18).fillEllipse(26,32,26,12);
+    g.fillStyle(0xb23a2e,1).fillCircle(26,22,12);   // cape/armor
+    g.fillStyle(0xd7a576,1).fillCircle(26,18,6);    // head
+    g.fillStyle(0xd7c38b,1).fillTriangle(26,3,18,24,34,24); // direction marker / helmet
+    g.fillStyle(0x6a4a2c,1).fillRect(24,24,4,16);
+    g.fillStyle(0x8a6a42,1).fillRect(8,20,7,4); // shield
+    g.fillStyle(0xbca271,1).fillRect(30,6,2,22); // spear
+    g.generateTexture("heroTop",52,48);
 
-    // Trees
-    const tg=this.make.graphics({add:false});
-    tg.fillStyle(0x000000,.16).fillEllipse(34,62,52,14);
-    tg.fillStyle(0x67452a,1).fillRect(30,34,8,26);
-    tg.fillStyle(0x214b35,1).fillCircle(32,26,18);
-    tg.fillStyle(0x2d5d41,1).fillCircle(20,28,15);
-    tg.fillStyle(0x396d4d,1).fillCircle(41,24,14);
-    tg.fillStyle(0x527f60,.7).fillCircle(25,20,8);
-    tg.generateTexture("treeA",68,72);
-    tg.destroy();
+    // Ship - true top-down
+    g.clear();
+    g.fillStyle(0x000000,.18).fillEllipse(40,70,50,18);
+    g.fillStyle(0x5b381f,1).fillRoundedRect(22,10,36,62,16);
+    g.fillStyle(0x8c5932,1).fillRoundedRect(26,14,28,54,12);
+    g.fillStyle(0xd8ceb0,1).fillRect(39,18,2,34);
+    g.fillStyle(0xe7e0c2,1).fillTriangle(40,20,40,48,58,34);
+    g.fillStyle(0x452919,1).fillRect(34,58,12,6);
+    g.generateTexture("shipTop",80,84);
 
-    const tg2=this.make.graphics({add:false});
-    tg2.fillStyle(0x000000,.16).fillEllipse(34,62,54,14);
-    tg2.fillStyle(0x644328,1).fillRect(30,33,8,27);
-    tg2.fillStyle(0x2a573e,1).fillCircle(27,24,16);
-    tg2.fillStyle(0x355f45,1).fillCircle(41,30,15);
-    tg2.fillStyle(0x234b35,1).fillCircle(18,35,13);
-    tg2.fillStyle(0x456f53,.7).fillCircle(34,20,8);
-    tg2.generateTexture("treeB",68,72);
-    tg2.destroy();
+    // Trees top-down
+    g.clear();
+    g.fillStyle(0x000000,.16).fillEllipse(34,38,38,16);
+    g.fillStyle(0x1d462f,1).fillCircle(34,24,18);
+    g.fillStyle(0x2d6643,1).fillCircle(22,24,14);
+    g.fillStyle(0x3f7b57,1).fillCircle(43,22,12);
+    g.fillStyle(0x6a4a2e,1).fillCircle(34,24,5);
+    g.generateTexture("treeTopA",68,56);
+
+    g.clear();
+    g.fillStyle(0x000000,.16).fillEllipse(34,38,38,16);
+    g.fillStyle(0x274f37,1).fillCircle(30,22,16);
+    g.fillStyle(0x3d7754,1).fillCircle(42,25,14);
+    g.fillStyle(0x2f6346,1).fillCircle(21,28,12);
+    g.fillStyle(0x6a4a2e,1).fillCircle(32,25,5);
+    g.generateTexture("treeTopB",68,56);
 
     // Rock
-    const rg=this.make.graphics({add:false});
-    rg.fillStyle(0x000000,.18).fillEllipse(28,34,42,12);
-    rg.fillStyle(0x6a706f,1).fillPoints([new Phaser.Geom.Point(10,25),new Phaser.Geom.Point(18,8),new Phaser.Geom.Point(38,10),new Phaser.Geom.Point(48,22),new Phaser.Geom.Point(42,34),new Phaser.Geom.Point(18,32)], true);
-    rg.fillStyle(0x9aa19f,.65).fillPoints([new Phaser.Geom.Point(18,14),new Phaser.Geom.Point(34,13),new Phaser.Geom.Point(28,24),new Phaser.Geom.Point(16,23)], true);
-    rg.generateTexture("rock",56,40);
-    rg.destroy();
+    g.clear();
+    g.fillStyle(0x000000,.16).fillEllipse(24,28,32,10);
+    g.fillStyle(0x717879,1).fillCircle(22,18,12);
+    g.fillStyle(0x8c9291,1).fillCircle(31,16,9);
+    g.fillStyle(0xaeb4b2,.65).fillCircle(18,14,5);
+    g.generateTexture("rockTop",52,40);
 
-    // Cliff chunk
-    const cg=this.make.graphics({add:false});
-    cg.fillStyle(0x000000,.18).fillEllipse(56,76,92,18);
-    cg.fillStyle(0x70593d,1).fillRect(12,30,88,38);
-    cg.fillStyle(0x8fa56f,1).fillRoundedRect(8,12,96,24,4);
-    cg.fillStyle(0xc9d59f,.55).fillRect(14,16,66,6);
-    cg.fillStyle(0x5a422d,1).fillRect(16,52,4,12);
-    cg.fillStyle(0x5a422d,1).fillRect(30,48,4,18);
-    cg.fillStyle(0x5a422d,1).fillRect(52,50,4,16);
-    cg.fillStyle(0x5a422d,1).fillRect(74,47,4,19);
-    cg.generateTexture("cliff",112,84);
-    cg.destroy();
+    // Buildings top-down footprints/roofs
+    g.clear();
+    g.fillStyle(0x000000,.15).fillRect(10,12,132,94);
+    g.fillStyle(0x8f5b36,1).fillRoundedRect(0,0,132,94,5);
+    g.lineStyle(3,0x50331f,1).strokeRoundedRect(0,0,132,94,5);
+    g.fillStyle(0x6e4528,1).fillRect(58,58,18,36);
+    g.fillStyle(0x3e2d1c,1).fillRect(20,16,26,20);
+    g.fillStyle(0xde8139,1).fillCircle(34,26,6);
+    g.fillStyle(0xb77d48,1).fillRect(90,16,24,18);
+    g.generateTexture("forgeTop",152,112);
 
-    // Buildings
-    const forge=this.make.graphics({add:false});
-    forge.fillStyle(0x000000,.18).fillEllipse(80,140,128,18);
-    forge.fillStyle(0xd4c7ab,1).fillRoundedRect(22,58,116,72,6);
-    forge.fillStyle(0x975f38,1).fillTriangle(12,62,80,12,148,62);
-    forge.fillStyle(0x5a3b2a,1).fillRect(68,92,20,38);
-    forge.fillStyle(0x492f21,1).fillRect(108,76,16,54);
-    forge.fillStyle(0xea8744,1).fillCircle(118,112,9);
-    forge.fillStyle(0x6b4b37,1).fillRect(24,84,22,16);
-    forge.fillStyle(0xd5d0c8,1).fillRect(26,86,18,12);
-    forge.generateTexture("forge",160,152);
-    forge.destroy();
+    g.clear();
+    g.fillStyle(0x000000,.15).fillRect(10,12,150,92);
+    g.fillStyle(0xd2b77c,1).fillRoundedRect(0,0,150,92,5);
+    g.lineStyle(3,0x7e6641,1).strokeRoundedRect(0,0,150,92,5);
+    const awnings=[[10,8,28,20],[42,8,28,20],[74,8,28,20],[106,8,28,20]];
+    awnings.forEach((r,i)=>{ g.fillStyle(i%2?0xb7483a:0xf0ead4,1).fillRect(...r); });
+    g.fillStyle(0x8b6f4a,1).fillRect(64,52,20,30);
+    g.fillStyle(0x88b96b,1).fillRect(20,54,26,14);
+    g.fillStyle(0xc18e41,1).fillRect(104,54,26,14);
+    g.generateTexture("marketTop",170,108);
 
-    const market=this.make.graphics({add:false});
-    market.fillStyle(0x000000,.18).fillEllipse(90,142,138,18);
-    market.fillStyle(0xd7c9a4,1).fillRoundedRect(18,64,140,66,6);
-    market.fillStyle(0xb44738,1).fillTriangle(8,68,88,16,168,68);
-    market.fillStyle(0xffffff,.88).fillRect(24,70,26,18);
-    market.fillStyle(0xb44738,.85).fillRect(50,70,26,18);
-    market.fillStyle(0xffffff,.88).fillRect(76,70,26,18);
-    market.fillStyle(0xb44738,.85).fillRect(102,70,26,18);
-    market.fillStyle(0xffffff,.88).fillRect(128,70,26,18);
-    market.fillStyle(0x70513b,1).fillRect(78,96,20,34);
-    market.fillStyle(0xc4994d,1).fillRect(30,103,32,12);
-    market.fillStyle(0x88b96b,1).fillRect(110,103,30,12);
-    market.generateTexture("market",176,154);
-    market.destroy();
+    g.clear();
+    g.fillStyle(0x000000,.15).fillRect(12,12,174,124);
+    g.fillStyle(0xdbd8ca,1).fillRoundedRect(0,0,174,124,5);
+    g.lineStyle(3,0xbfb8a4,1).strokeRoundedRect(0,0,174,124,5);
+    for(let x=18;x<=146;x+=32) g.fillStyle(0xcfc9b4,1).fillRect(x,18,14,88);
+    g.fillStyle(0xb8ab82,1).fillRect(70,82,34,28);
+    g.fillStyle(0xc8bc92,1).fillRect(10,10,154,12);
+    g.generateTexture("templeTop",198,146);
 
-    const temple=this.make.graphics({add:false});
-    temple.fillStyle(0x000000,.18).fillEllipse(104,165,160,20);
-    temple.fillStyle(0xd9d3bf,1).fillRoundedRect(18,72,172,76,6);
-    temple.fillStyle(0xc4b58c,1).fillTriangle(8,76,104,18,200,76);
-    temple.fillStyle(0xece8dc,1).fillRect(34,82,16,66);
-    temple.fillStyle(0xece8dc,1).fillRect(66,82,16,66);
-    temple.fillStyle(0xece8dc,1).fillRect(98,82,16,66);
-    temple.fillStyle(0xece8dc,1).fillRect(130,82,16,66);
-    temple.fillStyle(0xece8dc,1).fillRect(162,82,16,66);
-    temple.fillStyle(0xc2b48d,1).fillRect(88,118,32,30);
-    temple.generateTexture("temple",208,176);
-    temple.destroy();
-
-    const bush=this.make.graphics({add:false});
-    bush.fillStyle(0x000000,.14).fillEllipse(30,26,42,10);
-    bush.fillStyle(0x2a573d,1).fillCircle(16,16,12);
-    bush.fillStyle(0x3f6e50,1).fillCircle(28,13,13);
-    bush.fillStyle(0x355f45,1).fillCircle(40,18,11);
-    bush.generateTexture("bush",60,34);
-    bush.destroy();
+    // Bush
+    g.clear();
+    g.fillStyle(0x000000,.14).fillEllipse(26,22,28,9);
+    g.fillStyle(0x2b5a3f,1).fillCircle(16,16,10);
+    g.fillStyle(0x3f6f52,1).fillCircle(28,14,11);
+    g.fillStyle(0x355f45,1).fillCircle(38,18,9);
+    g.generateTexture("bushTop",52,32);
+    g.destroy();
   }
 
   drawWorld(){
     this.waterG=this.add.graphics();
-    this.worldG=this.add.graphics();
+    this.groundG=this.add.graphics();
 
-    const poly=(points,color,alpha=1,g=this.worldG)=>{
-      g.fillStyle(color,alpha);
-      g.fillPoints(points.map(([x,y])=>new Phaser.Geom.Point(x,y)),true);
+    this.waterG.fillStyle(0x081d28,1).fillRect(0,0,W,H);
+    this.waterG.fillStyle(0x0f3342,.96).fillRect(0,0,W,H);
+    this.waterG.fillStyle(0x175163,.62).fillEllipse(850,860,1820,1380);
+    this.waterG.fillStyle(0x236d7f,.42).fillEllipse(850,860,1520,1120);
+
+    this.islandPts=[
+      [250,710],[330,540],[470,410],[690,315],[910,295],[1125,360],[1290,485],
+      [1395,650],[1418,862],[1360,1048],[1238,1202],[1040,1334],[835,1372],
+      [648,1328],[500,1230],[382,1088],[292,920],[245,806]
+    ];
+    this.beachPts=[
+      [220,690],[300,520],[450,390],[685,292],[930,275],[1142,340],[1318,472],
+      [1436,645],[1460,875],[1390,1078],[1265,1240],[1052,1365],[824,1406],
+      [620,1360],[470,1260],[348,1115],[262,936],[215,798]
+    ];
+
+    const polyToGeom = pts => pts.map(([x,y])=>new Phaser.Geom.Point(x,y));
+    this.groundG.fillStyle(0xdbc991,1).fillPoints(polyToGeom(this.beachPts),true);
+    this.groundG.fillStyle(0x638b63,1).fillPoints(polyToGeom(this.islandPts),true);
+
+    // Coastline highlight
+    this.groundG.lineStyle(4,0xf2e5b8,.45).strokePoints(polyToGeom(this.beachPts),true);
+    this.groundG.lineStyle(3,0x365843,.35).strokePoints(polyToGeom(this.islandPts),true);
+
+    this.landPolygon=new Phaser.Geom.Polygon(polyToGeom(this.islandPts));
+
+    // Paths
+    const drawRoad=(pts,width,outline,color)=>{
+      this.groundG.lineStyle(outline,0x685a3c,1).strokePoints(polyToGeom(pts),false);
+      this.groundG.lineStyle(width,color,1).strokePoints(polyToGeom(pts),false);
     };
+    drawRoad([[454,1112],[560,1002],[668,908],[820,792],[934,716]],34,46,0xc2ac72);
+    drawRoad([[932,716],[1042,704],[1164,746],[1250,846]],34,46,0xc2ac72);
+    drawRoad([[768,892],[724,772],[676,654],[632,540]],30,40,0xc2ac72);
 
-    // Mer : bandes de profondeur irrégulières, et non plus des ellipses parfaites.
-    this.waterG.fillStyle(0x071f2c,1).fillRect(0,0,W,H);
+    // Tactical zone patches
+    this.groundG.fillStyle(0x537c54,1).fillEllipse(574,628,220,138);
+    this.groundG.fillStyle(0x527752,1).fillEllipse(1160,862,300,172);
+    this.groundG.fillStyle(0x4b6d4d,1).fillEllipse(522,1180,210,122);
 
-    const deepShelf=[
-      [70,610],[180,350],[430,150],[770,80],[1130,130],[1450,310],[1690,590],
-      [1760,900],[1660,1210],[1420,1480],[1070,1640],[680,1630],[350,1490],[130,1220],[40,880]
-    ];
-    const midShelf=[
-      [145,660],[260,420],[500,245],[790,185],[1080,220],[1375,380],[1570,620],
-      [1610,890],[1510,1150],[1300,1370],[1010,1500],[700,1485],[430,1360],[230,1140],[130,880]
-    ];
-    const shallowShelf=[
-      [210,700],[330,495],[565,340],[815,290],[1055,325],[1300,455],[1450,650],
-      [1480,875],[1390,1090],[1210,1260],[965,1375],[720,1350],[500,1245],[325,1060],[225,855]
-    ];
-
-    poly(deepShelf,0x0d3543,.95,this.waterG);
-    poly(midShelf,0x155265,.90,this.waterG);
-    poly(shallowShelf,0x287584,.82,this.waterG);
-
-    // Côte irrégulière.
-    const beachPoints=[
-      [255,720],[310,560],[445,420],[625,325],[825,285],[1040,320],[1235,410],
-      [1390,555],[1480,735],[1470,930],[1380,1110],[1235,1260],[1040,1370],
-      [820,1420],[605,1375],[430,1270],[310,1125],[235,950],[225,820]
-    ];
-    const landPoints=[
-      [315,735],[365,590],[485,470],[645,390],[825,360],[1005,388],[1170,465],
-      [1305,585],[1380,740],[1360,910],[1285,1060],[1160,1175],[990,1270],
-      [805,1320],[630,1280],[490,1195],[380,1075],[310,925],[295,820]
-    ];
-    poly(beachPoints,0xd2c489);
-    poly(landPoints,0x608b62);
-
-    this.landPolygon=new Phaser.Geom.Polygon(
-      landPoints.map(([x,y])=>new Phaser.Geom.Point(x,y))
-    );
-
-    // Petites criques qui cassent encore la silhouette.
-    const bays=[
-      [258,760,145,110],[1398,790,170,145],[690,1378,210,110],[1128,392,155,105]
-    ];
-    bays.forEach(([x,y,w,h])=>{
-      this.worldG.fillStyle(0x2b7a86,1).fillEllipse(x,y,w,h);
-      this.worldG.fillStyle(0x0d3c49,.92).fillEllipse(x,y,w-46,h-42);
-    });
-
-    const drawCubicPath=(points,width,color)=>{
-      const [x0,y0,x1,y1,x2,y2,x3,y3]=points;
-      this.worldG.lineStyle(width,color,1);
-      this.worldG.beginPath();
-      this.worldG.moveTo(x0,y0);
-      for(let i=1;i<=36;i++){
-        const t=i/36,mt=1-t;
-        const x=(mt*mt*mt*x0)+(3*mt*mt*t*x1)+(3*mt*t*t*x2)+(t*t*t*x3);
-        const y=(mt*mt*mt*y0)+(3*mt*mt*t*y1)+(3*mt*t*t*y2)+(t*t*t*y3);
-        this.worldG.lineTo(x,y);
-      }
-      this.worldG.strokePath();
-    };
-
-    const roads=[
-      [505,1165,665,1050,795,920,955,770],
-      [952,770,1095,730,1240,800,1360,945],
-      [810,930,735,785,675,650,630,525],
-      [425,1240,365,1190,315,1130,278,1060]
-    ];
-    roads.forEach(c=>drawCubicPath(c,72,0x8d794f));
-    roads.forEach(c=>drawCubicPath(c,52,0xc3ab70));
-    roads.forEach(c=>drawCubicPath(c,4,0xd5bf86));
-
-    // Terrasses naturelles et relief visible.
-    const terraceA=[[430,590],[500,500],[610,470],[725,505],[750,585],[690,650],[560,670],[455,640]];
-    const terraceB=[[1060,820],[1155,775],[1275,815],[1340,900],[1300,980],[1180,1015],[1080,960]];
-    const terraceC=[[470,1150],[555,1105],[650,1140],[680,1215],[610,1270],[505,1250]];
-    [terraceA,terraceB,terraceC].forEach(points=>{
-      poly(points,0x486f50);
-      this.worldG.lineStyle(10,0x765f42,1);
-      this.worldG.strokePoints(points.map(([x,y])=>new Phaser.Geom.Point(x,y)),true);
-      this.worldG.lineStyle(4,0x9baa78,.75);
-      this.worldG.strokePoints(points.map(([x,y])=>new Phaser.Geom.Point(x,y-6)),true);
-    });
-
-    // Vagues et écume.
-    this.foam=[];
-    for(let i=0;i<82;i++){
-      const a=(Math.PI*2/82)*i;
-      const radiusX=625+Math.sin(i*1.7)*35;
-      const radiusY=500+Math.cos(i*1.3)*28;
-      const x=850+Math.cos(a)*radiusX;
-      const y=870+Math.sin(a)*radiusY;
-      const arc=this.add.arc(x,y,Phaser.Math.Between(9,20),205,335,false,0xf4edd2,.20).setDepth(2);
-      arc.baseY=y;
-      arc.phase=Math.random()*6.28;
-      this.foam.push(arc);
-    }
-
+    // Waves / foam
     this.waves=[];
-    for(let i=0;i<64;i++){
-      const wave=this.add.arc(
-        Phaser.Math.Between(0,W),Phaser.Math.Between(0,H),
-        Phaser.Math.Between(12,30),205,335,false,0xbfe8e9,.14
-      ).setDepth(1);
-      wave.speed=Phaser.Math.FloatBetween(6,18);
+    for(let i=0;i<72;i++){
+      const wave=this.add.arc(Phaser.Math.Between(0,W),Phaser.Math.Between(0,H),Phaser.Math.Between(8,20),210,335,false,0xbfecf0,.12).setDepth(1);
+      wave.speed=Phaser.Math.FloatBetween(8,22);
       this.waves.push(wave);
     }
 
-    this.dockPoint=new Phaser.Math.Vector2(486,1088);
+    this.foam=[];
+    for(let i=0;i<90;i++){
+      const a=(Math.PI*2/90)*i;
+      const x=842+Math.cos(a)*(610+Math.sin(i*.8)*24);
+      const y=840+Math.sin(a)*(510+Math.cos(i*.5)*18);
+      const f=this.add.arc(x,y,Phaser.Math.Between(6,16),210,332,false,0xf7f0da,.18).setDepth(2);
+      f.baseY=y; f.phase=Math.random()*6.28;
+      this.foam.push(f);
+    }
+
+    this.dockWalkRects=[
+      new Phaser.Geom.Rectangle(286,1112,350,54),
+      new Phaser.Geom.Rectangle(454,1072,58,214)
+    ];
+    this.dockPoint=new Phaser.Math.Vector2(482,1088);
     this.shipPoint=new Phaser.Math.Vector2(482,1260);
+    this.landSpawn=new Phaser.Math.Vector2(620,1038);
   }
 
   placeStaticProps(){
     this.propLayer=this.add.layer();
-    this.obstacles=[];
-    this.dockWalkRects=[
-      new Phaser.Geom.Rectangle(300,1118,360,52),
-      new Phaser.Geom.Rectangle(458,1075,58,220)
-    ];
+    this.labels=[];
 
-    // Falaises et terrasses.
-    const cliffs=[[555,588],[680,605],[1110,862],[1240,910],[550,1198]];
-    cliffs.forEach(([x,y])=>{
-      const sprite=this.add.image(x,y,"cliff").setDepth(y+10);
-      this.propLayer.add(sprite);
-      this.obstacles.push({type:"ellipse",x,y:y+8,rx:43,ry:20});
-    });
+    // Dock
+    const dock=this.add.graphics().setDepth(40);
+    dock.fillStyle(0x6c4a2a,1).fillRect(286,1112,350,54);
+    dock.fillStyle(0x8e653d,1);
+    for(let x=294;x<628;x+=34) dock.fillRect(x,1120,5,38);
+    dock.fillStyle(0x6c4a2a,1).fillRect(454,1072,58,214);
+    for(let y=1080;y<1274;y+=28) dock.fillRect(462,y,42,4);
+    dock.fillStyle(0x3f2919,1);
+    [286,636].forEach(x=>dock.fillRect(x-6,1106,12,68));
+    [454,512].forEach(x=>dock.fillRect(x-6,1066,12,70));
+    this.propLayer.add(dock);
 
-    // Ponton détaillé.
-    const dockG=this.add.graphics().setDepth(1160);
-    dockG.fillStyle(0x3f2a18,.30).fillRect(294,1168,372,20);
-    dockG.fillStyle(0x704b2a,1).fillRect(300,1118,360,52);
-    dockG.fillRect(458,1075,58,220);
-    dockG.fillStyle(0xa8834f,1);
-    for(let x=312;x<650;x+=38) dockG.fillRect(x,1126,7,35);
-    for(let y=1086;y<1285;y+=34) dockG.fillRect(467,y,40,5);
-    dockG.fillStyle(0x4a301b,1);
-    [312,360,408,552,600,648].forEach(x=>{
-      dockG.fillRect(x,1160,10,34);
-      dockG.fillCircle(x+5,1127,8);
-    });
-    dockG.fillRect(448,1090,10,58);
-    dockG.fillRect(516,1090,10,58);
-    dockG.lineStyle(3,0xc7ab70,.7);
-    dockG.lineBetween(315,1137,645,1137);
+    // Dock collision walls (sides only, top deck walkable)
+    this.obstacles.push({type:"rect",x:272,y:1102,w:14,h:78});
+    this.obstacles.push({type:"rect",x:636,y:1102,w:14,h:78});
+    this.obstacles.push({type:"rect",x:440,y:1062,w:14,h:70});
+    this.obstacles.push({type:"rect",x:512,y:1062,w:14,h:70});
 
-    // Murs de quai : on ne traverse pas les côtés, mais le tablier reste praticable.
-    this.obstacles.push({type:"rect",x:286,y:1107,w:14,h:78});
-    this.obstacles.push({type:"rect",x:660,y:1107,w:14,h:78});
-    this.obstacles.push({type:"rect",x:444,y:1062,w:14,h:72});
-    this.obstacles.push({type:"rect",x:516,y:1062,w:14,h:72});
-
-    // Bâtiments avec socles et collisions correspondant à leur emprise au sol.
+    // Buildings in top-down view
     this.buildings=[
-      {
-        x:760,y:877,name:"Forgeron",type:"forge",texture:"forge",scale:.84,
-        footprint:{x:706,y:873,w:108,h:70},interactX:760,interactY:965
-      },
-      {
-        x:1148,y:717,name:"Marché",type:"market",texture:"market",scale:.84,
-        footprint:{x:1088,y:718,w:120,h:72},interactX:1148,interactY:818
-      },
-      {
-        x:962,y:545,name:"Temple d’Athéna",type:"temple",texture:"temple",scale:.92,
-        footprint:{x:890,y:548,w:144,h:90},interactX:962,interactY:660
-      }
+      {x:760,y:870,name:"Forgeron",type:"forge",texture:"forgeTop",scale:1,footprint:{x:694,y:824,w:132,h:94},interactX:760,interactY:966},
+      {x:1148,y:720,name:"Marché",type:"market",texture:"marketTop",scale:1,footprint:{x:1073,y:674,w:150,h:92},interactX:1148,interactY:818},
+      {x:960,y:548,name:"Temple d’Athéna",type:"temple",texture:"templeTop",scale:1,footprint:{x:873,y:486,w:174,h:124},interactX:960,interactY:654},
     ];
 
     this.buildings.forEach(b=>{
-      const f=b.footprint;
-      const foundation=this.add.rectangle(
-        f.x+f.w/2,f.y+f.h-4,f.w+22,f.h+22,0xb5a47c,.80
-      ).setStrokeStyle(4,0x75654b,.8).setDepth(b.y-4);
-      const shadow=this.add.ellipse(b.x,b.y+72,f.w*1.16,22,0x000000,.18).setDepth(b.y-2);
-      const image=this.add.image(b.x,b.y,b.texture).setScale(b.scale).setDepth(b.y+20);
-      const label=this.add.text(
-        b.x,b.y+74,b.name,
-        {fontFamily:"system-ui",fontSize:"12px",fontStyle:"bold",color:"#f4e3ad",backgroundColor:"#071b23cc",padding:{x:5,y:3}}
-      ).setOrigin(.5).setDepth(b.y+52);
-      this.propLayer.add([foundation,shadow,image,label]);
-      this.obstacles.push({type:"rect",...f});
+      const pad=this.add.rectangle(b.footprint.x+b.footprint.w/2,b.footprint.y+b.footprint.h/2,b.footprint.w+10,b.footprint.h+10,0xb7aa84,.88)
+        .setStrokeStyle(4,0x7b6b50,.8).setDepth(50);
+      const roof=this.add.image(b.x,b.y,b.texture).setDepth(55);
+      const label=this.add.text(b.x,b.y+b.footprint.h/2+16,b.name,{
+        fontFamily:"system-ui",fontSize:"12px",fontStyle:"bold",color:"#f4e3ad",
+        backgroundColor:"#071b23cc",padding:{x:5,y:3}
+      }).setOrigin(.5).setDepth(56);
+      this.propLayer.add([pad,roof,label]);
+      this.labels.push(label);
+      this.obstacles.push({type:"rect",...b.footprint});
     });
 
-    // Arbres.
+    // Trees
     const treeData=[
-      [270,780,"treeA"],[445,640,"treeB"],[570,520,"treeA"],[760,520,"treeB"],
-      [1270,630,"treeA"],[1370,1035,"treeB"],[1120,1175,"treeA"],[865,1290,"treeB"],
-      [620,1365,"treeA"],[340,1030,"treeB"],[1020,1115,"treeA"],[1210,500,"treeB"],
-      [1380,760,"treeB"],[770,1090,"treeA"],[930,435,"treeB"],[1110,1300,"treeA"],
-      [1460,910,"treeA"],[540,860,"treeB"]
+      [280,780,"treeTopA"],[434,642,"treeTopB"],[562,528,"treeTopA"],[744,512,"treeTopB"],
+      [1260,616,"treeTopA"],[1368,1008,"treeTopB"],[1108,1170,"treeTopA"],[848,1286,"treeTopB"],
+      [610,1352,"treeTopA"],[338,1016,"treeTopB"],[1012,1106,"treeTopA"],[1202,492,"treeTopB"],
+      [1368,742,"treeTopB"],[772,1084,"treeTopA"],[914,428,"treeTopB"],[1106,1280,"treeTopA"],
+      [1450,890,"treeTopA"],[536,846,"treeTopB"]
     ];
     treeData.forEach(([x,y,key])=>{
-      const tree=this.add.image(x,y,key).setDepth(y+10);
-      this.propLayer.add(tree);
-      this.trees.push(tree);
-      this.obstacles.push({type:"circle",x,y:y+13,r:20});
+      const t=this.add.image(x,y,key).setDepth(58);
+      this.propLayer.add(t);
+      this.decorTrees.push(t);
+      this.obstacles.push({type:"circle",x,y,r:18});
     });
 
-    // Buissons et rochers.
-    [[970,815],[1010,850],[669,993],[890,710],[1280,850],[600,770],[750,1390]].forEach(([x,y])=>{
-      this.propLayer.add(this.add.image(x,y,"bush").setDepth(y));
+    // Bushes
+    [[970,812],[1004,848],[664,988],[890,704],[1272,842],[600,768],[748,1382]].forEach(([x,y])=>{
+      this.propLayer.add(this.add.image(x,y,"bushTop").setDepth(52));
     });
 
-    [[676,680],[1320,1120],[470,560],[1140,462],[365,1270],[910,1180]].forEach(([x,y])=>{
-      const rock=this.add.image(x,y,"rock").setDepth(y);
+    // Rocks
+    [[676,678],[1320,1118],[470,558],[1140,460],[365,1268],[910,1178]].forEach(([x,y])=>{
+      const rock=this.add.image(x,y,"rockTop").setDepth(57);
       this.propLayer.add(rock);
-      this.obstacles.push({type:"circle",x,y:y+5,r:18});
+      this.obstacles.push({type:"circle",x,y,r:16});
     });
+
+    // Decorative tactical relief outlines
+    const ridge=this.add.graphics().setDepth(51);
+    ridge.lineStyle(5,0x6a583d,1);
+    ridge.strokeEllipse(574,628,220,138);
+    ridge.strokeEllipse(1160,862,300,172);
+    ridge.strokeEllipse(522,1180,210,122);
+    ridge.lineStyle(2,0x95aa77,.8);
+    ridge.strokeEllipse(574,620,198,116);
+    ridge.strokeEllipse(1160,854,276,148);
+    ridge.strokeEllipse(522,1174,188,98);
+    this.propLayer.add(ridge);
   }
 
   createActors(){
-    this.ship=this.physics.add.image(this.shipPoint.x,this.shipPoint.y,"ship")
-      .setDepth(1205).setImmovable(true);
-    this.ship.body.setCircle(26,26,18);
-
-    // Spawn volontairement placé sur la terre ferme, hors des hitboxes du quai.
-    this.landSpawn=new Phaser.Math.Vector2(620,1050);
-    this.player=this.physics.add.image(this.landSpawn.x,this.landSpawn.y,"hero")
-      .setDepth(1300).setCollideWorldBounds(true);
-    this.player.body.setCircle(14,4,28);
-
-    // Le mouvement est géré manuellement afin d’éviter les traversées d’obstacles
-    // à haute vitesse sur mobile.
-    this.player.body.moves=false;
-    this.ship.body.moves=false;
+    this.ship=this.add.image(this.shipPoint.x,this.shipPoint.y,"shipTop").setDepth(70);
+    this.player=this.add.image(this.landSpawn.x,this.landSpawn.y,"heroTop").setDepth(72);
+    this.player.rotation=0;
   }
 
   createUI(){
-    this.hudBg=this.add.rectangle(12,12,286,70,0x06171e,.82).setOrigin(0).setScrollFactor(0).setDepth(2000);
+    this.hudBg=this.add.rectangle(12,12,292,70,0x06171e,.82).setOrigin(0).setScrollFactor(0).setDepth(2000);
     this.hud=this.add.text(24,22,"",{fontFamily:"system-ui",fontSize:"16px",fontStyle:"bold",color:"#f4df9b"}).setScrollFactor(0).setDepth(2001);
     this.modeText=this.add.text(24,51,"",{fontFamily:"system-ui",fontSize:"13px",fontStyle:"bold",color:"#a6d3ce"}).setScrollFactor(0).setDepth(2001);
 
@@ -696,44 +520,24 @@ class WorldScene extends Phaser.Scene{
       const rect=base.getBoundingClientRect();
       const cx=rect.left+rect.width/2;
       const cy=rect.top+rect.height/2;
-      const dx=clientX-cx;
-      const dy=clientY-cy;
+      const dx=clientX-cx, dy=clientY-cy;
       const length=Math.hypot(dx,dy)||1;
       const max=rect.width*.34;
       const distance=Math.min(length,max);
-      const nx=dx/length;
-      const ny=dy/length;
+      const nx=dx/length, ny=dy/length;
       this.joy.x=nx*(distance/max);
       this.joy.y=ny*(distance/max);
       knob.style.transform=`translate3d(${nx*distance}px,${ny*distance}px,0)`;
     };
 
     const resetJoystick=()=>{
-      this.joy.active=false;
-      this.joy.id=null;
-      this.joy.x=0;
-      this.joy.y=0;
+      this.joy.active=false; this.joy.id=null; this.joy.x=0; this.joy.y=0;
       knob.style.transform="translate3d(0,0,0)";
     };
 
-    const pointerDown=(event)=>{
-      event.preventDefault();
-      event.stopPropagation();
-      this.joy.active=true;
-      this.joy.id=event.pointerId;
-      base.setPointerCapture?.(event.pointerId);
-      updateFromPoint(event.clientX,event.clientY);
-    };
-    const pointerMove=(event)=>{
-      if(!this.joy.active||event.pointerId!==this.joy.id) return;
-      event.preventDefault();
-      updateFromPoint(event.clientX,event.clientY);
-    };
-    const pointerEnd=(event)=>{
-      if(event.pointerId!==this.joy.id) return;
-      event.preventDefault();
-      resetJoystick();
-    };
+    const pointerDown=(event)=>{ event.preventDefault(); event.stopPropagation(); this.joy.active=true; this.joy.id=event.pointerId; base.setPointerCapture?.(event.pointerId); updateFromPoint(event.clientX,event.clientY); };
+    const pointerMove=(event)=>{ if(!this.joy.active||event.pointerId!==this.joy.id) return; event.preventDefault(); updateFromPoint(event.clientX,event.clientY); };
+    const pointerEnd=(event)=>{ if(event.pointerId!==this.joy.id) return; event.preventDefault(); resetJoystick(); };
 
     base.addEventListener("pointerdown",pointerDown,{passive:false});
     base.addEventListener("pointermove",pointerMove,{passive:false});
@@ -741,20 +545,9 @@ class WorldScene extends Phaser.Scene{
     base.addEventListener("pointercancel",pointerEnd,{passive:false});
     base.addEventListener("lostpointercapture",resetJoystick);
 
-    base.addEventListener("touchstart",(event)=>{
-      event.preventDefault();
-      const touch=event.changedTouches[0];
-      this.joy.active=true;
-      this.joy.id="touch";
-      updateFromPoint(touch.clientX,touch.clientY);
-    },{passive:false});
-    base.addEventListener("touchmove",(event)=>{
-      if(!this.joy.active) return;
-      event.preventDefault();
-      const touch=event.changedTouches[0];
-      updateFromPoint(touch.clientX,touch.clientY);
-    },{passive:false});
-    base.addEventListener("touchend",(event)=>{event.preventDefault(); resetJoystick();},{passive:false});
+    base.addEventListener("touchstart",(event)=>{ event.preventDefault(); const t=event.changedTouches[0]; this.joy.active=true; this.joy.id="touch"; updateFromPoint(t.clientX,t.clientY); },{passive:false});
+    base.addEventListener("touchmove",(event)=>{ if(!this.joy.active) return; event.preventDefault(); const t=event.changedTouches[0]; updateFromPoint(t.clientX,t.clientY); },{passive:false});
+    base.addEventListener("touchend",(event)=>{ event.preventDefault(); resetJoystick(); },{passive:false});
     base.addEventListener("touchcancel",resetJoystick,{passive:false});
 
     const actionHandler=(event)=>{ event.preventDefault(); event.stopPropagation(); this.actionUse(); };
@@ -767,12 +560,12 @@ class WorldScene extends Phaser.Scene{
 
   updateResponsiveView(){
     const landscape=this.scale.width>this.scale.height;
-    const zoom=landscape ? (this.scale.height<500 ? .80 : .90) : .74;
+    const zoom=landscape ? (this.scale.height<500 ? 1.02 : 1.12) : .88;
     this.cameras.main.setZoom(zoom);
   }
 
   layout(){
-    const w=this.scale.width,h=this.scale.height;
+    const w=this.scale.width, h=this.scale.height;
     const landscape=w>h;
     this.messageBg.setPosition(w/2,landscape?68:110).setSize(Math.min(430,w-24),58);
     this.message.setPosition(w/2,landscape?68:110);
@@ -798,63 +591,51 @@ class WorldScene extends Phaser.Scene{
 
     if(this.mode==="land"){
       const ds=Phaser.Math.Distance.Between(this.player.x,this.player.y,this.ship.x,this.ship.y);
-      if(ds<120){
+      if(ds<118){
         this.mode="sea";
         this.player.setVisible(false);
-        this.player.body.enable=false;
-        this.ship.body.immovable=false;
         this.cameras.main.startFollow(this.ship,true,.08,.08);
-        this.toast("Tu prends la mer. Reviens au ponton pour débarquer.");
+        this.toast("Tu prends la mer.");
         this.save();
         return;
       }
 
-      const forge=Phaser.Math.Distance.Between(this.player.x,this.player.y,760,965)<120;
-      if(forge){
-        if(!this.inventory.sword && this.coins>=50){
-          this.coins-=50; this.inventory.sword=true; this.toast("Épée de bronze achetée et équipée.");
-        }else if(this.inventory.sword){
-          this.toast("Le forgeron prépare bientôt de nouvelles armes.");
-        }else{
-          this.toast("Il te faut 50 drachmes.");
-        }
+      if(Phaser.Math.Distance.Between(this.player.x,this.player.y,760,966)<112){
+        if(!this.inventory.sword && this.coins>=50){ this.coins-=50; this.inventory.sword=true; this.toast("Épée de bronze achetée et équipée."); }
+        else if(this.inventory.sword){ this.toast("Le forgeron prépare d'autres armes."); }
+        else { this.toast("Il te faut 50 drachmes."); }
         this.save(); return;
       }
 
-      const market=Phaser.Math.Distance.Between(this.player.x,this.player.y,1148,818)<130;
-      if(market){
-        if(this.coins>=20){
-          this.coins-=20; this.food+=8; this.toast("8 vivres achetés pour 20 drachmes.");
-        }else{
-          this.toast("Pas assez de drachmes.");
-        }
+      if(Phaser.Math.Distance.Between(this.player.x,this.player.y,1148,818)<118){
+        if(this.coins>=20){ this.coins-=20; this.food+=8; this.toast("8 vivres achetés pour 20 drachmes."); }
+        else { this.toast("Pas assez de drachmes."); }
         this.save(); return;
       }
 
-      const temple=Phaser.Math.Distance.Between(this.player.x,this.player.y,962,660)<135;
-      if(temple){ this.toast("Athéna veille peut-être sur toi… ou peut-être pas."); return; }
+      if(Phaser.Math.Distance.Between(this.player.x,this.player.y,960,654)<126){
+        this.toast("Athéna veille peut-être sur toi…");
+        return;
+      }
 
-      this.toast("Approche-toi d’un lieu ou du navire.");
-    }else{
+      this.toast("Approche-toi d'un lieu ou du navire.");
+    } else {
       const d=Phaser.Math.Distance.Between(this.ship.x,this.ship.y,this.dockPoint.x,this.dockPoint.y);
       if(d<150){
         this.mode="land";
-        this.ship.setVelocity(0,0);
-        this.ship.body.immovable=true;
         this.player.setPosition(this.landSpawn.x,this.landSpawn.y).setVisible(true);
-        this.player.body.enable=true;
         this.cameras.main.startFollow(this.player,true,.08,.08);
         this.toast("Débarquement à Ithaque.");
         this.save();
-      }else{
-        this.toast("Reviens près du ponton.");
+      } else {
+        this.toast("Reviens près du ponton pour débarquer.");
       }
     }
   }
 
   save(){
-    const data={coins:this.coins,food:this.food,wood:this.wood,inventory:this.inventory};
-    localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+    const data={ coins:this.coins, food:this.food, wood:this.wood, inventory:this.inventory };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   }
 
   loadSave(){
@@ -869,9 +650,8 @@ class WorldScene extends Phaser.Scene{
   }
 
   pointInsideWalkableArea(x,y){
-    const point=new Phaser.Geom.Point(x,y);
     if(Phaser.Geom.Polygon.Contains(this.landPolygon,x,y)) return true;
-    return this.dockWalkRects.some(rect=>Phaser.Geom.Rectangle.Contains(rect,x,y));
+    return this.dockWalkRects.some(r=>Phaser.Geom.Rectangle.Contains(r,x,y));
   }
 
   isWalkableCircle(x,y,r=14){
@@ -885,8 +665,8 @@ class WorldScene extends Phaser.Scene{
   circleRectCollision(cx,cy,r,rect){
     const closestX=Phaser.Math.Clamp(cx,rect.x,rect.x+rect.w);
     const closestY=Phaser.Math.Clamp(cy,rect.y,rect.y+rect.h);
-    const dx=cx-closestX,dy=cy-closestY;
-    return dx*dx+dy*dy<r*r;
+    const dx=cx-closestX, dy=cy-closestY;
+    return dx*dx+dy*dy < r*r;
   }
 
   collidesWithObstacles(x,y,r=14){
@@ -895,12 +675,8 @@ class WorldScene extends Phaser.Scene{
         if(this.circleRectCollision(x,y,r,o)) return true;
       }else if(o.type==="circle"){
         const rr=r+o.r;
-        const dx=x-o.x,dy=y-o.y;
+        const dx=x-o.x, dy=y-o.y;
         if(dx*dx+dy*dy<rr*rr) return true;
-      }else if(o.type==="ellipse"){
-        const dx=(x-o.x)/(o.rx+r);
-        const dy=(y-o.y)/(o.ry+r);
-        if(dx*dx+dy*dy<=1) return true;
       }
     }
     return false;
@@ -911,9 +687,8 @@ class WorldScene extends Phaser.Scene{
   }
 
   isShipBlocked(x,y){
-    const onIsland=Phaser.Geom.Polygon.Contains(this.landPolygon,x,y);
-    const berthDistance=Phaser.Math.Distance.Between(x,y,this.shipPoint.x,this.shipPoint.y);
-    return onIsland && berthDistance>175;
+    if(Phaser.Geom.Polygon.Contains(this.landPolygon,x,y) && Phaser.Math.Distance.Between(x,y,this.shipPoint.x,this.shipPoint.y)>165) return true;
+    return false;
   }
 
   toast(text){
@@ -921,52 +696,42 @@ class WorldScene extends Phaser.Scene{
     this.messageBg.setVisible(true);
     clearTimeout(this.toastTimer);
     this.toastTimer=setTimeout(()=>{
-      if(this.message){
-        this.message.setVisible(false);
-        this.messageBg.setVisible(false);
-      }
+      if(this.message){ this.message.setVisible(false); this.messageBg.setVisible(false); }
     },2400);
   }
 
   update(time,delta){
-    this.dayT+=delta*0.00003;
+    this.dayT += delta*0.00003;
 
     for(const wave of this.waves){
-      wave.x+=wave.speed*delta/1000;
-      if(wave.x>W+40) wave.x=-40;
+      wave.x += wave.speed*delta/1000;
+      if(wave.x > W+40) wave.x = -40;
     }
     for(const foam of this.foam){
-      foam.alpha=0.11+((Math.sin(this.dayT*2+foam.phase)+1)/2)*0.16;
-      foam.y=foam.baseY+Math.sin(this.dayT*4+foam.phase)*2.5;
+      foam.alpha = 0.10 + ((Math.sin(this.dayT*2 + foam.phase)+1)/2)*0.14;
+      foam.y = foam.baseY + Math.sin(this.dayT*4 + foam.phase)*1.8;
     }
-    for(let i=0;i<this.trees.length;i++){
-      const tree=this.trees[i];
-      tree.rotation=Math.sin(this.dayT*1.8+i)*0.006;
+    for(let i=0;i<this.decorTrees.length;i++){
+      this.decorTrees[i].rotation=Math.sin(this.dayT*1.4+i)*0.018;
     }
 
-    let x=this.joy.x,y=this.joy.y;
+    let x=this.joy.x, y=this.joy.y;
     const len=Math.hypot(x,y);
-    if(len>1){x/=len;y/=len;}
+    if(len>1){ x/=len; y/=len; }
 
     if(this.mode==="land"){
       const stepX=x*this.speed*delta/1000;
       const stepY=y*this.speed*delta/1000;
 
-      // Résolution axe par axe : le héros glisse contre les murs au lieu de
-      // les traverser ou de rester brutalement bloqué.
       const nextX=this.player.x+stepX;
-      if(this.canPlayerOccupy(nextX,this.player.y)){
-        this.player.x=nextX;
-      }
+      if(this.canPlayerOccupy(nextX,this.player.y)) this.player.x=nextX;
 
       const nextY=this.player.y+stepY;
-      if(this.canPlayerOccupy(this.player.x,nextY)){
-        this.player.y=nextY;
-      }
+      if(this.canPlayerOccupy(this.player.x,nextY)) this.player.y=nextY;
 
-      if(Math.abs(x)>.05) this.player.setFlipX(x<0);
-      this.player.setDepth(this.player.y+80);
-    }else{
+      if(len>.05) this.player.rotation=Math.atan2(y,x)+Math.PI/2;
+      this.player.setDepth(72 + this.player.y*0.001);
+    } else {
       const stepX=x*this.shipSpeed*delta/1000;
       const stepY=y*this.shipSpeed*delta/1000;
 
@@ -976,27 +741,26 @@ class WorldScene extends Phaser.Scene{
       const nextY=this.ship.y+stepY;
       if(!this.isShipBlocked(this.ship.x,nextY)) this.ship.y=nextY;
 
-      if(len>.07) this.ship.rotation=Math.atan2(y,x)+Math.PI/2;
-      this.ship.setDepth(this.ship.y+35);
+      if(len>.05) this.ship.rotation=Math.atan2(y,x)+Math.PI/2;
+      this.ship.setDepth(70 + this.ship.y*0.001);
     }
 
     this.hud.setText(`◈ ${this.coins}   🍞 ${this.food}   🪵 ${this.wood}`);
-    this.modeText.setText(this.mode==="land"?"ITHAQUE — EXPLORATION":"MER IONIENNE — NAVIGATION");
+    this.modeText.setText(this.mode==="land" ? "ITHAQUE — TOP-DOWN TACTIQUE" : "MER IONIENNE — NAVIGATION");
   }
 }
 
-const config = {
-  type: Phaser.AUTO,
-  parent: "game",
-  backgroundColor: "#06171e",
-  scale: {mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH, width: innerWidth, height: innerHeight},
-  physics: {default:"arcade", arcade:{gravity:{x:0,y:0}, debug:false}},
-  render: {antialias:false, pixelArt:true, roundPixels:true},
-  scene: [BootScene, WorldScene]
+const config={
+  type:Phaser.AUTO,
+  parent:"game",
+  backgroundColor:"#06171e",
+  scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH,width:innerWidth,height:innerHeight},
+  render:{antialias:false,pixelArt:true,roundPixels:true},
+  scene:[BootScene,WorldScene]
 };
 
 const game = new Phaser.Game(config);
-let gameStarted = false;
+let gameStarted=false;
 
 function showFatal(error){
   const box=document.getElementById("fatalError");
@@ -1006,12 +770,9 @@ function showFatal(error){
 }
 
 function startGame(event){
-  if(event){
-    event.preventDefault();
-    event.stopPropagation();
-  }
+  if(event){ event.preventDefault(); event.stopPropagation(); }
   if(gameStarted) return;
-  gameStarted = true;
+  gameStarted=true;
 
   const title=document.getElementById("titleScreen");
   audioDirector.start().then(()=>audioDirector.setMode("game")).catch(()=>{});
@@ -1019,7 +780,6 @@ function startGame(event){
 
   document.documentElement.requestFullscreen?.().catch?.(()=>{});
   screen.orientation?.lock?.("landscape").catch?.(()=>{});
-
   setTimeout(()=>title.classList.add("hidden"),1080);
 
   try{
@@ -1032,12 +792,8 @@ function startGame(event){
 }
 
 const embeddedTheme=document.getElementById("menuTheme");
-embeddedTheme.addEventListener("canplaythrough",()=>{
-  soundPrompt.dataset.ready="true";
-});
-embeddedTheme.addEventListener("error",()=>{
-  soundPrompt.textContent="Erreur audio";
-});
+embeddedTheme.addEventListener("canplaythrough",()=>{ soundPrompt.dataset.ready="true"; });
+embeddedTheme.addEventListener("error",()=>{ soundPrompt.textContent="Erreur audio"; });
 
 const soundPrompt=document.getElementById("soundPrompt");
 async function activateTitleMusic(event){
