@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.1.3 — Door Kickers arm pose</title>
+<title>Odyssée — v1.11.2 — Shield block</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -39,7 +39,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 #controls{display:none;position:fixed;inset:0;z-index:2500;pointer-events:none}#controls.visible{display:block}
 #stick{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(18px + env(safe-area-inset-bottom));width:124px;height:124px;border:2px solid rgba(191,151,91,.58);border-radius:50%;background:radial-gradient(circle,rgba(25,30,29,.76) 0 43%,rgba(7,10,10,.72) 45%);box-shadow:0 14px 35px rgba(0,0,0,.4);pointer-events:auto;touch-action:none}#stick:before,#stick:after{content:"";position:absolute;background:rgba(191,151,91,.18)}#stick:before{left:50%;top:12%;bottom:12%;width:1px}#stick:after{top:50%;left:12%;right:12%;height:1px}#knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border:1px solid #b88b53;border-radius:50%;background:radial-gradient(circle at 35% 30%,#a98655,#503e27 72%);box-shadow:0 9px 22px rgba(0,0,0,.48)}
 #actionPad{position:absolute;right:calc(23px + env(safe-area-inset-right));bottom:calc(19px + env(safe-area-inset-bottom));width:160px;height:132px;pointer-events:none}
-.actionBtn{position:absolute;display:grid;place-items:center;width:70px;height:70px;padding:0;border:2px solid rgba(191,151,91,.54);border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(115,92,59,.94),rgba(29,31,28,.96) 72%);color:#e5d3ad;box-shadow:0 13px 30px rgba(0,0,0,.46),inset 0 0 0 4px rgba(0,0,0,.18);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s ease,filter .15s ease,border-color .15s ease,opacity .15s ease}.actionBtn:active{transform:scale(.93)}.actionBtn .letter{display:block;font:950 25px/1 system-ui}.actionBtn .label{display:block;margin-top:3px;font:900 8px/1 system-ui;letter-spacing:.12em}.actionBtnA{right:73px;top:0;opacity:.58;filter:saturate(.55)}.actionBtnA.available{opacity:1;filter:none;border-color:#ddb369;box-shadow:0 0 0 4px rgba(191,137,70,.18),0 13px 30px rgba(0,0,0,.48),0 0 24px rgba(213,159,79,.28)}.actionBtnB{right:0;bottom:0;opacity:.52;filter:saturate(.35)}.actionBtnB .label{color:#908875}
+.actionBtn{position:absolute;display:grid;place-items:center;width:70px;height:70px;padding:0;border:2px solid rgba(191,151,91,.54);border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(115,92,59,.94),rgba(29,31,28,.96) 72%);color:#e5d3ad;box-shadow:0 13px 30px rgba(0,0,0,.46),inset 0 0 0 4px rgba(0,0,0,.18);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s ease,filter .15s ease,border-color .15s ease,opacity .15s ease}.actionBtn:active{transform:scale(.93)}.actionBtn .letter{display:block;font:950 25px/1 system-ui}.actionBtn .label{display:block;margin-top:3px;font:900 8px/1 system-ui;letter-spacing:.12em}.actionBtnA{right:73px;top:0;opacity:.58;filter:saturate(.55)}.actionBtnA.available{opacity:1;filter:none;border-color:#ddb369;box-shadow:0 0 0 4px rgba(191,137,70,.18),0 13px 30px rgba(0,0,0,.48),0 0 24px rgba(213,159,79,.28)}.actionBtnB{right:0;bottom:0;opacity:1;filter:none;border-color:rgba(151,179,190,.72)}.actionBtnB .label{color:#c5d0d2}.actionBtnB.blocking{transform:scale(.94);border-color:#d6e3e7;background:radial-gradient(circle at 34% 28%,rgba(105,129,139,.98),rgba(22,28,31,.98) 72%);box-shadow:0 0 0 5px rgba(131,166,180,.20),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(154,196,212,.34)}
 #credits{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:2550;display:none;padding:7px 9px;background:rgba(4,7,8,.62);color:#8d9694;font:700 8px system-ui;letter-spacing:.05em;pointer-events:none}#credits.visible{display:block}
 #npcBubble{display:none;position:fixed;z-index:2750;max-width:min(58vw,270px);padding:9px 12px;border:1px solid rgba(215,189,134,.62);border-left:4px solid #8b5d32;background:rgba(16,20,18,.93);color:#eadbb9;box-shadow:0 10px 28px rgba(0,0,0,.48);font:700 11px/1.35 system-ui;letter-spacing:.02em;pointer-events:none;transform:translate(-50%,-115%)}#npcBubble.visible{display:block}#npcBubble strong{display:block;margin-bottom:3px;color:#c99b5c;font:900 9px system-ui;letter-spacing:.14em;text-transform:uppercase}
 </style>
@@ -51,14 +51,14 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.1 — FARMER ACTIONS</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Démos tient désormais sa houe à deux mains. Bouton A pour parler, bouton B préparé pour une future action.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.2 — SHIELD BLOCK</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A pour parler. Maintiens le bouton B pour lever le bouclier devant le hoplite et bloquer.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
   <div id="stick"><div id="knob"></div></div>
   <div id="actionPad">
     <button id="actionA" class="actionBtn actionBtnA" type="button" aria-label="Parler"><span><span class="letter">A</span><span class="label">PARLER</span></span></button>
-    <button id="actionB" class="actionBtn actionBtnB" type="button" aria-label="Action B non disponible" aria-disabled="true"><span><span class="letter">B</span><span class="label">BIENTÔT</span></span></button>
+    <button id="actionB" class="actionBtn actionBtnB" type="button" aria-label="Lever le bouclier" aria-pressed="false"><span><span class="letter">B</span><span class="label">BLOQUER</span></span></button>
   </div>
 </div>
 <div id="npcBubble"><strong>Démos — fermier</strong><span id="npcBubbleText">Que les dieux protègent ta route, guerrier.</span></div>
@@ -80,7 +80,7 @@ const FOOTSTEP_URLS=[
 const els={game:document.getElementById('game'),fatal:document.getElementById('fatal'),loading:document.getElementById('loading3d'),loaderText:document.getElementById('loaderText'),title:document.getElementById('titleScreen'),start:document.getElementById('startBtn'),sound:document.getElementById('soundBtn'),hud:document.getElementById('hud'),controls:document.getElementById('controls'),credits:document.getElementById('credits'),stick:document.getElementById('stick'),knob:document.getElementById('knob'),audio:document.getElementById('menuTheme'),npcBubble:document.getElementById('npcBubble'),npcBubbleText:document.getElementById('npcBubbleText'),actionA:document.getElementById('actionA'),actionB:document.getElementById('actionB')};
 window.addEventListener('error',e=>{els.fatal.style.display='block';els.fatal.textContent='Le prototype 3D a rencontré une erreur :\n\n'+(e.error?.stack||e.message||e)});
 
-let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0;
+let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,0), turnVelocity=0, stepParity=0;
 const normalizeAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const keys=new Set();
@@ -847,6 +847,13 @@ function addGreekGear(root){
   const grip=new THREE.Mesh(new THREE.BoxGeometry(.05,.42,.05), matLeather); grip.position.z=.022; shieldPivot.add(grip);
   const handStrap=new THREE.Mesh(new THREE.BoxGeometry(.13,.055,.05), matLeather); handStrap.position.set(.00,.04,.022); shieldPivot.add(handStrap);
 
+  // Le bouclier garde sa pose de repos, mais devient indépendant du coude pour pouvoir être levé proprement devant le corps.
+  torsoPivot.attach(shieldPivot);
+  const shieldRestPosition=shieldPivot.position.clone();
+  const shieldRestQuaternion=shieldPivot.quaternion.clone();
+  const shieldBlockPosition=new THREE.Vector3(-.015,.31,-.39);
+  const shieldBlockQuaternion=shieldRestQuaternion.clone();
+
   // Lance sanglée dans le dos, remontée au niveau du dos et bien en biais derrière l'épaule droite.
   const backSpearPivot=new THREE.Group();
   backSpearPivot.position.set(.11,.49,.30);
@@ -929,7 +936,7 @@ function addGreekGear(root){
   pommel.castShadow=true;
   swordPivot.add(pommel);
 
-  gear.userData={gear,motion,hips,torsoPivot,headPivot,capeAnchor,cape,crest,leftLeg,rightLeg,leftArm,rightArm,shieldPivot,backSpearPivot,swordPivot};
+  gear.userData={gear,motion,hips,torsoPivot,headPivot,capeAnchor,cape,crest,leftLeg,rightLeg,leftArm,rightArm,shieldPivot,shieldRestPosition,shieldRestQuaternion,shieldBlockPosition,shieldBlockQuaternion,backSpearPivot,swordPivot};
   return gear;
 }
 
@@ -940,6 +947,10 @@ function setupJoystick(){const update=(cx,cy)=>{const r=els.stick.getBoundingCli
 function update(){
   if(!renderer)return;
   const dt=Math.min(clock.getDelta(),.04);
+  const wantsBlock=blocking||keys.has('KeyB');
+  blockBlend=THREE.MathUtils.lerp(blockBlend,wantsBlock?1:0,1-Math.exp(-15*dt));
+  els.actionB?.classList.toggle('blocking',blockBlend>.12);
+  els.actionB?.setAttribute('aria-pressed',wantsBlock?'true':'false');
   let x=joy.x,z=joy.y;
   if(keys.has('ArrowRight')||keys.has('KeyD'))x+=1;
   if(keys.has('ArrowLeft')||keys.has('KeyA'))x-=1;
@@ -947,7 +958,8 @@ function update(){
   if(keys.has('ArrowUp')||keys.has('KeyW'))z-=1;
   const l=Math.hypot(x,z);
   if(l>1){x/=l;z/=l}
-  const target=new THREE.Vector2(x*2.75,z*2.75);
+  const moveSpeed=THREE.MathUtils.lerp(2.75,1.30,blockBlend);
+  const target=new THREE.Vector2(x*moveSpeed,z*moveSpeed);
   velocity.lerp(target,1-Math.exp(-10*dt));
   const proposed=player.clone();
   proposed.x+=velocity.x*dt;
@@ -1001,20 +1013,23 @@ function update(){
       g.leftLeg.foot.rotation.x=-Math.max(0,-swing)*0.18*speedNorm;
       g.rightLeg.foot.rotation.x=-Math.max(0,swing)*0.18*speedNorm;
 
-      const armSwing=swing*0.085*speedNorm;
-      g.leftArm.shoulder.rotation.x=0.03 + armSwing;
-      g.leftArm.shoulder.rotation.z=0.01 - turnLean*0.16;
-      g.leftArm.elbow.rotation.x=0.10 + Math.sin(walkCycle+.3)*0.024*speedNorm;
-      g.rightArm.shoulder.rotation.x=-0.02 - armSwing*0.9;
-      g.rightArm.shoulder.rotation.z=-0.01 - turnLean*0.08;
-      g.rightArm.elbow.rotation.x=0.06 + Math.sin(walkCycle+1.2)*0.022*speedNorm;
+      const armSwing=swing*0.085*speedNorm*(1-blockBlend*.7);
+      const leftShoulderX=0.03 + armSwing;
+      const leftShoulderZ=0.01 - turnLean*0.16;
+      const leftElbowX=0.10 + Math.sin(walkCycle+.3)*0.024*speedNorm;
+      g.leftArm.shoulder.rotation.x=THREE.MathUtils.lerp(leftShoulderX,-.58,blockBlend);
+      g.leftArm.shoulder.rotation.z=THREE.MathUtils.lerp(leftShoulderZ,.36,blockBlend);
+      g.leftArm.elbow.rotation.x=THREE.MathUtils.lerp(leftElbowX,.88,blockBlend);
+      g.leftArm.elbow.rotation.z=.16*blockBlend;
+      const rightShoulderX=-0.02-armSwing*.9;
+      g.rightArm.shoulder.rotation.x=THREE.MathUtils.lerp(rightShoulderX,-.20,blockBlend);
+      g.rightArm.shoulder.rotation.z=THREE.MathUtils.lerp(-0.01-turnLean*.08,-.10,blockBlend);
+      g.rightArm.elbow.rotation.x=THREE.MathUtils.lerp(0.06+Math.sin(walkCycle+1.2)*0.022*speedNorm,.28,blockBlend);
 
-      g.shieldPivot.position.x=-.16;
-      g.shieldPivot.position.y=-.06 + Math.abs(Math.sin(walkCycle))*0.003*speedNorm;
-      g.shieldPivot.position.z=.03;
-      g.shieldPivot.rotation.x=Math.PI/2 + Math.sin(walkCycle+.4)*0.006*speedNorm;
-      g.shieldPivot.rotation.y=0;
-      g.shieldPivot.rotation.z=Math.PI/2 + Math.sin(walkCycle+.2)*0.003*speedNorm;
+      const shieldRestBob=g.shieldRestPosition.clone();
+      shieldRestBob.y+=Math.abs(Math.sin(walkCycle))*0.003*speedNorm;
+      g.shieldPivot.position.lerpVectors(shieldRestBob,g.shieldBlockPosition,blockBlend);
+      g.shieldPivot.quaternion.copy(g.shieldRestQuaternion).slerp(g.shieldBlockQuaternion,blockBlend);
       g.backSpearPivot.position.x=.11;
       g.backSpearPivot.position.y=.49;
       g.backSpearPivot.position.z=.30;
@@ -1093,7 +1108,17 @@ addEventListener('resize',onResize);
 document.addEventListener('fullscreenchange',()=>setTimeout(onResize,80));
 els.start.addEventListener('click',start);
 els.actionA?.addEventListener('pointerdown',e=>{e.preventDefault();talkToFarmer()},{passive:false});
-els.actionB?.addEventListener('pointerdown',e=>{e.preventDefault()},{passive:false});
+const setBlocking=value=>{
+  blocking=!!value&&started;
+  els.actionB?.classList.toggle('blocking',blocking);
+  els.actionB?.setAttribute('aria-pressed',blocking?'true':'false');
+};
+els.actionB?.addEventListener('pointerdown',e=>{e.preventDefault();els.actionB.setPointerCapture?.(e.pointerId);setBlocking(true)},{passive:false});
+els.actionB?.addEventListener('pointerup',e=>{e.preventDefault();setBlocking(false)},{passive:false});
+els.actionB?.addEventListener('pointercancel',()=>setBlocking(false));
+els.actionB?.addEventListener('lostpointercapture',()=>setBlocking(false));
+addEventListener('pointerup',()=>setBlocking(false));
+addEventListener('blur',()=>setBlocking(false));
 els.sound.addEventListener('click',async()=>{try{if(started)return;if(els.audio.paused){els.audio.volume=.30;await els.audio.play();els.sound.textContent='♪ MUSIQUE ACTIVE'}else{els.audio.pause();els.sound.textContent='♪ MUSIQUE'}}catch{}});
 </script>
 </body></html>
