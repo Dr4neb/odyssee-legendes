@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.4.5.2 — Startup hotfix</title>
+<title>Odyssée — v1.12.5 — Côtes naturelles d’Ithaque</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.4 — PNJ VIVANTS & TEMPLE DE DÉMÉTER</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos parcourt ses quatre cultures, Níkon patrouille dans le camp et le temple de Déméter devient transparent à l’entrée. A près de Myron ouvre la forge.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.5 — CÔTES NATURELLES D’ITHAQUE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos parcourt ses quatre cultures, Níkon patrouille dans le camp et le temple de Déméter devient transparent à l’entrée. A près de Myron ouvre la forge.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -123,6 +123,64 @@ const farmPlotCenters=[
   {name:'carottes',pos:new THREE.Vector3(6.50,0,6.77)}
 ];
 
+// Silhouette irrégulière de l'île. Les anses, pointes et petites péninsules
+// remplacent définitivement l'ancienne ellipse régulière.
+const ISLAND_OUTLINE=[
+  new THREE.Vector2(-11.55,-8.10),new THREE.Vector2(-10.10,-8.92),new THREE.Vector2(-8.15,-9.32),
+  new THREE.Vector2(-6.15,-8.83),new THREE.Vector2(-4.05,-9.46),new THREE.Vector2(-1.72,-9.05),
+  new THREE.Vector2(.35,-9.58),new THREE.Vector2(2.72,-9.10),new THREE.Vector2(4.05,-8.18),
+  new THREE.Vector2(5.55,-9.34),new THREE.Vector2(7.48,-8.66),new THREE.Vector2(9.62,-8.90),
+  new THREE.Vector2(11.42,-7.48),new THREE.Vector2(12.22,-5.78),new THREE.Vector2(11.58,-4.23),
+  new THREE.Vector2(12.52,-2.62),new THREE.Vector2(11.86,-.88),new THREE.Vector2(12.62,1.02),
+  new THREE.Vector2(11.18,2.05),new THREE.Vector2(12.18,4.72),new THREE.Vector2(12.45,6.72),
+  new THREE.Vector2(11.18,8.42),new THREE.Vector2(8.92,9.02),new THREE.Vector2(7.34,8.72),
+  new THREE.Vector2(5.13,8.52),new THREE.Vector2(3.03,9.34),new THREE.Vector2(.18,8.46),
+  new THREE.Vector2(-1.42,9.52),new THREE.Vector2(-3.38,8.78),new THREE.Vector2(-5.38,9.20),
+  new THREE.Vector2(-7.35,8.48),new THREE.Vector2(-9.38,8.78),new THREE.Vector2(-11.18,7.48),
+  new THREE.Vector2(-11.86,5.62),new THREE.Vector2(-11.25,4.18),new THREE.Vector2(-12.25,2.66),
+  new THREE.Vector2(-10.42,.18),new THREE.Vector2(-12.48,-.82),new THREE.Vector2(-11.62,-2.48),
+  new THREE.Vector2(-12.25,-4.55),new THREE.Vector2(-11.48,-6.48)
+];
+const ISLAND_SIGNED_AREA=ISLAND_OUTLINE.reduce((sum,p,i)=>{
+  const q=ISLAND_OUTLINE[(i+1)%ISLAND_OUTLINE.length];
+  return sum+p.x*q.y-q.x*p.y;
+},0)*.5;
+function pointInsideIsland(x,z){
+  let inside=false;
+  for(let i=0,j=ISLAND_OUTLINE.length-1;i<ISLAND_OUTLINE.length;j=i++){
+    const a=ISLAND_OUTLINE[i],b=ISLAND_OUTLINE[j];
+    const crosses=((a.y>z)!==(b.y>z))&&(x<(b.x-a.x)*(z-a.y)/((b.y-a.y)||1e-8)+a.x);
+    if(crosses)inside=!inside;
+  }
+  return inside;
+}
+function nearestIslandEdge(x,z){
+  let best=null,bestD2=Infinity;
+  for(let i=0;i<ISLAND_OUTLINE.length;i++){
+    const a=ISLAND_OUTLINE[i],b=ISLAND_OUTLINE[(i+1)%ISLAND_OUTLINE.length];
+    const abx=b.x-a.x,abz=b.y-a.y,len2=abx*abx+abz*abz;
+    const t=THREE.MathUtils.clamp(((x-a.x)*abx+(z-a.y)*abz)/(len2||1),0,1);
+    const px=a.x+abx*t,pz=a.y+abz*t,dx=x-px,dz=z-pz,d2=dx*dx+dz*dz;
+    if(d2<bestD2){
+      const inv=ISLAND_SIGNED_AREA>0?new THREE.Vector2(-abz,abx):new THREE.Vector2(abz,-abx);
+      inv.normalize();best={x:px,z:pz,d2,normal:inv};bestD2=d2;
+    }
+  }
+  return best;
+}
+function constrainToIsland(pos,radius=.24){
+  const edge=nearestIslandEdge(pos.x,pos.z);if(!edge)return;
+  const inside=pointInsideIsland(pos.x,pos.z),dist=Math.sqrt(edge.d2);
+  if(!inside||dist<radius){
+    pos.x=edge.x+edge.normal.x*(radius+.035);
+    pos.z=edge.z+edge.normal.y*(radius+.035);
+    if(!pointInsideIsland(pos.x,pos.z)){
+      // sécurité dans les angles concaves : repli léger vers le centre de l'île.
+      pos.x=THREE.MathUtils.lerp(pos.x,0,.18);pos.z=THREE.MathUtils.lerp(pos.z,0,.18);
+    }
+  }
+}
+
 function addBoxCollider(x,z,w,d,pad=.16){colliders.push({x1:x-w/2-pad,x2:x+w/2+pad,z1:z-d/2-pad,z2:z+d/2+pad})}
 function resolveCollisions(pos,radius=.24){
   const applyRectCollision=(c)=>{
@@ -144,10 +202,8 @@ function resolveCollisions(pos,radius=.24){
   if(trainingGate && trainingGate.open < .62){
     applyRectCollision({x1:trainingGate.center.x-trainingGate.width*.5,x2:trainingGate.center.x+trainingGate.width*.5,z1:trainingGate.center.z-trainingGate.depth*.5,z2:trainingGate.center.z+trainingGate.depth*.5});
   }
-  // Limite elliptique naturelle de l'île, sans murs rectangulaires visibles.
-  const rx=12.45-radius, rz=9.55-radius;
-  const q=Math.hypot(pos.x/rx,pos.z/rz);
-  if(q>1){pos.x/=q;pos.z/=q;}
+  // Limite réelle basée sur la côte irrégulière, avec prise en compte du rayon du joueur.
+  constrainToIsland(pos,radius);
   return pos;
 }
 function getTerrainHeight(x,z){
@@ -524,19 +580,49 @@ function setupThree(){
   buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();loadCharacter();onResize();addEventListener('resize',onResize,{passive:true,once:false});renderer.setAnimationLoop(update);
 }
 function buildArena(){
-  const seaMat=new THREE.MeshStandardMaterial({color:0x2f6f82,roughness:.32,metalness:.06});
-  const sea=new THREE.Mesh(new THREE.PlaneGeometry(60,48),seaMat);sea.rotation.x=-Math.PI/2;sea.position.y=-.36;sea.receiveShadow=true;scene.add(sea);
-  const rockBase=new THREE.Mesh(new THREE.CircleGeometry(15.45,72),new THREE.MeshStandardMaterial({color:0x675d50,roughness:1}));
-  rockBase.rotation.x=-Math.PI/2;rockBase.scale.set(1,.73,1);rockBase.position.y=-.16;rockBase.receiveShadow=true;scene.add(rockBase);
+  const makeOutlineShape=(scale=1,offsetX=0,offsetZ=0)=>{
+    const shape=new THREE.Shape();
+    ISLAND_OUTLINE.forEach((p,i)=>{
+      const x=p.x*scale+offsetX,z=p.y*scale+offsetZ;
+      if(i===0)shape.moveTo(x,z);else shape.lineTo(x,z);
+    });
+    shape.closePath();return shape;
+  };
+  const createRibbonGeometry=(innerScale,outerScale,y=0)=>{
+    const vertices=[],indices=[],n=ISLAND_OUTLINE.length;
+    for(let i=0;i<n;i++){
+      const p=ISLAND_OUTLINE[i];vertices.push(p.x*innerScale,y,p.y*innerScale,p.x*outerScale,y,p.y*outerScale);
+    }
+    for(let i=0;i<n;i++){
+      const ni=(i+1)%n,a=i*2,b=i*2+1,c=ni*2,d=ni*2+1;
+      indices.push(a,c,b,b,c,d);
+    }
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();return g;
+  };
+  const seaMat=new THREE.MeshStandardMaterial({color:0x286b80,roughness:.28,metalness:.08});
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(60,48),seaMat);sea.rotation.x=-Math.PI/2;sea.position.y=-.46;sea.receiveShadow=true;scene.add(sea);
+  const shallow=new THREE.Mesh(createRibbonGeometry(1.005,1.085,-.405),new THREE.MeshBasicMaterial({color:0x56a9ad,transparent:true,opacity:.26,side:THREE.DoubleSide,depthWrite:false}));
+  shallow.renderOrder=1;scene.add(shallow);
+  const foamRing=new THREE.Mesh(createRibbonGeometry(1.014,1.038,-.385),new THREE.MeshBasicMaterial({color:0xd7ece4,transparent:true,opacity:.34,side:THREE.DoubleSide,depthWrite:false}));
+  foamRing.renderOrder=2;scene.add(foamRing);
+
+  const cliffShape=makeOutlineShape(1.035);
+  const cliffGeom=new THREE.ExtrudeGeometry(cliffShape,{depth:.42,bevelEnabled:false,steps:1});
+  cliffGeom.rotateX(Math.PI/2);
+  const cliffBase=new THREE.Mesh(cliffGeom,new THREE.MeshStandardMaterial({color:0x655b4e,roughness:1,flatShading:true}));
+  cliffBase.position.y=-.03;cliffBase.castShadow=cliffBase.receiveShadow=true;scene.add(cliffBase);
+
   const texLoader=new THREE.TextureLoader();
   texLoader.setCrossOrigin('anonymous');
+  const createLandTop=(material)=>{
+    material.side=THREE.DoubleSide;
+    const floor=new THREE.Mesh(new THREE.ShapeGeometry(makeOutlineShape(.995)),material);
+    floor.rotation.x=Math.PI/2;floor.position.y=.012;floor.receiveShadow=true;scene.add(floor);
+  };
   texLoader.load(FLOOR_URL,tex=>{
-    tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(13,10);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
-    const mat=new THREE.MeshStandardMaterial({map:tex,color:0xb6a27c,roughness:.96,metalness:0});
-    const floor=new THREE.Mesh(new THREE.CircleGeometry(15.0,72),mat);floor.rotation.x=-Math.PI/2;floor.scale.set(1,.72,1);floor.position.y=-.02;floor.receiveShadow=true;scene.add(floor);
-  },undefined,()=>{
-    const floor=new THREE.Mesh(new THREE.CircleGeometry(15.0,72),new THREE.MeshStandardMaterial({color:0x9b835e,roughness:1}));floor.rotation.x=-Math.PI/2;floor.scale.set(1,.72,1);floor.position.y=-.02;floor.receiveShadow=true;scene.add(floor);
-  });
+    tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(.12,.12);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+    createLandTop(new THREE.MeshStandardMaterial({map:tex,color:0xa9916b,roughness:.97,metalness:0}));
+  },undefined,()=>createLandTop(new THREE.MeshStandardMaterial({color:0x9b835e,roughness:1})));
 
   const wallMat=new THREE.MeshStandardMaterial({color:0xd0c0a2,roughness:.92});
   const capMat=new THREE.MeshStandardMaterial({color:0x594639,roughness:.96});
@@ -918,14 +1004,67 @@ function buildArena(){
     const door=new THREE.Mesh(new THREE.BoxGeometry(.42*s,.72*s,.08*s),capMat);door.position.set(0,.38*s,.86*s);door.castShadow=true;g.add(door);
     addBoxCollider(x,z,2.2*s,1.7*s,.06);
   };
-  const addCoastRocks=()=>{
-    for(let i=0;i<58;i++){
-      const a=i/58*Math.PI*2;
-      const rx=13.15+(Math.random()-.5)*.55, rz=9.72+(Math.random()-.5)*.42;
-      const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.18+Math.random()*.22,0),stoneDark);
-      rock.position.set(Math.cos(a)*rx,-.02+Math.random()*.12,Math.sin(a)*rz);
-      rock.rotation.set(Math.random()*2,Math.random()*2,Math.random()*2);rock.scale.set(1.25,.72,1);rock.castShadow=rock.receiveShadow=true;scene.add(rock);
+  const beachZones=[
+    {x:4.0,z:-8.45,r:1.55},{x:-10.85,z:.05,r:1.30},{x:.25,z:8.72,r:1.45}
+  ];
+  const nearBeach=(x,z)=>beachZones.some(b=>Math.hypot(x-b.x,z-b.z)<b.r);
+  const addBeachPatch=(pts,color=0xcbb47d)=>{
+    const shape=new THREE.Shape();pts.forEach((p,i)=>i?shape.lineTo(p[0],p[1]):shape.moveTo(p[0],p[1]));shape.closePath();
+    const beach=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({color,roughness:1,side:THREE.DoubleSide}));
+    beach.rotation.x=Math.PI/2;beach.position.y=.030;beach.receiveShadow=true;scene.add(beach);
+    for(let i=0;i<12;i++){
+      const p=pts[i%pts.length],q=pts[(i+1)%pts.length],t=(i*.618)%1;
+      const pebble=new THREE.Mesh(new THREE.DodecahedronGeometry(.045+(i%3)*.018,0),stoneDark);
+      pebble.position.set(THREE.MathUtils.lerp(p[0],q[0],t),.055,THREE.MathUtils.lerp(p[1],q[1],t));
+      pebble.scale.set(1.3,.55,1);pebble.rotation.y=i*.71;pebble.castShadow=true;scene.add(pebble);
     }
+  };
+  const addRockIslet=(cx,cz,scale=1,phase=0)=>{
+    const pts=[];
+    for(let i=0;i<11;i++){
+      const a=i/11*Math.PI*2,r=(.62+.18*Math.sin(i*2.17+phase)+.08*Math.cos(i*3.41-phase))*scale;
+      pts.push(new THREE.Vector2(Math.cos(a)*r,Math.sin(a)*r));
+    }
+    const shape=new THREE.Shape();pts.forEach((pt,i)=>i?shape.lineTo(pt.x,pt.y):shape.moveTo(pt.x,pt.y));shape.closePath();
+    const geom=new THREE.ExtrudeGeometry(shape,{depth:.34*scale,bevelEnabled:false,steps:1});geom.rotateX(Math.PI/2);
+    const rock=new THREE.Mesh(geom,new THREE.MeshStandardMaterial({color:0x5d574e,roughness:1,flatShading:true}));
+    rock.position.set(cx,-.18,cz);rock.castShadow=rock.receiveShadow=true;scene.add(rock);
+    const top=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({color:0x81745f,roughness:1,side:THREE.DoubleSide}));
+    top.rotation.x=Math.PI/2;top.position.set(cx,.02,cz);top.receiveShadow=true;scene.add(top);
+    for(let i=0;i<7;i++){
+      const a=i/7*Math.PI*2,r=.55*scale;
+      const stone=new THREE.Mesh(new THREE.DodecahedronGeometry((.10+(i%3)*.035)*scale,0),stoneDark);
+      stone.position.set(cx+Math.cos(a)*r,.02+Math.sin(i)*.02,cz+Math.sin(a)*r);stone.scale.set(1.2,.65,1);stone.castShadow=true;scene.add(stone);
+    }
+  };
+  const addCoastRocks=()=>{
+    const foamMat=new THREE.MeshBasicMaterial({color:0xe2f0e8,transparent:true,opacity:.30,side:THREE.DoubleSide,depthWrite:false});
+    for(let i=0;i<ISLAND_OUTLINE.length;i++){
+      const a=ISLAND_OUTLINE[i],b=ISLAND_OUTLINE[(i+1)%ISLAND_OUTLINE.length];
+      const dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz),steps=Math.max(1,Math.floor(len/.48));
+      const inward=ISLAND_SIGNED_AREA>0?new THREE.Vector2(-dz,dx):new THREE.Vector2(dz,-dx);inward.normalize();
+      const outward=inward.clone().multiplyScalar(-1),angle=Math.atan2(dz,dx);
+      for(let s=0;s<steps;s++){
+        const t=(s+.22+(i%3)*.11)/steps;
+        const x=THREE.MathUtils.lerp(a.x,b.x,t),z=THREE.MathUtils.lerp(a.y,b.y,t);
+        const beach=nearBeach(x,z);
+        if(!beach||s%4===0){
+          const size=(.14+((i*17+s*13)%11)*.018)*(beach?.72:1);
+          const jitter=(((i*31+s*19)%17)/17-.5)*.18;
+          const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(size,0),stoneDark);
+          rock.position.set(x+inward.x*jitter,-.07+((i+s)%5)*.035,z+inward.y*jitter);
+          rock.rotation.set((i+s)*.37,(i*3+s)*.29,(i*7+s)*.17);rock.scale.set(1.25+((i+s)%4)*.12,.58+((i*2+s)%3)*.10,1);rock.castShadow=rock.receiveShadow=true;scene.add(rock);
+        }
+        if(s%3===0){
+          const strip=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(.58,len/steps*.9),.07+((i+s)%3)*.025),foamMat.clone());
+          strip.rotation.x=-Math.PI/2;strip.rotation.z=-angle;strip.position.set(x+outward.x*.18,-.375,z+outward.y*.18);strip.renderOrder=3;scene.add(strip);
+        }
+      }
+    }
+    addBeachPatch([[2.52,-9.02],[3.96,-8.10],[5.52,-9.15],[5.02,-8.42],[4.00,-7.72],[2.92,-8.42]],0xcbb67f);
+    addBeachPatch([[-12.02,-.72],[-10.44,.16],[-11.27,.88],[-10.72,.63],[-9.94,.08],[-11.12,-.78]],0xc8b079);
+    addBeachPatch([[-1.35,9.34],[.18,8.45],[2.86,9.18],[2.17,8.52],[.22,7.93],[-.92,8.54]],0xcdb781);
+    addRockIslet(-14.10,5.55,.92,.6);addRockIslet(14.15,-5.05,.78,1.4);addRockIslet(-13.65,-6.55,.48,2.3);
   };
   // relief général de l'île et réseau de chemins
   addSteppedRise(0,-1.10,9.15,7.15,4,.145,.28,0xa68f67);
@@ -959,12 +1098,12 @@ function buildArena(){
   // Maisons grecques, oliveraies et emplacements futurs.
   addGreekHouse(-8.65,-5.85,.08,1.03);addGreekHouse(-4.75,-7.35,-.06,.95);addGreekHouse(-10.1,-2.55,.15,.90);
   addFuturePad(-1.8,7.65,2.2,1.7);addFuturePad(2.0,7.6,2.1,1.6);addFuturePad(4.15,-7.55,2.0,1.55);
-  for(const [x,z] of [[-11.1,-7.7],[-11.2,7.7],[11.0,-7.5],[11.3,7.5],[-10.7,2.0],[10.9,1.8],[-3.0,8.2],[3.1,8.15],[-2.8,-8.6],[8.0,8.45]]) addOlive(x,z,1.0+Math.random()*.12);
+  for(const [x,z] of [[-11.1,-7.7],[-10.6,7.45],[11.0,-7.5],[11.3,7.5],[-10.7,2.0],[10.9,1.8],[-3.0,8.2],[3.1,8.15],[-2.8,-8.6],[8.0,8.45]]) addOlive(x,z,1.0+Math.random()*.12);
   for(const args of [[-6.0,7.1,1.7,.9,.04],[-4.6,7.5,1.4,.8,-.06],[-9.8,1.9,1.5,.9,.08],[9.7,7.6,1.7,.9,.04],[0,6.0,1.5,1.0,0],[0,-4.9,1.9,1.15,0]]) addStonePatch(args[0],args[1],args[2],args[3],.022,args[4],0xbea887);
   addBrokenStones(-8.9,-3.9,8,1.8,1.1);addBrokenStones(9.0,.9,7,1.7,1.2);addBrokenStones(0,8.4,7,2.2,.9);
   addCoastRocks();
 
-  // La côte rocheuse et la limite elliptique remplacent les murs rectangulaires.
+  // La côte irrégulière, les anses et les falaises remplacent définitivement les formes rondes.
 
 }
 
