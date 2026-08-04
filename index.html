@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.4.5.1 — Startup hotfix</title>
+<title>Odyssée — v1.11.4.5.2 — Startup hotfix</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4.5.1 — STARTUP HOTFIX</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4.5.2 — STARTUP PARSER FIX</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -1136,8 +1136,6 @@ function updateBlacksmithNPC(dt){
       }else s.visible=false;
     });
   }
-}
-
 }
 
 function loadCharacter(){
