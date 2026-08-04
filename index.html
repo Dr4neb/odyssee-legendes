@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.2 — ITHAQUE VILLE VIVANTE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.2.1 — RESIZE STARTUP HOTFIX</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -493,7 +493,7 @@ function setupThree(){
   scene.add(new THREE.HemisphereLight(0xf3dfbd,0x2d211c,1.75));
   const sun=new THREE.DirectionalLight(0xffd39a,5.6);sun.position.set(-8,15,-6);sun.castShadow=true;sun.shadow.bias=-0.00018;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-13;sun.shadow.camera.right=13;sun.shadow.camera.top=13;sun.shadow.camera.bottom=-13;scene.add(sun);
   const rim=new THREE.DirectionalLight(0x7894a0,1.05);rim.position.set(8,8,8);scene.add(rim);
-  buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();loadCharacter();onResize();addEventListener('resize',onResize);renderer.setAnimationLoop(update);
+  buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();loadCharacter();onResize();addEventListener('resize',onResize,{passive:true,once:false});renderer.setAnimationLoop(update);
 }
 function buildArena(){
   const texLoader=new THREE.TextureLoader();
@@ -1711,7 +1711,7 @@ function addGreekGear(root){
 }
 
 
-function onResize(){const aspect=innerWidth/innerHeight,view=7.5;camera.left=-view*aspect/2;camera.right=view*aspect/2;camera.top=view/2;camera.bottom=-view/2;camera.zoom=1.08;camera.updateProjectionMatrix();renderer?.setSize(innerWidth,innerHeight)}
+function onResize(){if(!camera||!renderer)return;const aspect=Math.max(.35,innerWidth/Math.max(innerHeight,1)),view=7.5;camera.left=-view*aspect/2;camera.right=view*aspect/2;camera.top=view/2;camera.bottom=-view/2;camera.zoom=1.08;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
 function setupJoystick(){const update=(cx,cy)=>{const r=els.stick.getBoundingClientRect(),ox=r.left+r.width/2,oy=r.top+r.height/2;let dx=cx-ox,dy=cy-oy,len=Math.hypot(dx,dy)||1,max=r.width*.34;const dist=Math.min(len,max);dx/=len;dy/=len;joy.x=dx*(dist/max);joy.y=dy*(dist/max);els.knob.style.transform=`translate3d(${dx*dist}px,${dy*dist}px,0)`};const reset=()=>{joy.active=false;joy.id=null;joy.x=joy.y=0;els.knob.style.transform='translate3d(0,0,0)'};els.stick.addEventListener('pointerdown',e=>{e.preventDefault();joy.active=true;joy.id=e.pointerId;els.stick.setPointerCapture?.(e.pointerId);update(e.clientX,e.clientY)},{passive:false});els.stick.addEventListener('pointermove',e=>{if(!joy.active||e.pointerId!==joy.id)return;e.preventDefault();update(e.clientX,e.clientY)},{passive:false});els.stick.addEventListener('pointerup',e=>{if(e.pointerId===joy.id)reset()},{passive:false});els.stick.addEventListener('pointercancel',reset)}
 
 function update(){
@@ -2030,8 +2030,7 @@ addEventListener('keydown',e=>{
   if(!e.repeat&&(e.code==='Space'||e.code==='KeyF')){e.preventDefault();performPrimaryAction();}
 });
 addEventListener('keyup',e=>keys.delete(e.code));
-addEventListener('resize',onResize);
-document.addEventListener('fullscreenchange',()=>setTimeout(onResize,80));
+document.addEventListener('fullscreenchange',()=>setTimeout(()=>{if(threeReady)onResize();},80));
 els.start.addEventListener('click',start);
 els.start.addEventListener('pointerup',e=>{e.preventDefault();start();},{passive:false});
 els.actionA?.addEventListener('pointerdown',e=>{e.preventDefault();performPrimaryAction()},{passive:false});
