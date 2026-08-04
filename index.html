@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4.5.2 — STARTUP PARSER FIX</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4.6 — AUDIO ZONES & BLACKSMITH FIX</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -110,6 +110,8 @@ const attackSpeed=1.85;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,0), turnVelocity=0, stepParity=0;
 const normalizeAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const keys=new Set();
+const anvilWorldPos=new THREE.Vector3(-3.67,0,4.41);
+const farmerFieldSoundPos=new THREE.Vector3(4.65,0,-2.55);
 
 function addBoxCollider(x,z,w,d,pad=.16){colliders.push({x1:x-w/2-pad,x2:x+w/2+pad,z1:z-d/2-pad,z2:z+d/2+pad})}
 function resolveCollisions(pos,radius=.24){
@@ -139,8 +141,92 @@ function ensureAudio(){
   footstepBus.gain.value=.82;
   footstepBus.connect(audioCtx.destination);
   anvilBus=audioCtx.createGain();
-  anvilBus.gain.value=.42;
+  anvilBus.gain.value=0;
   anvilBus.connect(audioCtx.destination);
+  fieldBus=audioCtx.createGain();
+  fieldBus.gain.value=0;
+  fieldBus.connect(audioCtx.destination);
+}
+function zoneGain(dist,nearDist,farDist,maxGain=1){
+  if(dist<=nearDist) return maxGain;
+  if(dist>=farDist) return 0;
+  const t=(dist-nearDist)/(farDist-nearDist);
+  const eased=1-(t*t*(3-2*t));
+  return eased*maxGain;
+}
+function ensureFieldAmbience(){
+  if(!audioCtx||fieldAmbienceStarted) return;
+  fieldAmbienceStarted=true;
+
+  const mkNoise=(seconds=2.6,amp=.5)=>{
+    const length=Math.floor(audioCtx.sampleRate*seconds);
+    const buffer=audioCtx.createBuffer(1,length,audioCtx.sampleRate);
+    const data=buffer.getChannelData(0);
+    let smooth=0;
+    for(let i=0;i<length;i++){
+      smooth=smooth*.982+(Math.random()*2-1)*.018;
+      data[i]=smooth*amp;
+    }
+    return buffer;
+  };
+
+  fieldNoiseSource=audioCtx.createBufferSource();
+  fieldNoiseSource.buffer=mkNoise(3.4,.65);
+  fieldNoiseSource.loop=true;
+  const band=audioCtx.createBiquadFilter();
+  band.type='bandpass';
+  band.frequency.value=720;
+  band.Q.value=.45;
+  fieldNoiseGain=audioCtx.createGain();
+  fieldNoiseGain.gain.value=.020;
+  fieldNoiseLfo=audioCtx.createOscillator();
+  const noiseLfoGain=audioCtx.createGain();
+  fieldNoiseLfo.type='sine';
+  fieldNoiseLfo.frequency.value=.18;
+  noiseLfoGain.gain.value=.011;
+  fieldNoiseLfo.connect(noiseLfoGain);noiseLfoGain.connect(fieldNoiseGain.gain);
+  fieldNoiseSource.connect(band);band.connect(fieldNoiseGain);fieldNoiseGain.connect(fieldBus);
+  fieldNoiseSource.start();fieldNoiseLfo.start();
+
+  fieldCricketSource=audioCtx.createBufferSource();
+  fieldCricketSource.buffer=mkNoise(2.1,.8);
+  fieldCricketSource.loop=true;
+  const hp=audioCtx.createBiquadFilter();
+  hp.type='highpass';hp.frequency.value=2300;
+  const lp=audioCtx.createBiquadFilter();
+  lp.type='lowpass';lp.frequency.value=4800;
+  fieldCricketGain=audioCtx.createGain();
+  fieldCricketGain.gain.value=.001;
+  fieldCricketLfo=audioCtx.createOscillator();
+  const cricketLfoGain=audioCtx.createGain();
+  fieldCricketLfo.type='square';
+  fieldCricketLfo.frequency.value=7.4;
+  cricketLfoGain.gain.value=.006;
+  fieldCricketLfo.connect(cricketLfoGain);cricketLfoGain.connect(fieldCricketGain.gain);
+  fieldCricketSource.connect(hp);hp.connect(lp);lp.connect(fieldCricketGain);fieldCricketGain.connect(fieldBus);
+  fieldCricketSource.start();fieldCricketLfo.start();
+}
+function stopFieldAmbience(){
+  fieldAmbienceStarted=false;
+  for(const node of [fieldNoiseSource,fieldCricketSource,fieldNoiseLfo,fieldCricketLfo]){try{node?.stop?.()}catch{}}
+  for(const node of [fieldNoiseSource,fieldCricketSource,fieldNoiseGain,fieldCricketGain,fieldNoiseLfo,fieldCricketLfo]){try{node?.disconnect?.()}catch{}}
+  fieldNoiseSource=null;fieldCricketSource=null;fieldNoiseGain=null;fieldCricketGain=null;fieldNoiseLfo=null;fieldCricketLfo=null;
+}
+function updateAudioZones(dt=1/60){
+  if(!audioCtx) return;
+  const now=audioCtx.currentTime;
+  if(anvilBus){
+    const anvilDist=Math.hypot(player.x-anvilWorldPos.x,player.z-anvilWorldPos.z);
+    const target=zoneGain(anvilDist,1.0,8.5,.70);
+    anvilBus.gain.cancelScheduledValues(now);
+    anvilBus.gain.setTargetAtTime(target,now,Math.max(.035,dt*.55));
+  }
+  if(fieldBus){
+    const fieldDist=Math.hypot(player.x-farmerFieldSoundPos.x,player.z-farmerFieldSoundPos.z);
+    const target=zoneGain(fieldDist,1.1,9.5,.52);
+    fieldBus.gain.cancelScheduledValues(now);
+    fieldBus.gain.setTargetAtTime(target,now,Math.max(.05,dt*.75));
+  }
 }
 async function loadFootstepAssets(){
   if(footstepBuffers.length||footstepLoading||!audioCtx) return;
@@ -193,68 +279,77 @@ function playAnvilStrike(strength=.92){
   const now=audioCtx.currentTime;
   if(now-anvilLastTime<.08) return;
   anvilLastTime=now;
-  cameraShake=Math.max(cameraShake,.22*strength);
+  cameraShake=Math.max(cameraShake,.24*strength);
 
-  const body=audioCtx.createOscillator();
-  const clang=audioCtx.createOscillator();
-  const ring=audioCtx.createOscillator();
-  const bodyGain=audioCtx.createGain();
-  const clangGain=audioCtx.createGain();
-  const ringGain=audioCtx.createGain();
-  const bodyLP=audioCtx.createBiquadFilter();
-  const clangBand=audioCtx.createBiquadFilter();
-  const ringFilter=audioCtx.createBiquadFilter();
+  const lowHit=audioCtx.createOscillator();
+  const midClang=audioCtx.createOscillator();
+  const highClang=audioCtx.createOscillator();
+  const tailRing=audioCtx.createOscillator();
+  const lowGain=audioCtx.createGain();
+  const midGain=audioCtx.createGain();
+  const highGain=audioCtx.createGain();
+  const tailGain=audioCtx.createGain();
+  const lowLP=audioCtx.createBiquadFilter();
+  const midBand=audioCtx.createBiquadFilter();
+  const highBand=audioCtx.createBiquadFilter();
+  const tailHP=audioCtx.createBiquadFilter();
 
-  body.type='triangle';
-  body.frequency.setValueAtTime(220,now);
-  body.frequency.exponentialRampToValueAtTime(120,now+.30);
-  clang.type='square';
-  clang.frequency.setValueAtTime(1520,now);
-  clang.frequency.exponentialRampToValueAtTime(710,now+.16);
-  ring.type='sine';
-  ring.frequency.setValueAtTime(1860,now);
-  ring.frequency.exponentialRampToValueAtTime(950,now+.28);
+  lowHit.type='triangle';
+  lowHit.frequency.setValueAtTime(245,now);
+  lowHit.frequency.exponentialRampToValueAtTime(135,now+.18);
+  midClang.type='square';
+  midClang.frequency.setValueAtTime(1380,now);
+  midClang.frequency.exponentialRampToValueAtTime(920,now+.10);
+  highClang.type='square';
+  highClang.frequency.setValueAtTime(2620,now);
+  highClang.frequency.exponentialRampToValueAtTime(1540,now+.085);
+  tailRing.type='sine';
+  tailRing.frequency.setValueAtTime(1720,now);
+  tailRing.frequency.exponentialRampToValueAtTime(980,now+.34);
 
-  bodyLP.type='lowpass';
-  bodyLP.frequency.value=900;
-  clangBand.type='bandpass';
-  clangBand.frequency.value=1060;
-  clangBand.Q.value=1.45;
-  ringFilter.type='highpass';
-  ringFilter.frequency.value=800;
+  lowLP.type='lowpass'; lowLP.frequency.value=760;
+  midBand.type='bandpass'; midBand.frequency.value=1240; midBand.Q.value=2.3;
+  highBand.type='bandpass'; highBand.frequency.value=2200; highBand.Q.value=4.8;
+  tailHP.type='highpass'; tailHP.frequency.value=760;
 
-  bodyGain.gain.setValueAtTime(.001,now);
-  bodyGain.gain.linearRampToValueAtTime(.22*strength,now+.004);
-  bodyGain.gain.exponentialRampToValueAtTime(.001,now+.36);
-  clangGain.gain.setValueAtTime(.001,now);
-  clangGain.gain.linearRampToValueAtTime(.18*strength,now+.002);
-  clangGain.gain.exponentialRampToValueAtTime(.001,now+.18);
-  ringGain.gain.setValueAtTime(.001,now);
-  ringGain.gain.linearRampToValueAtTime(.085*strength,now+.003);
-  ringGain.gain.exponentialRampToValueAtTime(.001,now+.28);
+  lowGain.gain.setValueAtTime(.001,now);
+  lowGain.gain.linearRampToValueAtTime(.24*strength,now+.003);
+  lowGain.gain.exponentialRampToValueAtTime(.001,now+.23);
+  midGain.gain.setValueAtTime(.001,now);
+  midGain.gain.linearRampToValueAtTime(.19*strength,now+.001);
+  midGain.gain.exponentialRampToValueAtTime(.001,now+.16);
+  highGain.gain.setValueAtTime(.001,now);
+  highGain.gain.linearRampToValueAtTime(.11*strength,now+.001);
+  highGain.gain.exponentialRampToValueAtTime(.001,now+.09);
+  tailGain.gain.setValueAtTime(.001,now);
+  tailGain.gain.linearRampToValueAtTime(.075*strength,now+.004);
+  tailGain.gain.exponentialRampToValueAtTime(.001,now+.42);
 
-  body.connect(bodyLP); bodyLP.connect(bodyGain); bodyGain.connect(anvilBus);
-  clang.connect(clangBand); clangBand.connect(clangGain); clangGain.connect(anvilBus);
-  ring.connect(ringFilter); ringFilter.connect(ringGain); ringGain.connect(anvilBus);
-  body.start(now); body.stop(now+.38);
-  clang.start(now); clang.stop(now+.20);
-  ring.start(now); ring.stop(now+.30);
+  lowHit.connect(lowLP); lowLP.connect(lowGain); lowGain.connect(anvilBus);
+  midClang.connect(midBand); midBand.connect(midGain); midGain.connect(anvilBus);
+  highClang.connect(highBand); highBand.connect(highGain); highGain.connect(anvilBus);
+  tailRing.connect(tailHP); tailHP.connect(tailGain); tailGain.connect(anvilBus);
+  lowHit.start(now); lowHit.stop(now+.24);
+  midClang.start(now); midClang.stop(now+.18);
+  highClang.start(now); highClang.stop(now+.10);
+  tailRing.start(now); tailRing.stop(now+.44);
 
-  const dur=.14;
+  const dur=.12;
   const buffer=audioCtx.createBuffer(1,Math.floor(audioCtx.sampleRate*dur),audioCtx.sampleRate);
   const data=buffer.getChannelData(0);
   for(let i=0;i<data.length;i++){
     const t=i/data.length;
-    data[i]=(Math.random()*2-1)*(1-t)*(1-t)*.95;
+    data[i]=(Math.random()*2-1)*(1-t)*(1-t)*.92;
   }
   const noise=audioCtx.createBufferSource();
   noise.buffer=buffer;
   const noiseFilter=audioCtx.createBiquadFilter();
-  noiseFilter.type='highpass';
-  noiseFilter.frequency.value=1650;
+  noiseFilter.type='bandpass';
+  noiseFilter.frequency.value=2650;
+  noiseFilter.Q.value=.9;
   const noiseGain=audioCtx.createGain();
   noiseGain.gain.setValueAtTime(.001,now);
-  noiseGain.gain.linearRampToValueAtTime(.11*strength,now+.0012);
+  noiseGain.gain.linearRampToValueAtTime(.085*strength,now+.001);
   noiseGain.gain.exponentialRampToValueAtTime(.001,now+dur);
   noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(anvilBus);
   noise.start(now); noise.stop(now+dur+.02);
@@ -343,6 +438,7 @@ const colliders=[];
 let audioCtx=null, footstepBus=null, footstepBuffers=[], footstepLoading=false;
 let ambientBus=null, ambientNoiseSource=null, ambientNoiseGain=null, ambientLfo=null, ambientBirdTimer=null, ambientStarted=false;
 let anvilBus=null, anvilLastTime=0, cameraShake=0, cameraShakeX=0, cameraShakeZ=0;
+let fieldBus=null, fieldAmbienceStarted=false, fieldNoiseSource=null, fieldCricketSource=null, fieldNoiseGain=null, fieldCricketGain=null, fieldNoiseLfo=null, fieldCricketLfo=null;
 
 function setupThree(){
   renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -748,7 +844,7 @@ function createBlacksmithNPC(){
   addBoxCollider(-4.55,4.35,1.24,.92,.18);
   addBoxCollider(-3.67,4.41,.42,.34,.12);
 
-  const root=new THREE.Group();root.position.set(-3.82,0,4.12);scene.add(root);blacksmithNPC=root;
+  const root=new THREE.Group();root.position.set(-3.96,0,4.06);scene.add(root);blacksmithNPC=root;
   const motion=new THREE.Group();root.add(motion);
   const hips=new THREE.Group();hips.position.set(0,.68,0);motion.add(hips);
   const torsoPivot=new THREE.Group();torsoPivot.position.set(0,.16,0);hips.add(torsoPivot);
@@ -811,6 +907,7 @@ function createBlacksmithNPC(){
       'L’enclume parle vrai : chaque coup raté s’entend dans tout l’atelier.',
       'Si tu veux survivre au prochain combat, prends soin de ton tranchant.'
     ],
+    anvilTarget:anvilWorldPos.clone(),
     rig:{motion,hips,torsoPivot,headPivot,leftLeg,rightLeg,leftArm,rightArm,hammerPivot,sparks,sparkState,smoke,workpiece,forgeGlow,glowCore,glowOuter}
   };
 }
@@ -1027,7 +1124,8 @@ function updateBlacksmithNPC(dt){
     d.stateTime-=dt;
     if(d.stateTime<=0)d.state='work';
   }else{
-    const targetRot=Math.atan2(.88,.06)+Math.PI;
+    const aim=d.anvilTarget.clone().sub(blacksmithNPC.position);
+    const targetRot=Math.atan2(aim.x,aim.z)+Math.PI;
     blacksmithNPC.rotation.y=normalizeAngle(blacksmithNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-blacksmithNPC.rotation.y),-dt*3.9,dt*3.9));
 
     const cyc=(d.idleCycle*0.95)%1;
@@ -1069,27 +1167,27 @@ function updateBlacksmithNPC(dt){
 
     // Marteau : levée ample, impact, puis petit rebond de retour après le choc.
     r.hammerPivot.position.set(
-      .10 + raise*.09 - strike*.04 + rebound*.03,
-      .14 + raise*.38 - strike*.18 + rebound*.09,
-      -.10 - raise*.30 + strike*.28 - rebound*.06
+      .08 + raise*.11 - strike*.03 + rebound*.025,
+      .12 + raise*.42 - strike*.17 + rebound*.08,
+      -.06 - raise*.34 + strike*.26 - rebound*.05
     );
-    r.hammerPivot.rotation.x=-.72 - raise*1.42 + strike*2.62 - recover*.20 - rebound*.42;
-    r.hammerPivot.rotation.y=-.03 + raise*.16 - strike*.14 + rebound*.03;
-    r.hammerPivot.rotation.z=.02 - raise*.32 + strike*.48 - recover*.05 - rebound*.10;
+    r.hammerPivot.rotation.x=-.76 - raise*1.34 + strike*2.54 - recover*.18 - rebound*.38;
+    r.hammerPivot.rotation.y=.04 + raise*.10 - strike*.10 + rebound*.02;
+    r.hammerPivot.rotation.z=-.06 - raise*.22 + strike*.42 - recover*.04 - rebound*.08;
     r.hammerPivot.updateMatrix();
 
     // Marteau tenu d'une seule main : main droite en bas du manche.
-    const rightGripLocal=new THREE.Vector3(-.16,0,0).applyMatrix4(r.hammerPivot.matrix);
-    rightGripLocal.y+=.014;
-    rightGripLocal.z+=.004;
-    solveFarmerArm(r.rightArm,rightGripLocal,1.02);
+    const rightGripLocal=new THREE.Vector3(-.12,0,0).applyMatrix4(r.hammerPivot.matrix);
+    rightGripLocal.y+=.010;
+    rightGripLocal.z-=.006;
+    solveFarmerArm(r.rightArm,rightGripLocal,.92);
 
     // Bras gauche libre : replié près du torse pour une lecture claire de la silhouette.
-    const leftRest=new THREE.Vector3(-.16,.09,-.02);
-    leftRest.x-=raise*.04 + strike*.01;
-    leftRest.y+=raise*.03 - strike*.02;
-    leftRest.z+=strike*.05 - rebound*.02;
-    solveFarmerArm(r.leftArm,leftRest,.48);
+    const leftRest=new THREE.Vector3(-.17,.11,-.01);
+    leftRest.x-=raise*.02 + strike*.01;
+    leftRest.y+=raise*.04 - strike*.01;
+    leftRest.z+=strike*.03 - rebound*.02;
+    solveFarmerArm(r.leftArm,leftRest,.44);
 
     if(r.workpiece){
       r.workpiece.position.y=.45 + hitPulse*.024 + rebound*.008;
@@ -1611,6 +1709,7 @@ function update(){
   }
   updateFarmerNPC(dt);
   updateBlacksmithNPC(dt);
+  updateAudioZones(dt);
   updateNPCBubble();
   updateActionButtons();
   if(forgeMenuOpen&&(!blacksmithNPC||Math.hypot(player.x-blacksmithNPC.position.x,player.z-blacksmithNPC.position.z)>1.9))closeForgeMenu();
@@ -1669,6 +1768,7 @@ async function start(){
 
   immersive();
   ensureAudio();
+  ensureFieldAmbience();
   try{await audioCtx?.resume?.()}catch{}
   // Les sons de pas se chargent en arrière-plan : le joueur entre immédiatement dans le jeu même si le réseau est lent.
   loadFootstepAssets().catch(err=>console.warn('Sons de pas différés.',err));
