@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4.7 — REAL ANVIL SFX & HAMMER REWORK</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.0 — ITHAQUE TOWN REWORK</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre maintenant une mini forge.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -105,7 +105,7 @@ const FOOTSTEP_URLS=[
 const els={game:document.getElementById('game'),fatal:document.getElementById('fatal'),loading:document.getElementById('loading3d'),loaderText:document.getElementById('loaderText'),title:document.getElementById('titleScreen'),start:document.getElementById('startBtn'),sound:document.getElementById('soundBtn'),hud:document.getElementById('hud'),controls:document.getElementById('controls'),credits:document.getElementById('credits'),stick:document.getElementById('stick'),knob:document.getElementById('knob'),audio:document.getElementById('menuTheme'),npcBubble:document.getElementById('npcBubble'),npcBubbleText:document.getElementById('npcBubbleText'),actionA:document.getElementById('actionA'),actionALabel:document.querySelector('#actionA .label'),actionB:document.getElementById('actionB'),forgeMenu:document.getElementById('forgeMenu'),forgeMenuText:document.getElementById('forgeMenuText'),forgeClose:document.getElementById('forgeClose')};
 window.addEventListener('error',e=>{els.fatal.style.display='block';els.fatal.textContent='Le prototype 3D a rencontré une erreur :\n\n'+(e.error?.stack||e.message||e)});
 
-let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,blacksmithNPC=null,activeBubbleNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0,forgeMenuOpen=false,startingGame=false,threeReady=false,joystickReady=false;
+let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,blacksmithNPC=null,trainingNPC=null,activeBubbleNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0,forgeMenuOpen=false,startingGame=false,threeReady=false,joystickReady=false;
 const attackDuration=1.55;
 const attackSpeed=1.85;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,0), turnVelocity=0, stepParity=0;
@@ -116,7 +116,7 @@ const farmerFieldSoundPos=new THREE.Vector3(4.65,0,-2.55);
 
 function addBoxCollider(x,z,w,d,pad=.16){colliders.push({x1:x-w/2-pad,x2:x+w/2+pad,z1:z-d/2-pad,z2:z+d/2+pad})}
 function resolveCollisions(pos,radius=.24){
-  for(const c of colliders){
+  const applyRectCollision=(c)=>{
     const nx=Math.max(c.x1,Math.min(pos.x,c.x2));
     const nz=Math.max(c.z1,Math.min(pos.z,c.z2));
     let dx=pos.x-nx,dz=pos.z-nz;
@@ -130,6 +130,10 @@ function resolveCollisions(pos,radius=.24){
         if(m===left) pos.x=c.x1-radius; else if(m===right) pos.x=c.x2+radius; else if(m===top) pos.z=c.z1-radius; else pos.z=c.z2+radius;
       }
     }
+  };
+  for(const c of colliders) applyRectCollision(c);
+  if(trainingGate && trainingGate.open < .58){
+    applyRectCollision({x1:trainingGate.center.x-trainingGate.width*.5,x2:trainingGate.center.x+trainingGate.width*.5,z1:trainingGate.center.z-trainingGate.depth*.5,z2:trainingGate.center.z+trainingGate.depth*.5});
   }
   pos.x=THREE.MathUtils.clamp(pos.x,-8.1,8.1); pos.z=THREE.MathUtils.clamp(pos.z,-7.1,7.1);
   return pos;
@@ -474,6 +478,7 @@ function stopAmbient(){
 }
 
 const colliders=[];
+let trainingGate=null;
 let audioCtx=null, footstepBus=null, footstepBuffers=[], footstepLoading=false;
 let ambientBus=null, ambientNoiseSource=null, ambientNoiseGain=null, ambientLfo=null, ambientBirdTimer=null, ambientStarted=false;
 let anvilBus=null, anvilLastTime=0, anvilSfxBuffer=null, anvilSfxLoading=false, cameraShake=0, cameraShakeX=0, cameraShakeZ=0;
@@ -488,7 +493,7 @@ function setupThree(){
   scene.add(new THREE.HemisphereLight(0xf3dfbd,0x2d211c,1.75));
   const sun=new THREE.DirectionalLight(0xffd39a,5.6);sun.position.set(-8,15,-6);sun.castShadow=true;sun.shadow.bias=-0.00018;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-13;sun.shadow.camera.right=13;sun.shadow.camera.top=13;sun.shadow.camera.bottom=-13;scene.add(sun);
   const rim=new THREE.DirectionalLight(0x7894a0,1.05);rim.position.set(8,8,8);scene.add(rim);
-  buildArena();createFarmerNPC();createBlacksmithNPC();loadCharacter();onResize();addEventListener('resize',onResize);renderer.setAnimationLoop(update);
+  buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();loadCharacter();onResize();addEventListener('resize',onResize);renderer.setAnimationLoop(update);
 }
 function buildArena(){
   const texLoader=new THREE.TextureLoader();
@@ -730,14 +735,154 @@ function buildArena(){
     addBoxCollider(x,z,4.9*s,3.5*s,.14);
   };
 
+  const addForgeHouse=(x,z,s=1)=>{
+    const forge=new THREE.Group(); forge.position.set(x,0,z); scene.add(forge);
+    const stone=new THREE.MeshStandardMaterial({color:0x9b8a74,roughness:.96});
+    const beam=new THREE.MeshStandardMaterial({color:0x5e402a,roughness:.94});
+    const roof=new THREE.MeshStandardMaterial({color:0x694336,roughness:.86});
+    const floor=new THREE.Mesh(new THREE.BoxGeometry(3.4*s,.10,2.8*s), new THREE.MeshStandardMaterial({color:0x72614b,roughness:.97}));
+    floor.position.set(0,.05,0); floor.castShadow=floor.receiveShadow=true; forge.add(floor);
+    const back=new THREE.Mesh(new THREE.BoxGeometry(3.0*s,1.35*s,.20*s), stone); back.position.set(0,.72,-1.05*s); back.castShadow=back.receiveShadow=true; forge.add(back);
+    const sideL=new THREE.Mesh(new THREE.BoxGeometry(.18*s,1.22*s,2.2*s), stone); sideL.position.set(-1.42*s,.66,-.03*s); sideL.castShadow=sideL.receiveShadow=true; forge.add(sideL);
+    const sideR=sideL.clone(); sideR.position.x=1.42*s; forge.add(sideR);
+    for(const px of [-1.12,-.35,.35,1.12]){ const post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,1.55*s,10), beam); post.position.set(px,.78,.98*s); post.castShadow=true; forge.add(post); }
+    const ridge=new THREE.Mesh(new THREE.BoxGeometry(2.9*s,.12,.18*s), beam); ridge.position.set(0,1.82,-.08*s); ridge.castShadow=true; forge.add(ridge);
+    const roofL=new THREE.Mesh(new THREE.BoxGeometry(1.86*s,.14,2.65*s), roof); roofL.position.set(-.52*s,1.67,-.07*s); roofL.rotation.z=.33; roofL.castShadow=true; forge.add(roofL);
+    const roofR=roofL.clone(); roofR.position.x=.52*s; roofR.rotation.z=-.33; forge.add(roofR);
+    const chimney=new THREE.Mesh(new THREE.BoxGeometry(.36*s,1.15*s,.36*s), stone); chimney.position.set(-1.0*s,1.48,-.88*s); chimney.castShadow=chimney.receiveShadow=true; forge.add(chimney);
+    const chimneyTop=new THREE.Mesh(new THREE.BoxGeometry(.46*s,.12,.46*s), capMat); chimneyTop.position.set(-1.0*s,2.08,-.88*s); chimneyTop.castShadow=true; forge.add(chimneyTop);
+    const coal=new THREE.Mesh(new THREE.BoxGeometry(.72*s,.14,.58*s), new THREE.MeshStandardMaterial({color:0x2b2723,roughness:1})); coal.position.set(.9*s,.12,-.58*s); coal.castShadow=coal.receiveShadow=true; forge.add(coal);
+    addBoxCollider(x,z,3.45*s,2.85*s,.08);
+  };
+
+  const addFieldComplex=(x,z)=>{
+    const patch=new THREE.Group(); patch.position.set(x,0,z); scene.add(patch);
+    const soil=new THREE.MeshStandardMaterial({color:0x6d4d30,roughness:1});
+    const dry=new THREE.MeshStandardMaterial({color:0xb59459,roughness:1});
+    const green=new THREE.MeshStandardMaterial({color:0x78894b,roughness:1});
+    const field=new THREE.Mesh(new THREE.BoxGeometry(4.4,.06,3.2),soil); field.position.y=.03; field.receiveShadow=true; patch.add(field);
+    for(let r=0;r<7;r++){
+      const row=new THREE.Mesh(new THREE.BoxGeometry(3.95,.04,.14),dry); row.position.set(0,.065,-1.16+r*.39); row.castShadow=row.receiveShadow=true; patch.add(row);
+      for(let i=0;i<12;i++){ const stalk=new THREE.Mesh(new THREE.ConeGeometry(.04,.16,5),green); stalk.position.set(-1.78+i*.32,.14,-1.16+r*.39); stalk.rotation.z=(Math.random()-.5)*.18; stalk.castShadow=true; patch.add(stalk); }
+    }
+    const fenceMat=new THREE.MeshStandardMaterial({color:0x6c4930,roughness:.96});
+    const rail=(w,d,px,pz)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,.10,d),fenceMat); m.position.set(px,.22,pz); m.castShadow=true; patch.add(m);};
+    for(const [px,pz] of [[-2.15,-1.45],[-2.15,1.45],[2.15,-1.45],[2.15,1.45]]){ const post=new THREE.Mesh(new THREE.BoxGeometry(.10,.46,.10),fenceMat); post.position.set(px,.23,pz); post.castShadow=true; patch.add(post); }
+    rail(4.15,.06,0,-1.45); rail(4.15,.06,0,1.45); rail(.06,2.9,-2.15,0); rail(.06,2.9,2.15,0);
+    addBoxCollider(x,z,4.4,3.2,.04);
+  };
+
+  const addTrainingCamp=(x,z)=>{
+    const camp=new THREE.Group(); camp.position.set(x,0,z); scene.add(camp);
+    const dirt=new THREE.Mesh(new THREE.BoxGeometry(4.6,.08,4.9), new THREE.MeshStandardMaterial({color:0x8a7356,roughness:1})); dirt.position.y=.04; dirt.castShadow=dirt.receiveShadow=true; camp.add(dirt);
+    const sand=new THREE.Mesh(new THREE.PlaneGeometry(3.4,3.8), new THREE.MeshStandardMaterial({color:0xb79d73,roughness:1})); sand.rotation.x=-Math.PI/2; sand.position.y=.085; camp.add(sand);
+    const wood2=new THREE.MeshStandardMaterial({color:0x6e4a30,roughness:.96});
+    const fenceSegment=(px,pz,w,d)=>{ const seg=new THREE.Mesh(new THREE.BoxGeometry(w,.16,d),wood2); seg.position.set(px,.34,pz); seg.castShadow=true; camp.add(seg); };
+    const post=(px,pz,h=.76)=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(.12,h,.12),wood2); p.position.set(px,h*.5,pz); p.castShadow=true; camp.add(p); };
+    for(const [px,pz] of [[-2.05,-2.2],[-2.05,2.2],[2.05,-2.2],[2.05,2.2],[-.82,2.2],[.82,2.2],[-2.05,0],[2.05,0]]) post(px,pz);
+    fenceSegment(0,-2.2,4.1,.10); fenceSegment(-2.05,0,.10,4.4); fenceSegment(2.05,0,.10,4.4); fenceSegment(-1.45,2.2,1.05,.10); fenceSegment(1.45,2.2,1.05,.10);
+    addBoxCollider(x,z-2.2,4.1,.10,.06); addBoxCollider(x-2.05,z,.10,4.4,.06); addBoxCollider(x+2.05,z,.10,4.4,.06); addBoxCollider(x-1.45,z+2.2,1.05,.10,.06); addBoxCollider(x+1.45,z+2.2,1.05,.10,.06);
+    const gateBase=new THREE.Group(); gateBase.position.set(x,0,z+2.2); scene.add(gateBase);
+    const postL=new THREE.Mesh(new THREE.BoxGeometry(.16,1.05,.18),wood2); postL.position.set(-.92,.525,0); postL.castShadow=true; gateBase.add(postL);
+    const postR=postL.clone(); postR.position.x=.92; gateBase.add(postR);
+    const lintel=new THREE.Mesh(new THREE.BoxGeometry(2.0,.16,.18),wood2); lintel.position.set(0,1.0,0); lintel.castShadow=true; gateBase.add(lintel);
+    const leftPivot=new THREE.Group(); leftPivot.position.set(-.82,.44,0); gateBase.add(leftPivot);
+    const rightPivot=new THREE.Group(); rightPivot.position.set(.82,.44,0); gateBase.add(rightPivot);
+    const doorGeo=new THREE.BoxGeometry(.86,.72,.11);
+    const leftDoor=new THREE.Mesh(doorGeo,wood2); leftDoor.position.set(.43,0,0); leftDoor.castShadow=true; leftPivot.add(leftDoor);
+    const rightDoor=new THREE.Mesh(doorGeo,wood2); rightDoor.position.set(-.43,0,0); rightDoor.castShadow=true; rightPivot.add(rightDoor);
+    for(const d of [leftDoor,rightDoor]){
+      for(let i=-1;i<=1;i++){ const brace=new THREE.Mesh(new THREE.BoxGeometry(.72,.05,.025),capMat); brace.position.set(0,.18*i,.07); brace.rotation.z=i===0?0:(i<0?.28:-.28); d.add(brace); }
+    }
+    trainingGate={center:new THREE.Vector2(x,z+2.2),width:1.86,depth:.42,open:0,target:0,autoClose:0,leftPivot,rightPivot};
+
+    const rack=new THREE.Group(); rack.position.set(-1.35,0,-1.05); camp.add(rack);
+    for(const px of [-.42,.42]){ const p=new THREE.Mesh(new THREE.CylinderGeometry(.05,.06,.85,8),wood2); p.position.set(px,.42,0); p.castShadow=true; rack.add(p); }
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(1.0,.08,.08),wood2); bar.position.set(0,.74,0); bar.castShadow=true; rack.add(bar);
+    for(const px of [-.28,0,.28]){ const spear=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,1.2,8),wood2); spear.rotation.z=.55; spear.position.set(px,.66,.02); spear.castShadow=true; rack.add(spear); }
+
+    const dummy=new THREE.Group(); dummy.position.set(1.1,0,-.7); camp.add(dummy);
+    const stump=new THREE.Mesh(new THREE.CylinderGeometry(.11,.15,.7,10),wood2); stump.position.y=.35; stump.castShadow=true; dummy.add(stump);
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(.22,.25,.52,12), new THREE.MeshStandardMaterial({color:0xb39668,roughness:1})); torso.position.y=.88; torso.castShadow=true; dummy.add(torso);
+    const arms=new THREE.Mesh(new THREE.BoxGeometry(.92,.10,.10), wood2); arms.position.y=.96; arms.castShadow=true; dummy.add(arms);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.16,10,10), new THREE.MeshStandardMaterial({color:0x9f845a,roughness:1})); head.position.y=1.22; head.castShadow=true; dummy.add(head);
+  };
+
+  addSteppedRise(0,-6.05,8.6,5.8,4,.10,.28,0x98825d);
+  addStonePatch(0,-4.65,2.2,3.1,.026,0,0xb8a47c);
   addTemple(0,-6.15,1.22);
   addColumnLine(0,-3.75,9,.84,0);
   addColumnLine(-6.45,2.0,6,.82,Math.PI/2);
   addColumnLine(6.45,2.0,6,.82,Math.PI/2);
   addAltar(0,-1.15,1.15);
-  addMarket(0,6.15,1.24);
+  addMarket(0,6.10,1.36);
+  addFieldComplex(4.65,-2.55);
+  addForgeHouse(-3.7,4.28,1.06);
+  addTrainingCamp(5.55,-3.55);
   for(const [x,z,w,d,r] of [[-5.0,6.2,1.45,.85,.06],[5.0,6.2,1.45,.85,-.06],[-4.55,-6.5,1.2,.72,0],[4.55,-6.5,1.2,.72,0]]) addStonePatch(x,z,w,d,.022,r,0xbea887);
 
+}
+
+function updateTrainingGate(dt){
+  if(!trainingGate)return;
+  const dx=player.x-trainingGate.center.x, dz=player.z-trainingGate.center.y;
+  const dist=Math.hypot(dx,dz);
+  const moving=started&&(Math.abs(player.vx)+Math.abs(player.vz)>.02);
+  if(dist<1.45 && moving){ trainingGate.target=1; trainingGate.autoClose=1.5; }
+  else if(trainingGate.autoClose>0){ trainingGate.autoClose-=dt; }
+  else trainingGate.target=0;
+  trainingGate.open=THREE.MathUtils.lerp(trainingGate.open,trainingGate.target,1-Math.exp(-5*dt));
+  const ang=trainingGate.open*1.22;
+  trainingGate.leftPivot.rotation.y=-ang;
+  trainingGate.rightPivot.rotation.y=ang;
+}
+
+function createTrainingNPC(){
+  const root=new THREE.Group(); root.position.set(5.55,0,-3.55); scene.add(root); trainingNPC=root;
+  const skin=new THREE.MeshStandardMaterial({color:0xb27a57,roughness:.95});
+  const armor=new THREE.MeshStandardMaterial({color:0x202327,roughness:.72,metalness:.28});
+  const leather=new THREE.MeshStandardMaterial({color:0x4b3428,roughness:.96});
+  const wood=new THREE.MeshStandardMaterial({color:0x725235,roughness:.96});
+  const linen=new THREE.MeshStandardMaterial({color:0xcab88f,roughness:.98});
+  const shieldMat=new THREE.MeshStandardMaterial({color:0x8c7045,roughness:.9});
+  const motion=new THREE.Group(); root.add(motion);
+  const hips=new THREE.Group(); hips.position.set(0,.78,0); motion.add(hips);
+  const torsoPivot=new THREE.Group(); torsoPivot.position.set(0,.12,0); hips.add(torsoPivot);
+  const pelvis=new THREE.Mesh(new THREE.BoxGeometry(.36,.20,.29),leather); pelvis.castShadow=true; hips.add(pelvis);
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(.46,.56,.34),armor); torso.position.y=.26; torso.castShadow=true; torsoPivot.add(torso);
+  const belt=new THREE.Mesh(new THREE.BoxGeometry(.49,.07,.37),leather); belt.position.y=.03; belt.castShadow=true; torsoPivot.add(belt);
+  const headPivot=new THREE.Group(); headPivot.position.set(0,.66,-.015); torsoPivot.add(headPivot);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.055,.062,.10,10),skin); neck.position.y=.53; neck.castShadow=true; torsoPivot.add(neck);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.15,14,12),skin); head.scale.set(.94,1.02,.95); head.castShadow=true; headPivot.add(head);
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(.17,16,12),armor); helmet.scale.set(1,.92,1); helmet.position.y=.03; helmet.castShadow=true; headPivot.add(helmet);
+  const crest=new THREE.Mesh(new THREE.BoxGeometry(.08,.17,.30),new THREE.MeshStandardMaterial({color:0x6e1f18,roughness:.9})); crest.position.set(0,.21,.01); crest.castShadow=true; headPivot.add(crest);
+  const nose=new THREE.Mesh(new THREE.ConeGeometry(.025,.07,7),skin); nose.rotation.x=Math.PI/2; nose.position.set(0,-.01,-.145); nose.castShadow=true; headPivot.add(nose);
+  const leftLegPivot=new THREE.Group(); leftLegPivot.position.set(-.11,-.12,0); hips.add(leftLegPivot);
+  const rightLegPivot=new THREE.Group(); rightLegPivot.position.set(.11,-.12,0); hips.add(rightLegPivot);
+  for(const p of [leftLegPivot,rightLegPivot]){ const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.048,.28,6,10),linen); leg.position.y=-.20; leg.castShadow=true; p.add(leg); const foot=new THREE.Mesh(new THREE.BoxGeometry(.12,.07,.18),leather); foot.position.set(0,-.42,-.04); foot.castShadow=true; p.add(foot); }
+  const leftShoulder=new THREE.Group(); leftShoulder.position.set(-.22,.33,-.02); torsoPivot.add(leftShoulder);
+  const rightShoulder=new THREE.Group(); rightShoulder.position.set(.22,.31,-.02); torsoPivot.add(rightShoulder);
+  leftShoulder.rotation.set(.18,0,.62); rightShoulder.rotation.set(.32,0,-.58);
+  const leftUpper=new THREE.Mesh(new THREE.CapsuleGeometry(.04,.16,6,10),skin); leftUpper.position.y=-.12; leftUpper.castShadow=true; leftShoulder.add(leftUpper);
+  const leftFore=new THREE.Group(); leftFore.position.set(0,-.21,0); leftShoulder.add(leftFore); leftFore.rotation.z=.24;
+  const leftForeMesh=new THREE.Mesh(new THREE.CapsuleGeometry(.036,.12,6,10),skin); leftForeMesh.position.y=-.10; leftForeMesh.castShadow=true; leftFore.add(leftForeMesh);
+  const shieldPivot=new THREE.Group(); shieldPivot.position.set(.03,-.21,-.02); leftFore.add(shieldPivot); shieldPivot.rotation.z=.08;
+  const shieldEdge=new THREE.Mesh(new THREE.BoxGeometry(.12,.34,.12),shieldMat); shieldEdge.castShadow=true; shieldPivot.add(shieldEdge);
+  const shieldLip=new THREE.Mesh(new THREE.CapsuleGeometry(.055,.18,5,10),new THREE.MeshStandardMaterial({color:0x3a2c21,roughness:.95})); shieldLip.rotation.z=Math.PI/2; shieldLip.castShadow=true; shieldPivot.add(shieldLip);
+  const rightUpper=new THREE.Mesh(new THREE.CapsuleGeometry(.04,.17,6,10),skin); rightUpper.position.y=-.13; rightUpper.castShadow=true; rightShoulder.add(rightUpper);
+  const rightFore=new THREE.Group(); rightFore.position.set(0,-.22,0); rightShoulder.add(rightFore); rightFore.rotation.z=-.20;
+  const rightForeMesh=new THREE.Mesh(new THREE.CapsuleGeometry(.036,.13,6,10),skin); rightForeMesh.position.y=-.10; rightForeMesh.castShadow=true; rightFore.add(rightForeMesh);
+  const swordPivot=new THREE.Group(); swordPivot.position.set(0,-.21,-.02); rightFore.add(swordPivot); swordPivot.rotation.z=-.38;
+  const swordHandle=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.11,8), leather); swordHandle.rotation.z=Math.PI/2; swordHandle.position.set(.05,-.01,0); swordHandle.castShadow=true; swordPivot.add(swordHandle);
+  const guard=new THREE.Mesh(new THREE.BoxGeometry(.02,.10,.03), armor); guard.position.set(.10,-.01,0); guard.castShadow=true; swordPivot.add(guard);
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(.02,.30,.05), wood); blade.position.set(.22,-.01,0); blade.rotation.z=-.04; blade.castShadow=true; swordPivot.add(blade);
+  root.userData={name:'Níkon',role:'soldat instructeur',dialogIndex:0,state:'idle',stateTime:0,bubbleUntil:0,dialogues:[
+    'Derrière ces portes, on forge des réflexes avant de forger des victoires.',
+    'Je peux t’enseigner la garde haute, la parade au bouclier et la poussée de lance.',
+    'Les armes d’entraînement pardonnent l’erreur. Les vraies, beaucoup moins.',
+    'Entre quand tu veux. Ici, on sue avant de saigner.',
+    'Un hoplite se construit répétition après répétition, pas seulement bataille après bataille.'
+  ],rig:{motion,torsoPivot,headPivot,leftShoulder,rightShoulder,leftFore,rightFore,shieldPivot,swordPivot}};
 }
 
 function createFarmerNPC(){
@@ -1008,7 +1153,7 @@ function solveFarmerArm(arm,targetLocal,bend=1){
 }
 
 function getTalkNPCs(){
-  return [farmerNPC,blacksmithNPC].filter(Boolean);
+  return [farmerNPC,blacksmithNPC,trainingNPC].filter(Boolean);
 }
 function getNearbyNPC(maxDist=1.58){
   if(!started)return null;
@@ -1022,6 +1167,8 @@ function getNearbyNPC(maxDist=1.58){
 function showNPCBubble(npc,message,duration=2.8){
   if(!els.npcBubble||!npc)return;
   activeBubbleNPC=npc;
+  const title=els.npcBubble.querySelector('strong');
+  if(title){ const d=npc.userData||{}; title.textContent=(d.name||'Habitant') + (d.role?` — ${d.role}`:''); }
   els.npcBubbleText.textContent=message;
   els.npcBubble.classList.add('visible');
   npc.userData.bubbleUntil=performance.now()+duration*1000;
@@ -1057,9 +1204,10 @@ function updateActionButtons(){
   els.actionA?.classList.toggle('interact',!!nearNPC);
   els.actionA?.setAttribute('aria-disabled','false');
   const isForge=nearNPC===blacksmithNPC;
-  const label=nearNPC?(isForge?`Ouvrir la forge de ${nearNPC.userData?.name||'Myron'}`:`Interagir avec ${nearNPC.userData?.name||'le PNJ'}`):'Attaquer au xiphos';
+  const isTrainer=nearNPC===trainingNPC;
+  const label=nearNPC?(isForge?`Ouvrir la forge de ${nearNPC.userData?.name||'Myron'}`:isTrainer?`Parler à ${nearNPC.userData?.name||"l'instructeur"}`:`Interagir avec ${nearNPC.userData?.name||'le PNJ'}`):'Attaquer au xiphos';
   els.actionA?.setAttribute('aria-label',label);
-  if(els.actionALabel)els.actionALabel.textContent=nearNPC?(isForge?'FORGE':'INTERAGIR'):'ATTAQUER';
+  if(els.actionALabel)els.actionALabel.textContent=nearNPC?(isForge?'FORGE':isTrainer?'ENTRAÎNER':'INTERAGIR'):'ATTAQUER';
 }
 function startSwordAttack(){
   if(!started||!greekGear||attackTimer>0)return;
@@ -1158,6 +1306,22 @@ function updateFarmerNPC(dt){
 
   solveFarmerArm(r.leftArm,leftGripLocal,1.0);
   solveFarmerArm(r.rightArm,rightGripLocal,.72);
+}
+
+function updateTrainingNPC(dt){
+  if(!trainingNPC)return;
+  const d=trainingNPC.userData, r=d.rig; if(!r)return;
+  d.stateTime=(d.stateTime||0)+dt;
+  r.motion.position.y=Math.sin(d.stateTime*2.2)*.015;
+  r.torsoPivot.rotation.z=Math.sin(d.stateTime*1.6)*.03;
+  r.headPivot.rotation.z=Math.sin(d.stateTime*1.2)*.05;
+  r.leftShoulder.rotation.x=.14+Math.sin(d.stateTime*1.8)*.03;
+  r.leftFore.rotation.z=.22+Math.sin(d.stateTime*1.6)*.03;
+  r.rightShoulder.rotation.x=.28+Math.sin(d.stateTime*1.7+.7)*.04;
+  r.rightShoulder.rotation.z=-.58+Math.sin(d.stateTime*1.4)*.02;
+  r.rightFore.rotation.z=-.22+Math.sin(d.stateTime*1.5+.5)*.03;
+  r.shieldPivot.rotation.y=Math.sin(d.stateTime*1.5)*.08;
+  r.swordPivot.rotation.x=.12+Math.sin(d.stateTime*1.4)*.04;
 }
 
 function updateBlacksmithNPC(dt){
@@ -1777,6 +1941,8 @@ function update(){
   }
   updateFarmerNPC(dt);
   updateBlacksmithNPC(dt);
+  updateTrainingNPC(dt);
+  updateTrainingGate(dt);
   updateAudioZones(dt);
   updateNPCBubble();
   updateActionButtons();
