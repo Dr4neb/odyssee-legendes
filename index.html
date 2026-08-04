@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.4 — Blacksmith and dialogue pass</title>
+<title>Odyssée — v1.11.4.1 — Blacksmith hammer animation</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4 — FORGERON & DIALOGUES</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont maintenant chacun plusieurs répliques.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4.1 — MARTEAU & ENCLUME</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont maintenant chacun plusieurs répliques.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -636,6 +636,7 @@ function createBlacksmithNPC(){
   const anvilBase=new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,.32,10),stoneDark);anvilBase.position.set(.88,.16,.06);anvilBase.castShadow=anvilBase.receiveShadow=true;station.add(anvilBase);
   const anvilTop=new THREE.Mesh(new THREE.BoxGeometry(.40,.10,.18),iron);anvilTop.position.set(.88,.37,.06);anvilTop.castShadow=true;station.add(anvilTop);
   const anvilHorn=new THREE.Mesh(new THREE.ConeGeometry(.07,.22,10),iron);anvilHorn.rotation.z=-Math.PI/2;anvilHorn.position.set(1.09,.37,.06);anvilHorn.castShadow=true;station.add(anvilHorn);
+  const workpiece=new THREE.Mesh(new THREE.BoxGeometry(.16,.035,.06),new THREE.MeshStandardMaterial({color:0xb0672d,emissive:0x5a1a08,emissiveIntensity:.55,roughness:.48,metalness:.72}));workpiece.position.set(.84,.45,.08);workpiece.rotation.y=.35;workpiece.castShadow=true;station.add(workpiece);
   const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.16,.19,.34,12),wood);barrel.position.set(-.88,.17,.46);barrel.castShadow=true;station.add(barrel);
   addBoxCollider(-4.55,4.35,1.24,.92,.18);
   addBoxCollider(-3.67,4.41,.42,.34,.12);
@@ -694,7 +695,7 @@ function createBlacksmithNPC(){
       'L’enclume parle vrai : chaque coup raté s’entend dans tout l’atelier.',
       'Si tu veux survivre au prochain combat, prends soin de ton tranchant.'
     ],
-    rig:{motion,hips,torsoPivot,headPivot,leftLeg,rightLeg,leftArm,rightArm,hammerPivot,sparks}
+    rig:{motion,hips,torsoPivot,headPivot,leftLeg,rightLeg,leftArm,rightArm,hammerPivot,sparks,workpiece}
   };
 }
 
@@ -872,58 +873,79 @@ function updateBlacksmithNPC(dt){
   const d=blacksmithNPC.userData,r=d.rig;
   d.idleCycle+=dt;
   const dxp=player.x-blacksmithNPC.position.x,dzp=player.z-blacksmithNPC.position.z;
-  let strike=0;
+  let hitPulse=0;
   if(d.state==='talk'){
     const targetRot=Math.atan2(dxp,dzp)+Math.PI;
-    blacksmithNPC.rotation.y=normalizeAngle(blacksmithNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-blacksmithNPC.rotation.y),-dt*4.2,dt*4.2));
-    r.torsoPivot.rotation.x=.08+Math.sin(d.idleCycle*2.0)*.01;
-    r.hips.rotation.z=Math.sin(d.idleCycle*1.5)*.01;
+    blacksmithNPC.rotation.y=normalizeAngle(blacksmithNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-blacksmithNPC.rotation.y),-dt*4.4,dt*4.4));
+    r.motion.position.y=.012+Math.sin(d.idleCycle*3.2)*.003;
+    r.torsoPivot.rotation.x=.07+Math.sin(d.idleCycle*2.0)*.012;
+    r.torsoPivot.rotation.z=Math.sin(d.idleCycle*1.7)*.015;
+    r.hips.rotation.z=Math.sin(d.idleCycle*1.5)*.012;
+    r.leftLeg.pivot.rotation.x=.04;
+    r.rightLeg.pivot.rotation.x=-.06;
+    r.headPivot.rotation.z=Math.sin(d.idleCycle*1.4)*.012;
+    r.hammerPivot.position.set(.05,.16,-.10);
+    r.hammerPivot.rotation.set(-.72,-.14,.22);
+    solveFarmerArm(r.rightArm,new THREE.Vector3(.16,.16,-.08),.74);
+    solveFarmerArm(r.leftArm,new THREE.Vector3(-.12,.15,-.02),.58);
     d.stateTime-=dt;
     if(d.stateTime<=0)d.state='work';
   }else{
     const targetRot=Math.atan2(.88,.06)+Math.PI;
-    blacksmithNPC.rotation.y=normalizeAngle(blacksmithNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-blacksmithNPC.rotation.y),-dt*3.8,dt*3.8));
-    strike=(Math.sin(d.idleCycle*5.1)+1)*.5;
-    strike=Math.pow(strike,1.35);
-    r.torsoPivot.rotation.x=.10+strike*.15;
-    r.hips.rotation.z=Math.sin(d.idleCycle*5.1)*.015;
-  }
-  r.motion.position.y=.01+Math.sin(d.idleCycle*3.0)*.003;
-  r.leftLeg.pivot.rotation.x=.04;
-  r.rightLeg.pivot.rotation.x=-.06;
-  r.headPivot.rotation.z=Math.sin(d.idleCycle*1.4)*.012;
+    blacksmithNPC.rotation.y=normalizeAngle(blacksmithNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-blacksmithNPC.rotation.y),-dt*3.9,dt*3.9));
 
-  const restHX=-.35, restHY=-.28, restHZ=.16;
-  r.hammerPivot.rotation.x=restHX-strike*.98;
-  r.hammerPivot.rotation.y=restHY+strike*.05;
-  r.hammerPivot.rotation.z=restHZ-strike*.10;
-  r.hammerPivot.position.y=.18+Math.sin(d.idleCycle*3.0)*.003;
+    const cyc=(d.idleCycle*1.08)%1;
+    const ss=t=>t*t*(3-2*t);
+    let raise=0,fall=0,recover=0;
+    if(cyc<.48) raise=ss(cyc/.48);
+    else if(cyc<.70){raise=1;fall=ss((cyc-.48)/.22);} 
+    else recover=ss((cyc-.70)/.30);
+    hitPulse=Math.max(0,1-Math.abs(cyc-.70)/.08);
+    hitPulse=THREE.MathUtils.clamp(hitPulse,0,1);
 
-  r.hammerPivot.updateMatrix();
-  const rightGripLocal=new THREE.Vector3(.06,0,0).applyMatrix4(r.hammerPivot.matrix);
-  const leftGripLocal=new THREE.Vector3(-.09,0,0).applyMatrix4(r.hammerPivot.matrix);
-  leftGripLocal.x-=.02; leftGripLocal.y+=.03;
-  const supportLocal=new THREE.Vector3(-.12,.07,.06);
-  if(d.state==='talk'){
-    solveFarmerArm(r.rightArm,new THREE.Vector3(.12,.18,-.14),.72);
-    solveFarmerArm(r.leftArm,new THREE.Vector3(-.15,.15,-.02),.55);
-  }else{
-    solveFarmerArm(r.rightArm,rightGripLocal,.92);
-    solveFarmerArm(r.leftArm,leftGripLocal,.68);
-    r.leftArm.hand.position.lerp(supportLocal,.15);
+    r.motion.position.y=.01 + Math.sin(d.idleCycle*2.6)*.002 + hitPulse*.012;
+    r.torsoPivot.rotation.x=.16 + raise*.24 - fall*.14 - recover*.04;
+    r.torsoPivot.rotation.z=.02 - raise*.06 + fall*.05;
+    r.hips.rotation.z=-.01 + Math.sin(d.idleCycle*2.2)*.004 + raise*.02;
+    r.leftLeg.pivot.rotation.x=.06 + raise*.06 - fall*.04;
+    r.rightLeg.pivot.rotation.x=-.08 - raise*.10 + fall*.05;
+    r.headPivot.rotation.z=-.02 + raise*.04 - fall*.06;
+
+    // Hammer arc: raised high, then driven onto the anvil.
+    r.hammerPivot.position.set(.02 + raise*.04 - fall*.01, .20 + raise*.16 - fall*.08, -.16 - raise*.06 + fall*.18);
+    r.hammerPivot.rotation.x=-.88 - raise*.92 + fall*1.92 - recover*.18;
+    r.hammerPivot.rotation.y=-.18 + raise*.12 - fall*.18;
+    r.hammerPivot.rotation.z=.18 - raise*.26 + fall*.22;
+    r.hammerPivot.updateMatrix();
+
+    // Right hand at the bottom of the handle, left hand higher for control.
+    const rightGripLocal=new THREE.Vector3(-.18,0,0).applyMatrix4(r.hammerPivot.matrix);
+    const leftGripLocal=new THREE.Vector3(-.02,0,0).applyMatrix4(r.hammerPivot.matrix);
+    rightGripLocal.y+=.010; rightGripLocal.z+=.004;
+    leftGripLocal.y+=.014; leftGripLocal.x-=.014; leftGripLocal.z-=.004;
+    solveFarmerArm(r.rightArm,rightGripLocal,.96);
+    solveFarmerArm(r.leftArm,leftGripLocal,.88);
+
+    if(r.workpiece){
+      r.workpiece.position.y=.45 + hitPulse*.012;
+      r.workpiece.rotation.y=.35 + Math.sin(d.idleCycle*4.0)*.03;
+      const heat=.55 + hitPulse*.55;
+      r.workpiece.material.emissiveIntensity=heat;
+    }
   }
 
   if(r.sparks){
-    const flash=d.state!=='talk'&&strike>.92;
+    const flash=d.state!=='talk'&&hitPulse>.2;
     r.sparks.forEach((s,i)=>{
       s.visible=flash;
       if(flash){
-        s.position.set(.88+(i-1.5)*.04,.46+Math.random()*.05,.06+(Math.random()-.5)*.08);
-        s.scale.setScalar(.75+Math.random()*.55);
+        s.position.set(.84+(i-1.5)*.05,.46+hitPulse*.06+Math.random()*.02,.08+(Math.random()-.5)*.08);
+        s.scale.setScalar(.75+hitPulse*.65+Math.random()*.15);
       }
     });
   }
 }
+
 
 function loadCharacter(){
   els.loading.classList.add('visible');
