@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.3 — ITHAQUE MAJOR FIXES</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont chacun plusieurs répliques. A près de Myron ouvre la forge. Le portail du camp s’ouvre en le poussant.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.4 — PNJ VIVANTS & TEMPLE DE DÉMÉTER</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos parcourt ses quatre cultures, Níkon patrouille dans le camp et le temple de Déméter devient transparent à l’entrée. A près de Myron ouvre la forge.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -115,6 +115,13 @@ const forgeCenterPos=new THREE.Vector3(-8.25,0,6.25);
 const anvilWorldPos=new THREE.Vector3(-7.92,0,6.31);
 const farmerFieldSoundPos=new THREE.Vector3(8.45,0,5.65);
 const trainingCampCenter=new THREE.Vector3(8.45,0,-5.65);
+const templeCenterPos=new THREE.Vector3(0,0,-1.10);
+const farmPlotCenters=[
+  {name:'blé',pos:new THREE.Vector3(6.50,0,4.53)},
+  {name:'orge',pos:new THREE.Vector3(10.40,0,4.53)},
+  {name:'terre',pos:new THREE.Vector3(10.40,0,6.77)},
+  {name:'carottes',pos:new THREE.Vector3(6.50,0,6.77)}
+];
 
 function addBoxCollider(x,z,w,d,pad=.16){colliders.push({x1:x-w/2-pad,x2:x+w/2+pad,z1:z-d/2-pad,z2:z+d/2+pad})}
 function resolveCollisions(pos,radius=.24){
@@ -497,7 +504,9 @@ let trainingGate=null;
 const trainingTargets=[];
 const forgeRoofParts=[];
 const forgeWallParts=[];
-let forgeReveal=0;
+const templeRoofParts=[];
+const templeWallParts=[];
+let forgeReveal=0,templeReveal=0;
 let audioCtx=null, footstepBus=null, footstepBuffers=[], footstepLoading=false;
 let ambientBus=null, ambientNoiseSource=null, ambientNoiseGain=null, ambientLfo=null, ambientBirdTimer=null, ambientStarted=false;
 let anvilBus=null, anvilLastTime=0, anvilSfxBuffer=null, anvilSfxLoading=false, cameraShake=0, cameraShakeX=0, cameraShakeZ=0;
@@ -589,44 +598,81 @@ function buildArena(){
     const marble=new THREE.MeshStandardMaterial({color:0xded2ba,roughness:.88});
     const marbleLight=new THREE.MeshStandardMaterial({color:0xeee4d0,roughness:.84});
     const marbleDark=new THREE.MeshStandardMaterial({color:0xbcae92,roughness:.94});
-    const roofMat=new THREE.MeshStandardMaterial({color:0x9d4f36,roughness:.82});
+    const fadeMarble=()=>new THREE.MeshStandardMaterial({color:0xded2ba,roughness:.88,transparent:true,opacity:1,depthWrite:true});
+    const fadeRoof=()=>new THREE.MeshStandardMaterial({color:0x9d4f36,roughness:.82,transparent:true,opacity:1,depthWrite:true});
     const darkWood=new THREE.MeshStandardMaterial({color:0x4a3427,roughness:.95});
+    const statueStone=new THREE.MeshStandardMaterial({color:0xe7ddc8,roughness:.72});
+    const harvestGold=new THREE.MeshStandardMaterial({color:0xb88b3e,roughness:.58,metalness:.18});
 
     // Crépis / stylobate en trois degrés.
     for(let i=0;i<3;i++){
-      const step=new THREE.Mesh(new THREE.BoxGeometry((5.55-i*.34)*s,.12*s,(4.35-i*.30)*s),i===2?marbleLight:marble);
+      const step=new THREE.Mesh(new THREE.BoxGeometry((5.75-i*.36)*s,.12*s,(4.55-i*.32)*s),i===2?marbleLight:marble);
       step.position.set(0,.06*s+i*.12*s,0);step.castShadow=step.receiveShadow=true;group.add(step);
     }
     const stylobateY=.38*s;
-    const cella=new THREE.Mesh(new THREE.BoxGeometry(3.28*s,1.34*s,2.16*s),marble);
-    cella.position.set(0,stylobateY+.67*s,-.20*s);cella.castShadow=cella.receiveShadow=true;group.add(cella);
-    const pronaos=new THREE.Mesh(new THREE.BoxGeometry(2.30*s,.22*s,.60*s),marbleDark);
-    pronaos.position.set(0,stylobateY+.11*s,1.30*s);pronaos.castShadow=pronaos.receiveShadow=true;group.add(pronaos);
-    const door=new THREE.Mesh(new THREE.BoxGeometry(.82*s,1.06*s,.09*s),darkWood);
-    door.position.set(0,stylobateY+.61*s,.91*s);door.castShadow=true;group.add(door);
+    const floor=new THREE.Mesh(new THREE.BoxGeometry(3.35*s,.08*s,2.30*s),marbleDark);
+    floor.position.set(0,stylobateY+.05*s,-.20*s);floor.castShadow=floor.receiveShadow=true;group.add(floor);
+
+    // Cella ouverte par une vraie entrée au sud : murs séparés au lieu d'un bloc plein.
+    const wallH=1.34*s, wallY=stylobateY+.72*s;
+    const back=new THREE.Mesh(new THREE.BoxGeometry(3.28*s,wallH,.16*s),fadeMarble());
+    back.position.set(0,wallY,-1.26*s);back.castShadow=back.receiveShadow=true;group.add(back);
+    const sideL=new THREE.Mesh(new THREE.BoxGeometry(.16*s,wallH,2.20*s),fadeMarble());
+    sideL.position.set(-1.56*s,wallY,-.18*s);sideL.castShadow=sideL.receiveShadow=true;group.add(sideL);
+    const sideR=new THREE.Mesh(sideL.geometry,fadeMarble());sideR.position.set(1.56*s,wallY,-.18*s);sideR.castShadow=sideR.receiveShadow=true;group.add(sideR);
+    const frontL=new THREE.Mesh(new THREE.BoxGeometry(.78*s,wallH,.16*s),fadeMarble());
+    frontL.position.set(-1.17*s,wallY,.88*s);frontL.castShadow=frontL.receiveShadow=true;group.add(frontL);
+    const frontR=new THREE.Mesh(frontL.geometry,fadeMarble());frontR.position.set(1.17*s,wallY,.88*s);frontR.castShadow=frontR.receiveShadow=true;group.add(frontR);
+    templeWallParts.push(back,sideL,sideR,frontL,frontR);
+
+    const threshold=new THREE.Mesh(new THREE.BoxGeometry(1.28*s,.10*s,.35*s),marbleLight);
+    threshold.position.set(0,stylobateY+.10*s,1.02*s);threshold.castShadow=threshold.receiveShadow=true;group.add(threshold);
+    const doorL=new THREE.Mesh(new THREE.BoxGeometry(.48*s,1.08*s,.07*s),darkWood);doorL.position.set(-.42*s,stylobateY+.65*s,.96*s);doorL.rotation.y=-.65;doorL.castShadow=true;group.add(doorL);
+    const doorR=doorL.clone();doorR.position.x=.42*s;doorR.rotation.y=.65;group.add(doorR);
 
     const addCol=(cx,cz)=>{
       const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.115*s,.145*s,1.36*s,18),marbleLight);shaft.position.set(cx,stylobateY+.70*s,cz);shaft.castShadow=shaft.receiveShadow=true;group.add(shaft);
       const base=new THREE.Mesh(new THREE.CylinderGeometry(.18*s,.19*s,.10*s,18),marble);base.position.set(cx,stylobateY+.06*s,cz);base.castShadow=true;group.add(base);
       const cap=new THREE.Mesh(new THREE.BoxGeometry(.34*s,.10*s,.34*s),marbleLight);cap.position.set(cx,stylobateY+1.41*s,cz);cap.castShadow=true;group.add(cap);
     };
-    for(const cx of [-1.65,-.55,.55,1.65]){addCol(cx*s,1.38*s);addCol(cx*s,-1.28*s);}
-    for(const cz of [-.62,0,.62]){addCol(-2.08*s,cz*s);addCol(2.08*s,cz*s);}
+    for(const cx of [-1.65,-.55,.55,1.65]){addCol(cx*s,1.42*s);addCol(cx*s,-1.34*s);}
+    for(const cz of [-.68,0,.68]){addCol(-2.12*s,cz*s);addCol(2.12*s,cz*s);}
 
-    const entablature=new THREE.Mesh(new THREE.BoxGeometry(4.72*s,.24*s,3.18*s),marbleDark);
-    entablature.position.set(0,stylobateY+1.56*s,.02*s);entablature.castShadow=true;group.add(entablature);
-    const roofL=new THREE.Mesh(new THREE.BoxGeometry(2.62*s,.16*s,3.55*s),roofMat);roofL.position.set(-.76*s,stylobateY+1.83*s,.02*s);roofL.rotation.z=.31;roofL.castShadow=true;group.add(roofL);
-    const roofR=roofL.clone();roofR.position.x=.76*s;roofR.rotation.z=-.31;group.add(roofR);
+    const entablature=new THREE.Mesh(new THREE.BoxGeometry(4.82*s,.24*s,3.28*s),fadeMarble());
+    entablature.position.set(0,stylobateY+1.56*s,.02*s);entablature.castShadow=true;group.add(entablature);templeRoofParts.push(entablature);
+    const roofL=new THREE.Mesh(new THREE.BoxGeometry(2.70*s,.16*s,3.68*s),fadeRoof());roofL.position.set(-.78*s,stylobateY+1.84*s,.02*s);roofL.rotation.z=.31;roofL.castShadow=true;group.add(roofL);
+    const roofR=new THREE.Mesh(roofL.geometry,fadeRoof());roofR.position.set(.78*s,stylobateY+1.84*s,.02*s);roofR.rotation.z=-.31;roofR.castShadow=true;group.add(roofR);
+    roofL.userData.baseY=roofL.position.y;roofR.userData.baseY=roofR.position.y;templeRoofParts.push(roofL,roofR);
 
-    // Frontons triangulaires authentiques, à l'avant et à l'arrière.
-    const tri=new THREE.Shape();tri.moveTo(-2.20*s,0);tri.lineTo(2.20*s,0);tri.lineTo(0,.72*s);tri.closePath();
+    const tri=new THREE.Shape();tri.moveTo(-2.25*s,0);tri.lineTo(2.25*s,0);tri.lineTo(0,.74*s);tri.closePath();
     const pedGeom=new THREE.ExtrudeGeometry(tri,{depth:.16*s,bevelEnabled:false,steps:1});
-    for(const pz of [1.58*s,-1.74*s]){
-      const ped=new THREE.Mesh(pedGeom,marbleLight);ped.position.set(0,stylobateY+1.65*s,pz);ped.castShadow=true;group.add(ped);
+    for(const pz of [1.64*s,-1.80*s]){
+      const ped=new THREE.Mesh(pedGeom,fadeMarble());ped.position.set(0,stylobateY+1.66*s,pz);ped.castShadow=true;group.add(ped);ped.userData.baseY=ped.position.y;templeRoofParts.push(ped);
     }
-    const ridge=new THREE.Mesh(new THREE.CylinderGeometry(.05*s,.05*s,4.7*s,10),roofMat);ridge.rotation.z=Math.PI/2;ridge.position.set(0,stylobateY+2.18*s,.02*s);ridge.castShadow=true;group.add(ridge);
+    const ridge=new THREE.Mesh(new THREE.CylinderGeometry(.05*s,.05*s,4.82*s,10),fadeRoof());ridge.rotation.z=Math.PI/2;ridge.position.set(0,stylobateY+2.20*s,.02*s);ridge.castShadow=true;group.add(ridge);ridge.userData.baseY=ridge.position.y;templeRoofParts.push(ridge);
 
-    addBoxCollider(x,z-.20*s,3.36*s,2.22*s,.08);
+    // Statue de Déméter, déesse des moissons, visible lorsque le toit s'efface.
+    const statue=new THREE.Group();statue.position.set(0,stylobateY+.10*s,-.45*s);group.add(statue);
+    const pedestal=new THREE.Mesh(new THREE.BoxGeometry(.78*s,.30*s,.66*s),marbleDark);pedestal.position.y=.15*s;pedestal.castShadow=pedestal.receiveShadow=true;statue.add(pedestal);
+    const robe=new THREE.Mesh(new THREE.CylinderGeometry(.20*s,.34*s,.82*s,18),statueStone);robe.position.y=.70*s;robe.castShadow=true;statue.add(robe);
+    const torso=new THREE.Mesh(new THREE.CylinderGeometry(.18*s,.22*s,.42*s,16),statueStone);torso.position.y=1.22*s;torso.castShadow=true;statue.add(torso);
+    const head=new THREE.Mesh(new THREE.SphereGeometry(.17*s,16,12),statueStone);head.position.y=1.55*s;head.castShadow=true;statue.add(head);
+    const crown=new THREE.Mesh(new THREE.TorusGeometry(.15*s,.025*s,8,18),harvestGold);crown.rotation.x=Math.PI/2;crown.position.y=1.69*s;statue.add(crown);
+    const armL=new THREE.Mesh(new THREE.CapsuleGeometry(.045*s,.31*s,6,10),statueStone);armL.rotation.z=.55;armL.position.set(-.28*s,1.26*s,0);armL.castShadow=true;statue.add(armL);
+    const armR=new THREE.Mesh(new THREE.CapsuleGeometry(.045*s,.31*s,6,10),statueStone);armR.rotation.z=-.62;armR.position.set(.28*s,1.23*s,0);armR.castShadow=true;statue.add(armR);
+    const sheaf=new THREE.Group();sheaf.position.set(.44*s,.92*s,0);statue.add(sheaf);
+    for(let i=0;i<7;i++){
+      const stalk=new THREE.Mesh(new THREE.CylinderGeometry(.012*s,.014*s,.62*s,6),harvestGold);stalk.position.set((i-3)*.025*s,.30*s,(i%2)*.018*s);stalk.rotation.z=(i-3)*.035;stalk.castShadow=true;sheaf.add(stalk);
+      const grain=new THREE.Mesh(new THREE.ConeGeometry(.032*s,.14*s,7),harvestGold);grain.position.set((i-3)*.025*s,.66*s,(i%2)*.018*s);grain.castShadow=true;sheaf.add(grain);
+    }
+    const offering=new THREE.Mesh(new THREE.BoxGeometry(.72*s,.18*s,.44*s),marbleLight);offering.position.set(0,stylobateY+.16*s,.48*s);offering.castShadow=offering.receiveShadow=true;group.add(offering);
+
+    // Collisions des murs avec une ouverture centrale praticable.
+    addBoxCollider(x,z-1.26*s,3.28*s,.16*s,.05);
+    addBoxCollider(x-1.56*s,z-.18*s,.16*s,2.20*s,.05);
+    addBoxCollider(x+1.56*s,z-.18*s,.16*s,2.20*s,.05);
+    addBoxCollider(x-1.17*s,z+.88*s,.78*s,.16*s,.05);
+    addBoxCollider(x+1.17*s,z+.88*s,.78*s,.16*s,.05);
   };
   const addColumnLine=(x,z,count=6,gap=.82,rot=0)=>{
     const columnMat=new THREE.MeshStandardMaterial({color:0xddd0b3,roughness:.9});
@@ -669,48 +715,77 @@ function buildArena(){
   };
   const addForgeHouse=(x,z,s=1)=>{
     const forge=new THREE.Group(); forge.position.set(x,0,z); scene.add(forge);
-    const stone=new THREE.MeshStandardMaterial({color:0xb8a78f,roughness:.95,transparent:true,opacity:1,depthWrite:false});
+    const makeStone=()=>new THREE.MeshStandardMaterial({color:0xb8a78f,roughness:.95,transparent:true,opacity:1,depthWrite:true});
     const beam=new THREE.MeshStandardMaterial({color:0x5e402a,roughness:.94});
-    const roof=new THREE.MeshStandardMaterial({color:0x754538,roughness:.86,transparent:true,opacity:1,depthWrite:false});
+    const makeRoof=()=>new THREE.MeshStandardMaterial({color:0x754538,roughness:.86,transparent:true,opacity:1,depthWrite:true});
     const floor=new THREE.Mesh(new THREE.BoxGeometry(4.25*s,.10,3.55*s), new THREE.MeshStandardMaterial({color:0x75654f,roughness:.98}));
     floor.position.set(0,.05,0); floor.castShadow=floor.receiveShadow=true; forge.add(floor);
-    const back=new THREE.Mesh(new THREE.BoxGeometry(3.82*s,1.48*s,.18*s), stone); back.position.set(0,.79,-1.31*s); back.castShadow=back.receiveShadow=true; forge.add(back);
-    const sideL=new THREE.Mesh(new THREE.BoxGeometry(.18*s,1.32*s,2.70*s), stone); sideL.position.set(-1.82*s,.72,-.06*s); sideL.castShadow=sideL.receiveShadow=true; forge.add(sideL);
-    const sideR=sideL.clone(); sideR.position.x=1.82*s; forge.add(sideR);
+    const back=new THREE.Mesh(new THREE.BoxGeometry(3.82*s,1.48*s,.18*s), makeStone()); back.position.set(0,.79,-1.31*s); back.castShadow=back.receiveShadow=true; forge.add(back);
+    const sideL=new THREE.Mesh(new THREE.BoxGeometry(.18*s,1.32*s,2.70*s), makeStone()); sideL.position.set(-1.82*s,.72,-.06*s); sideL.castShadow=sideL.receiveShadow=true; forge.add(sideL);
+    const sideR=new THREE.Mesh(sideL.geometry,makeStone()); sideR.position.set(1.82*s,.72,-.06*s); sideR.castShadow=sideR.receiveShadow=true; forge.add(sideR);
     forgeWallParts.push(back,sideL,sideR);
     for(const px of [-1.45,-.48,.48,1.45]){ const post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,1.72*s,10), beam); post.position.set(px,.86,1.23*s); post.castShadow=true; forge.add(post); }
-    const ridge=new THREE.Mesh(new THREE.BoxGeometry(3.62*s,.12,.18*s), beam); ridge.position.set(0,2.00,-.06*s); ridge.castShadow=true; forge.add(ridge);
-    const roofL=new THREE.Mesh(new THREE.BoxGeometry(2.30*s,.15,3.28*s), roof); roofL.position.set(-.63*s,1.82,-.08*s); roofL.rotation.z=.33; roofL.castShadow=true; forge.add(roofL);
-    const roofR=roofL.clone(); roofR.position.x=.63*s; roofR.rotation.z=-.33; forge.add(roofR);
-    forgeRoofParts.push(roofL,roofR);
-    const chimney=new THREE.Mesh(new THREE.BoxGeometry(.40*s,1.32*s,.40*s), stone); chimney.position.set(-1.23*s,1.66,-1.13*s); chimney.castShadow=chimney.receiveShadow=true; forge.add(chimney);forgeWallParts.push(chimney);
+    const ridgeBeam=new THREE.Mesh(new THREE.BoxGeometry(3.62*s,.12,.18*s), beam); ridgeBeam.position.set(0,2.00,-.06*s); ridgeBeam.castShadow=true; forge.add(ridgeBeam);
+    const roofL=new THREE.Mesh(new THREE.BoxGeometry(2.30*s,.15,3.28*s), makeRoof()); roofL.position.set(-.63*s,1.82,-.08*s); roofL.rotation.z=.33; roofL.castShadow=true; forge.add(roofL);
+    const roofR=new THREE.Mesh(roofL.geometry,makeRoof()); roofR.position.set(.63*s,1.82,-.08*s); roofR.rotation.z=-.33; roofR.castShadow=true; forge.add(roofR);
+    roofL.userData.baseY=roofL.position.y;roofR.userData.baseY=roofR.position.y;forgeRoofParts.push(roofL,roofR);
+    const chimney=new THREE.Mesh(new THREE.BoxGeometry(.40*s,1.32*s,.40*s), makeStone()); chimney.position.set(-1.23*s,1.66,-1.13*s); chimney.castShadow=chimney.receiveShadow=true; forge.add(chimney);forgeWallParts.push(chimney);
     const chimneyTop=new THREE.Mesh(new THREE.BoxGeometry(.52*s,.12,.52*s), capMat); chimneyTop.position.set(-1.23*s,2.34,-1.13*s); chimneyTop.castShadow=true; forge.add(chimneyTop);
     const signPole=new THREE.Mesh(new THREE.BoxGeometry(.08,1.00,.08),beam);signPole.position.set(1.70,.52,1.45);signPole.castShadow=true;forge.add(signPole);
     const sign=new THREE.Mesh(new THREE.BoxGeometry(.72,.34,.08),beam);sign.position.set(1.42,.90,1.45);sign.castShadow=true;forge.add(sign);
   };
   const addFieldComplex=(x,z)=>{
     const patch=new THREE.Group(); patch.position.set(x,0,z); scene.add(patch);
-    const soil=new THREE.MeshStandardMaterial({color:0x69462c,roughness:1});
+    const soil=new THREE.MeshStandardMaterial({color:0x654229,roughness:1});
     const looseSoil=new THREE.MeshStandardMaterial({color:0x80603d,roughness:1});
-    const dry=new THREE.MeshStandardMaterial({color:0xb7985e,roughness:1});
-    const green=new THREE.MeshStandardMaterial({color:0x748447,roughness:1});
-    // Grand sol en terre autour des parcelles, bien séparé du plateau du temple.
-    const dirtYard=new THREE.Mesh(new THREE.BoxGeometry(7.75,.055,5.15),looseSoil);dirtYard.position.y=.027;dirtYard.receiveShadow=true;patch.add(dirtYard);
-    const plots=[[-1.95,-1.12],[1.95,-1.12],[-1.95,1.12],[1.95,1.12]];
-    for(const [ox,oz] of plots){
-      const field=new THREE.Mesh(new THREE.BoxGeometry(3.25,.07,1.86),soil); field.position.set(ox,.065,oz); field.receiveShadow=true; patch.add(field);
+    const furrowMat=new THREE.MeshStandardMaterial({color:0x9a7446,roughness:1});
+    const wheatMat=new THREE.MeshStandardMaterial({color:0xc9a84f,roughness:1});
+    const barleyMat=new THREE.MeshStandardMaterial({color:0xb9aa69,roughness:1});
+    const carrotMat=new THREE.MeshStandardMaterial({color:0xd46d2e,roughness:.95});
+    const carrotLeaf=new THREE.MeshStandardMaterial({color:0x638142,roughness:1});
+
+    const dirtYard=new THREE.Mesh(new THREE.BoxGeometry(7.95,.055,5.30),looseSoil);dirtYard.position.y=.027;dirtYard.receiveShadow=true;patch.add(dirtYard);
+    const plotDefs=[
+      {name:'blé',ox:-1.95,oz:-1.12},
+      {name:'orge',ox:1.95,oz:-1.12},
+      {name:'carottes',ox:-1.95,oz:1.12},
+      {name:'terre',ox:1.95,oz:1.12}
+    ];
+    for(const plot of plotDefs){
+      const field=new THREE.Mesh(new THREE.BoxGeometry(3.25,.07,1.86),soil);field.position.set(plot.ox,.065,plot.oz);field.receiveShadow=true;patch.add(field);
       for(let r=0;r<4;r++){
-        const row=new THREE.Mesh(new THREE.BoxGeometry(2.78,.04,.13),dry); row.position.set(ox,.115,oz-.55+r*.36); row.castShadow=row.receiveShadow=true; patch.add(row);
-        for(let i=0;i<9;i++){ const stalk=new THREE.Mesh(new THREE.ConeGeometry(.04,.17,5),green); stalk.position.set(ox-1.20+i*.30,.18,oz-.55+r*.36); stalk.rotation.z=(Math.random()-.5)*.18; stalk.castShadow=true; patch.add(stalk); }
+        const rz=plot.oz-.55+r*.36;
+        const row=new THREE.Mesh(new THREE.BoxGeometry(2.80,.045,.13),furrowMat);row.position.set(plot.ox,.115,rz);row.castShadow=row.receiveShadow=true;patch.add(row);
+        if(plot.name==='terre'){
+          for(let i=0;i<5;i++){const clod=new THREE.Mesh(new THREE.DodecahedronGeometry(.045+Math.random()*.025,0),soil);clod.position.set(plot.ox-1.05+i*.52,.16,rz+(Math.random()-.5)*.08);clod.scale.y=.55;clod.castShadow=true;patch.add(clod);}
+          continue;
+        }
+        for(let i=0;i<10;i++){
+          const px=plot.ox-1.30+i*.29+(Math.random()-.5)*.035;
+          if(plot.name==='blé'){
+            const stem=new THREE.Mesh(new THREE.CylinderGeometry(.012,.015,.31,6),wheatMat);stem.position.set(px,.30,rz);stem.rotation.z=(Math.random()-.5)*.12;stem.castShadow=true;patch.add(stem);
+            const head=new THREE.Mesh(new THREE.ConeGeometry(.035,.13,7),wheatMat);head.position.set(px,.50,rz);head.rotation.z=stem.rotation.z;head.castShadow=true;patch.add(head);
+          }else if(plot.name==='orge'){
+            const stem=new THREE.Mesh(new THREE.CylinderGeometry(.010,.013,.28,6),barleyMat);stem.position.set(px,.285,rz);stem.rotation.z=(Math.random()-.5)*.15;stem.castShadow=true;patch.add(stem);
+            const head=new THREE.Mesh(new THREE.CylinderGeometry(.022,.035,.13,7),barleyMat);head.position.set(px,.47,rz);head.rotation.z=stem.rotation.z;head.castShadow=true;patch.add(head);
+            for(const side of [-1,1]){const awn=new THREE.Mesh(new THREE.CylinderGeometry(.004,.004,.11,4),barleyMat);awn.position.set(px+side*.025,.53,rz);awn.rotation.z=side*.42;patch.add(awn);}
+          }else{
+            const root=new THREE.Mesh(new THREE.ConeGeometry(.035,.13,7),carrotMat);root.position.set(px,.19,rz);root.rotation.x=Math.PI;root.castShadow=true;patch.add(root);
+            for(let l=0;l<3;l++){const leaf=new THREE.Mesh(new THREE.ConeGeometry(.018,.15,5),carrotLeaf);leaf.position.set(px+(l-1)*.025,.31,rz+(l%2)*.018);leaf.rotation.z=(l-1)*.22;leaf.castShadow=true;patch.add(leaf);}
+          }
+        }
       }
+      const marker=new THREE.Mesh(new THREE.BoxGeometry(.62,.07,.24),new THREE.MeshStandardMaterial({color:plot.name==='blé'?0xc9a84f:plot.name==='orge'?0xb9aa69:plot.name==='carottes'?0xb95d2b:0x6a4a30,roughness:1}));
+      marker.position.set(plot.ox,.18,plot.oz-.86);marker.castShadow=true;patch.add(marker);
     }
     const fenceMat=new THREE.MeshStandardMaterial({color:0x6c4930,roughness:.96});
-    const rail=(w,d,px,pz)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,.10,d),fenceMat); m.position.set(px,.23,pz); m.castShadow=true; patch.add(m);};
-    for(const [px,pz] of [[-4.0,-2.62],[-4.0,2.62],[4.0,-2.62],[4.0,2.62]]){ const post=new THREE.Mesh(new THREE.BoxGeometry(.10,.48,.10),fenceMat); post.position.set(px,.24,pz); post.castShadow=true; patch.add(post); }
-    rail(7.9,.06,0,-2.62); rail(7.9,.06,0,2.62); rail(.06,5.20,-4.0,0); rail(.06,5.20,4.0,0);
-    const hut=new THREE.Group(); hut.position.set(0,0,-3.32); patch.add(hut);
-    const base=new THREE.Mesh(new THREE.BoxGeometry(1.65,.70,1.12),wallMat); base.position.set(0,.35,0); base.castShadow=base.receiveShadow=true; hut.add(base);
-    const roofH=new THREE.Mesh(new THREE.BoxGeometry(1.98,.18,1.45),redTile); roofH.position.set(0,.82,0); roofH.castShadow=true; hut.add(roofH);
+    const rail=(w,d,px,pz)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,.10,d),fenceMat);m.position.set(px,.23,pz);m.castShadow=true;patch.add(m);};
+    for(const [px,pz] of [[-4.1,-2.68],[-4.1,2.68],[4.1,-2.68],[4.1,2.68]]){const post=new THREE.Mesh(new THREE.BoxGeometry(.10,.48,.10),fenceMat);post.position.set(px,.24,pz);post.castShadow=true;patch.add(post);}
+    // Ouvertures au nord et au sud pour laisser Démos circuler naturellement.
+    rail(3.25,.06,-2.35,-2.68);rail(3.25,.06,2.35,-2.68);rail(3.25,.06,-2.35,2.68);rail(3.25,.06,2.35,2.68);rail(.06,5.30,-4.1,0);rail(.06,5.30,4.1,0);
+    const hut=new THREE.Group();hut.position.set(0,0,-3.32);patch.add(hut);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(1.65,.70,1.12),wallMat);base.position.set(0,.35,0);base.castShadow=base.receiveShadow=true;hut.add(base);
+    const roofH=new THREE.Mesh(new THREE.BoxGeometry(1.98,.18,1.45),redTile);roofH.position.set(0,.82,0);roofH.castShadow=true;hut.add(roofH);
   };
   const addTrainingCamp=(x,z)=>{
     const camp=new THREE.Group(); camp.position.set(x,0,z); scene.add(camp);
@@ -821,15 +896,15 @@ function buildArena(){
     for(const [ox,oz] of targetPositions){
       const tx=cx+ox,tz=cz+oz;
       const target=new THREE.Group(); target.position.set(tx,0,tz); scene.add(target);
-      const stand=new THREE.Mesh(new THREE.CylinderGeometry(.06,.07,.92,8),wood); stand.position.y=.46; stand.castShadow=true; target.add(stand);
-      const ring1=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.055,20),new THREE.MeshStandardMaterial({color:0xb89a69,roughness:1})); ring1.rotation.x=Math.PI/2; ring1.position.y=1.02; ring1.castShadow=true; target.add(ring1);
-      const ring2=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.060,20),new THREE.MeshStandardMaterial({color:0x8a2d24,roughness:1})); ring2.rotation.x=Math.PI/2; ring2.position.y=1.03; target.add(ring2);
-      const ring3=new THREE.Mesh(new THREE.CylinderGeometry(.10,.10,.070,20),new THREE.MeshStandardMaterial({color:0xd3c6a5,roughness:1})); ring3.rotation.x=Math.PI/2; ring3.position.y=1.04; target.add(ring3);
-      const barBack=new THREE.Mesh(new THREE.PlaneGeometry(.48,.055),new THREE.MeshBasicMaterial({color:0x1c1514,side:THREE.DoubleSide,depthTest:false}));barBack.rotation.x=-Math.PI/2;barBack.position.set(0,1.48,0);barBack.renderOrder=9;target.add(barBack);
-      const barFill=new THREE.Mesh(new THREE.PlaneGeometry(.44,.037),new THREE.MeshBasicMaterial({color:0xb51f24,side:THREE.DoubleSide,depthTest:false}));barFill.rotation.x=-Math.PI/2;barFill.position.set(0,1.485,0);barFill.renderOrder=10;target.add(barFill);
+      const stand=new THREE.Mesh(new THREE.CylinderGeometry(.075,.085,1.10,8),wood); stand.position.y=.55; stand.castShadow=true; target.add(stand);
+      const ring1=new THREE.Mesh(new THREE.CylinderGeometry(.50,.50,.070,24),new THREE.MeshStandardMaterial({color:0xb89a69,roughness:1})); ring1.rotation.x=Math.PI/2; ring1.position.y=1.27; ring1.castShadow=true; target.add(ring1);
+      const ring2=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.076,24),new THREE.MeshStandardMaterial({color:0x8a2d24,roughness:1})); ring2.rotation.x=Math.PI/2; ring2.position.y=1.28; target.add(ring2);
+      const ring3=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,.082,24),new THREE.MeshStandardMaterial({color:0xd3c6a5,roughness:1})); ring3.rotation.x=Math.PI/2; ring3.position.y=1.29; target.add(ring3);
+      const barBack=new THREE.Mesh(new THREE.PlaneGeometry(.66,.058),new THREE.MeshBasicMaterial({color:0x1c1514,side:THREE.DoubleSide,depthTest:false}));barBack.rotation.x=-Math.PI/2;barBack.position.set(0,1.82,0);barBack.renderOrder=9;target.add(barBack);
+      const barFill=new THREE.Mesh(new THREE.PlaneGeometry(.62,.038),new THREE.MeshBasicMaterial({color:0xb51f24,side:THREE.DoubleSide,depthTest:false}));barFill.rotation.x=-Math.PI/2;barFill.position.set(0,1.825,0);barFill.renderOrder=10;target.add(barFill);
       target.userData={health:1,maxHealth:1,healthBar:barFill,functional:false};
       trainingTargets.push(target);
-      addBoxCollider(tx,tz,.54,.54,.07);
+      addBoxCollider(tx,tz,.78,.78,.07);
     }
     addCrateStack(cx+2.65,cz+3.30,1,2,.9);
     addBench(cx-2.55,cz+3.55,Math.PI/2,.92);
@@ -912,16 +987,38 @@ function updateTrainingGate(dt){
   trainingGate.rightPivot.position.y=.50+lift;
 }
 function updateForgeVisibility(dt){
-  const dist=Math.hypot(player.x-forgeCenterPos.x,player.z-forgeCenterPos.z);
-  const target=dist<3.05?1:0;
-  forgeReveal=THREE.MathUtils.lerp(forgeReveal,target,1-Math.exp(-5.4*dt));
+  const dx=Math.abs(player.x-forgeCenterPos.x),dz=Math.abs(player.z-forgeCenterPos.z);
+  const dist=Math.hypot(dx,dz);
+  const inside=dx<2.15&&dz<1.95;
+  const proximity=THREE.MathUtils.clamp((4.25-dist)/1.70,0,1);
+  const target=inside?1:proximity*.72;
+  forgeReveal=THREE.MathUtils.lerp(forgeReveal,target,1-Math.exp(-3.7*dt));
+  const smooth=forgeReveal*forgeReveal*(3-2*forgeReveal);
   for(const mesh of forgeRoofParts){
-    mesh.material.opacity=THREE.MathUtils.lerp(1,.10,forgeReveal);
-    mesh.material.depthWrite=forgeReveal<.08;
-    mesh.visible=mesh.material.opacity>.025;
+    mesh.material.opacity=THREE.MathUtils.lerp(1,.055,smooth);
+    mesh.material.depthWrite=smooth<.14;
+    if(mesh.userData.baseY!==undefined)mesh.position.y=mesh.userData.baseY+smooth*.14;
+    mesh.visible=mesh.material.opacity>.018;
   }
-  for(const mesh of forgeWallParts){mesh.material.opacity=THREE.MathUtils.lerp(1,.38,forgeReveal);mesh.material.depthWrite=forgeReveal<.08;}
+  for(const mesh of forgeWallParts){mesh.material.opacity=THREE.MathUtils.lerp(1,.26,smooth);mesh.material.depthWrite=smooth<.16;}
 }
+function updateTempleVisibility(dt){
+  const dx=Math.abs(player.x-templeCenterPos.x),dz=Math.abs(player.z-templeCenterPos.z);
+  const dist=Math.hypot(dx,dz);
+  const inside=dx<2.10&&dz<1.72&&player.y>.35;
+  const proximity=THREE.MathUtils.clamp((4.20-dist)/1.85,0,1);
+  const target=inside?1:proximity*.68;
+  templeReveal=THREE.MathUtils.lerp(templeReveal,target,1-Math.exp(-3.5*dt));
+  const smooth=templeReveal*templeReveal*(3-2*templeReveal);
+  for(const mesh of templeRoofParts){
+    mesh.material.opacity=THREE.MathUtils.lerp(1,.045,smooth);
+    mesh.material.depthWrite=smooth<.12;
+    if(mesh.userData.baseY!==undefined)mesh.position.y=mesh.userData.baseY+smooth*.13;
+    mesh.visible=mesh.material.opacity>.015;
+  }
+  for(const mesh of templeWallParts){mesh.material.opacity=THREE.MathUtils.lerp(1,.24,smooth);mesh.material.depthWrite=smooth<.16;}
+}
+
 function createTrainingNPC(){
   const root=new THREE.Group(); root.position.set(trainingCampCenter.x,0,trainingCampCenter.z+.55); scene.add(root); trainingNPC=root;
   const skin=new THREE.MeshStandardMaterial({color:0xb27a57,roughness:.95});
@@ -967,7 +1064,14 @@ function createTrainingNPC(){
     'Les armes d’entraînement pardonnent l’erreur. Les vraies, beaucoup moins.',
     'Entre quand tu veux. Ici, on sue avant de saigner.',
     'Un hoplite se construit répétition après répétition, pas seulement bataille après bataille.'
-  ],rig:{motion,torsoPivot,headPivot,leftShoulder,rightShoulder,leftFore,rightFore,shieldPivot,swordPivot}};
+  ],route:[
+    new THREE.Vector3(trainingCampCenter.x-2.25,0,trainingCampCenter.z-2.05),
+    new THREE.Vector3(trainingCampCenter.x,0,trainingCampCenter.z-2.15),
+    new THREE.Vector3(trainingCampCenter.x+2.25,0,trainingCampCenter.z-2.00),
+    new THREE.Vector3(trainingCampCenter.x+2.20,0,trainingCampCenter.z+1.95),
+    new THREE.Vector3(trainingCampCenter.x,0,trainingCampCenter.z+1.85),
+    new THREE.Vector3(trainingCampCenter.x-2.20,0,trainingCampCenter.z+1.90)
+  ],targetIndex:1,walkCycle:0,clock:0,rig:{motion,torsoPivot,headPivot,leftShoulder,rightShoulder,leftFore,rightFore,shieldPivot,swordPivot,leftLegPivot,rightLegPivot}};
 }
 
 function createFarmerNPC(){
@@ -1058,7 +1162,7 @@ function createFarmerNPC(){
 
   root.userData={
     state:'walk',stateTime:0,targetIndex:1,rounds:0,walkCycle:0,idleCycle:0,dialogIndex:0,playerNear:false,
-    route:[new THREE.Vector3(7.15,0,4.25),new THREE.Vector3(9.55,0,4.25),new THREE.Vector3(9.55,0,6.65),new THREE.Vector3(7.15,0,6.65)],
+    route:farmPlotCenters.map((plot,index)=>({pos:plot.pos.clone(),crop:plot.name,index})),currentCrop:'blé',
     rig:{motion,hips,torsoPivot,headPivot,leftLeg,rightLeg,leftArm,rightArm,hoePivot},
     bubbleUntil:0,
     name:'Démos',
@@ -1324,23 +1428,33 @@ function updateFarmerNPC(dt){
     if(d.stateTime<=0){d.state='walk';d.targetIndex=(d.targetIndex+1)%d.route.length;}
   }else if(d.state==='work'){
     workAmount=1;
-    const fieldDir=farmerFieldSoundPos.clone().sub(farmerNPC.position);
+    const current=d.route[d.targetIndex]||d.route[0];
+    d.currentCrop=current.crop;
+    const faceTarget=current.crop==='terre'?new THREE.Vector3(current.pos.x,0,current.pos.z-.7):farmerFieldSoundPos;
+    const fieldDir=faceTarget.clone().sub(farmerNPC.position);
     const targetRot=Math.atan2(fieldDir.x,fieldDir.z)+Math.PI;
     farmerNPC.rotation.y=normalizeAngle(farmerNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-farmerNPC.rotation.y),-dt*3.2,dt*3.2));
     if(d.stateTime<=0){
       d.targetIndex=(d.targetIndex+1)%d.route.length;
-      if(d.targetIndex===0){d.rounds++;d.state=d.rounds%2===0?'rest':'walk';d.stateTime=d.state==='rest'?2.2:0;}
+      if(d.targetIndex===0){d.rounds++;d.state='rest';d.stateTime=1.4+Math.random()*.8;}
       else d.state='walk';
     }
   }else{
-    const target=d.route[d.targetIndex],dir=target.clone().sub(farmerNPC.position);dir.y=0;
+    const targetData=d.route[d.targetIndex]||d.route[0];
+    const target=targetData.pos,dir=target.clone().sub(farmerNPC.position);dir.y=0;
     const dist=dir.length();
-    if(dist<.12){d.state='work';d.stateTime=1.8+Math.random()*1.5;}
+    if(dist<.16){d.currentCrop=targetData.crop;d.state='work';d.stateTime=(targetData.crop==='terre'?3.4:2.0)+Math.random()*1.2;}
     else{
-      dir.normalize();moving=true;d.walkCycle+=dt*5.2;
+      dir.normalize();moving=true;d.walkCycle+=dt*5.0;
       const targetRot=Math.atan2(dir.x,dir.z)+Math.PI;
-      farmerNPC.rotation.y=normalizeAngle(farmerNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-farmerNPC.rotation.y),-dt*4.0,dt*4.0));
-      const proposed=farmerNPC.position.clone();proposed.addScaledVector(dir,.52*dt);resolveCollisions(proposed,.20);farmerNPC.position.copy(proposed);
+      farmerNPC.rotation.y=normalizeAngle(farmerNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-farmerNPC.rotation.y),-dt*4.2,dt*4.2));
+      const speed=.58;
+      const proposed=farmerNPC.position.clone().addScaledVector(dir,speed*dt);
+      // Démos reste dans son domaine agricole sans être bloqué par les collisions générales de la ville.
+      proposed.x=THREE.MathUtils.clamp(proposed.x,farmerFieldSoundPos.x-3.2,farmerFieldSoundPos.x+3.2);
+      proposed.z=THREE.MathUtils.clamp(proposed.z,farmerFieldSoundPos.z-2.15,farmerFieldSoundPos.z+2.15);
+      const pdx=proposed.x-player.x,pdz=proposed.z-player.z,pdist=Math.hypot(pdx,pdz);
+      if(pdist>.52)farmerNPC.position.copy(proposed);
     }
   }
 
@@ -1352,11 +1466,14 @@ function updateFarmerNPC(dt){
   r.headPivot.rotation.z=Math.sin(d.idleCycle*1.4)*.015;
 
   if(workAmount){
-    const chop=(Math.sin(d.idleCycle*5.4)+1)*.5;
-    r.torsoPivot.rotation.x=.14+chop*.10;
-    r.hoePivot.rotation.x=-.10-chop*.34;
-    r.hoePivot.rotation.y=-.50+chop*.06;
-    r.hoePivot.rotation.z=-.08-chop*.05;
+    const crop=d.currentCrop||'blé';
+    const cadence=crop==='terre'?5.8:crop==='carottes'?4.8:3.8;
+    const chop=(Math.sin(d.idleCycle*cadence)+1)*.5;
+    const force=crop==='terre'?.48:crop==='carottes'?.33:.20;
+    r.torsoPivot.rotation.x=.10+chop*(crop==='terre'?.17:.09);
+    r.hoePivot.rotation.x=-.08-chop*force;
+    r.hoePivot.rotation.y=-.50+(crop==='blé'||crop==='orge'?Math.sin(d.idleCycle*2.0)*.08:chop*.05);
+    r.hoePivot.rotation.z=-.08-chop*(crop==='terre'?.08:.035);
   }else{
     r.hoePivot.rotation.x=-.08+Math.sin(d.idleCycle*1.4)*.012;
     r.hoePivot.rotation.y=-.50+Math.sin(d.idleCycle*1.1)*.015;
@@ -1364,39 +1481,85 @@ function updateFarmerNPC(dt){
     if(d.state!=='rest'&&d.state!=='talk')r.torsoPivot.rotation.x=.04+Math.sin(d.idleCycle*1.6)*.01;
   }
 
-  // Les deux points de prise sont transformés dans l'espace local du torse.
   r.hoePivot.updateMatrix();
   const leftGripLocal=new THREE.Vector3(-.26,0,0).applyMatrix4(r.hoePivot.matrix);
   const rightGripLocal=new THREE.Vector3(.07,0,0).applyMatrix4(r.hoePivot.matrix);
-
-  // Main gauche en avant, main droite proche du corps : posture type arme/outil.
-  if(moving){
-    leftGripLocal.y+=Math.abs(swing)*.008;
-    rightGripLocal.y+=Math.abs(swing)*.006;
-  }
-  if(workAmount){
-    leftGripLocal.y+=.012;
-    rightGripLocal.y-=.004;
-  }
-
+  if(moving){leftGripLocal.y+=Math.abs(swing)*.008;rightGripLocal.y+=Math.abs(swing)*.006;}
+  if(workAmount){leftGripLocal.y+=.012;rightGripLocal.y-=.004;}
   solveFarmerArm(r.leftArm,leftGripLocal,1.0);
   solveFarmerArm(r.rightArm,rightGripLocal,.72);
 }
 
 function updateTrainingNPC(dt){
   if(!trainingNPC)return;
-  const d=trainingNPC.userData, r=d.rig; if(!r)return;
-  d.stateTime=(d.stateTime||0)+dt;
-  r.motion.position.y=Math.sin(d.stateTime*2.2)*.015;
-  r.torsoPivot.rotation.z=Math.sin(d.stateTime*1.6)*.03;
-  r.headPivot.rotation.z=Math.sin(d.stateTime*1.2)*.05;
-  r.leftShoulder.rotation.x=.14+Math.sin(d.stateTime*1.8)*.03;
-  r.leftFore.rotation.z=.22+Math.sin(d.stateTime*1.6)*.03;
-  r.rightShoulder.rotation.x=.28+Math.sin(d.stateTime*1.7+.7)*.04;
-  r.rightShoulder.rotation.z=-.58+Math.sin(d.stateTime*1.4)*.02;
-  r.rightFore.rotation.z=-.22+Math.sin(d.stateTime*1.5+.5)*.03;
-  r.shieldPivot.rotation.y=Math.sin(d.stateTime*1.5)*.08;
-  r.swordPivot.rotation.x=.12+Math.sin(d.stateTime*1.4)*.04;
+  const d=trainingNPC.userData,r=d.rig;if(!r)return;
+  d.clock=(d.clock||0)+dt;
+  let moving=false,practice=0;
+  if(d.state==='talk'){
+    d.stateTime-=dt;
+    const dx=player.x-trainingNPC.position.x,dz=player.z-trainingNPC.position.z;
+    const targetRot=Math.atan2(dx,dz)+Math.PI;
+    trainingNPC.rotation.y=normalizeAngle(trainingNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-trainingNPC.rotation.y),-dt*4.5,dt*4.5));
+    const gesture=(Math.sin(d.clock*3.1)+1)*.5;
+    r.rightShoulder.rotation.x=.20+gesture*.22;
+    r.rightShoulder.rotation.z=-.55+gesture*.35;
+    r.rightFore.rotation.z=-.20+gesture*.22;
+    r.leftShoulder.rotation.x=.14;
+    r.leftShoulder.rotation.z=.60;
+    r.leftFore.rotation.z=.24;
+    if(d.stateTime<=0){d.state='patrol';d.stateTime=0;}
+  }else if(d.state==='practice'){
+    d.stateTime-=dt;practice=1;
+    const phase=(Math.sin(d.clock*5.0)+1)*.5;
+    const guardPhase=(Math.sin(d.clock*2.5+.6)+1)*.5;
+    r.rightShoulder.rotation.x=.18+phase*.40;
+    r.rightShoulder.rotation.z=-.92+phase*1.18;
+    r.rightFore.rotation.z=-.42+phase*.54;
+    r.swordPivot.rotation.x=.05+phase*.32;
+    r.leftShoulder.rotation.x=.18+guardPhase*.12;
+    r.leftShoulder.rotation.z=.52-guardPhase*.22;
+    r.leftFore.rotation.z=.30+guardPhase*.18;
+    r.shieldPivot.rotation.y=-.10+guardPhase*.24;
+    r.torsoPivot.rotation.z=(phase-.5)*.10;
+    r.headPivot.rotation.z=(guardPhase-.5)*.05;
+    if(d.stateTime<=0){d.targetIndex=(d.targetIndex+1)%d.route.length;d.state='patrol';}
+  }else{
+    d.state='patrol';
+    const target=d.route[d.targetIndex]||d.route[0];
+    const dir=target.clone().sub(trainingNPC.position);dir.y=0;
+    const dist=dir.length();
+    if(dist<.15){d.state='practice';d.stateTime=1.7+Math.random()*1.6;}
+    else{
+      dir.normalize();moving=true;d.walkCycle=(d.walkCycle||0)+dt*5.4;
+      const targetRot=Math.atan2(dir.x,dir.z)+Math.PI;
+      trainingNPC.rotation.y=normalizeAngle(trainingNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-trainingNPC.rotation.y),-dt*4.3,dt*4.3));
+      const proposed=trainingNPC.position.clone().addScaledVector(dir,.48*dt);
+      proposed.x=THREE.MathUtils.clamp(proposed.x,trainingCampCenter.x-2.42,trainingCampCenter.x+2.42);
+      proposed.z=THREE.MathUtils.clamp(proposed.z,trainingCampCenter.z-2.25,trainingCampCenter.z+2.18);
+      const pdx=proposed.x-player.x,pdz=proposed.z-player.z;
+      if(Math.hypot(pdx,pdz)>.55)trainingNPC.position.copy(proposed);
+    }
+  }
+
+  const swing=Math.sin(d.walkCycle||0);
+  r.motion.position.y=.01+Math.abs(swing)*.025*(moving?1:0)+Math.sin(d.clock*2.0)*.006;
+  r.leftLegPivot.rotation.x=-swing*.46*(moving?1:0);
+  r.rightLegPivot.rotation.x=swing*.46*(moving?1:0);
+  if(moving){
+    r.leftShoulder.rotation.x=.12-swing*.18;
+    r.leftShoulder.rotation.z=.58;
+    r.leftFore.rotation.z=.24+swing*.05;
+    r.rightShoulder.rotation.x=.22+swing*.20;
+    r.rightShoulder.rotation.z=-.62;
+    r.rightFore.rotation.z=-.22-swing*.06;
+    r.shieldPivot.rotation.y=Math.sin(d.clock*2.2)*.07;
+    r.swordPivot.rotation.x=.10+Math.sin(d.clock*2.0)*.04;
+    r.torsoPivot.rotation.z=swing*.025;
+    r.headPivot.rotation.z=-swing*.018;
+  }else if(!practice&&d.state!=='talk'){
+    r.leftLegPivot.rotation.x=THREE.MathUtils.lerp(r.leftLegPivot.rotation.x,0,.12);
+    r.rightLegPivot.rotation.x=THREE.MathUtils.lerp(r.rightLegPivot.rotation.x,0,.12);
+  }
 }
 
 function updateBlacksmithNPC(dt){
@@ -2020,6 +2183,7 @@ function update(){
   updateTrainingNPC(dt);
   updateTrainingGate(dt);
   updateForgeVisibility(dt);
+  updateTempleVisibility(dt);
   updateAudioZones(dt);
   updateNPCBubble();
   updateActionButtons();
