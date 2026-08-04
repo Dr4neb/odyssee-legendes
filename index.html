@@ -81,7 +81,7 @@ const els={game:document.getElementById('game'),fatal:document.getElementById('f
 window.addEventListener('error',e=>{els.fatal.style.display='block';els.fatal.textContent='Le prototype 3D a rencontré une erreur :\n\n'+(e.error?.stack||e.message||e)});
 
 let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0;
-const attackDuration=.70;
+const attackDuration=1.55;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,0), turnVelocity=0, stepParity=0;
 const normalizeAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const keys=new Set();
@@ -946,6 +946,8 @@ function addGreekGear(root){
   swordGrip.castShadow=true;
   swordPivot.add(swordGrip);
   const swordGuard=new THREE.Mesh(new THREE.BoxGeometry(.21,.036,.05), matSteel);
+  // Vu du dessus, la garde et surtout la lame présentent leur tranche, pas leur face plate.
+  swordGuard.rotation.y=Math.PI/2;
   swordGuard.position.set(.00,.00,-.09);
   swordGuard.castShadow=true;
   swordPivot.add(swordGuard);
@@ -970,6 +972,8 @@ function addGreekGear(root){
   ]);
   bladeGeom.computeVertexNormals();
   const blade=new THREE.Mesh(bladeGeom,matSteel);
+  // Rotation de 90° autour de l'axe longitudinal : seule la tranche fine reste visible.
+  blade.rotation.y=Math.PI/2;
   blade.castShadow=true;
   blade.position.set(.00,.00,-.09);
   swordPivot.add(blade);
@@ -998,19 +1002,23 @@ function update(){
   let attackWeight=0,attackLift=0,attackStrike=0,attackRecover=0;
   const smoothStep=t=>t*t*(3-2*t);
   if(attackTimer>0){
-    if(attackProgress<.30){
-      // Armement : le glaive monte droit au-dessus et légèrement derrière la tête.
-      attackLift=smoothStep(attackProgress/.30);
+    if(attackProgress<.36){
+      // Armement lent : coude fortement plié, pointe du xiphos dirigée vers le haut.
+      attackLift=smoothStep(attackProgress/.36);
       attackWeight=attackLift;
-    }else if(attackProgress<.68){
-      // Frappe verticale : le bras et le glaive descendent droit devant le hoplite.
+    }else if(attackProgress<.48){
+      // Courte suspension en position haute pour rendre le geste parfaitement lisible.
       attackLift=1;
-      attackStrike=smoothStep((attackProgress-.30)/.38);
+      attackWeight=1;
+    }else if(attackProgress<.78){
+      // Coupe verticale contrôlée du haut vers le bas, sans balayage latéral.
+      attackLift=1;
+      attackStrike=smoothStep((attackProgress-.48)/.30);
       attackWeight=1;
     }else{
-      // Retour contrôlé vers la garde normale.
+      // Retour lent vers la garde normale.
       attackStrike=1;
-      attackRecover=smoothStep((attackProgress-.68)/.32);
+      attackRecover=smoothStep((attackProgress-.78)/.22);
       attackWeight=1-attackRecover;
     }
   }
@@ -1085,15 +1093,15 @@ function update(){
       const rightShoulderZ=-0.01-turnLean*.08;
       const rightElbowX=0.06+Math.sin(walkCycle+1.2)*0.022*speedNorm;
 
-      // Attaque verticale du haut vers le bas : aucun balayage latéral.
-      // Phase armée : bras replié et remonté derrière la tête.
-      const raisedShoulderX=1.08;
-      const raisedShoulderZ=-.18;
-      const raisedElbowX=1.20;
-      // Phase d'impact : bras projeté droit devant, coude presque déplié.
-      const struckShoulderX=-1.02;
-      const struckShoulderZ=-.08;
-      const struckElbowX=.20;
+      // Attaque verticale lente : le bras reste plié en position haute puis se déplie dans l'axe.
+      // Phase armée : main près de la tête, coude nettement visible et xiphos pointé vers le haut.
+      const raisedShoulderX=.72;
+      const raisedShoulderZ=-.26;
+      const raisedElbowX=1.42;
+      // Phase d'impact : bras abaissé devant le corps, mais sans verrouiller complètement le coude.
+      const struckShoulderX=-.84;
+      const struckShoulderZ=-.05;
+      const struckElbowX=.42;
 
       let attackShoulderX=rightShoulderX;
       let attackShoulderZ=rightShoulderZ;
@@ -1118,7 +1126,7 @@ function update(){
       g.rightArm.shoulder.rotation.z=THREE.MathUtils.lerp(attackShoulderZ,-.10,blockBlend);
       g.rightArm.elbow.rotation.x=THREE.MathUtils.lerp(attackElbow,.28,blockBlend);
       g.torsoPivot.rotation.y=0;
-      g.torsoPivot.rotation.x+=attackTimer>0?THREE.MathUtils.lerp(-.04,.16,attackStrike)*(1-attackRecover):0;
+      g.torsoPivot.rotation.x+=attackTimer>0?THREE.MathUtils.lerp(-.025,.12,attackStrike)*(1-attackRecover):0;
 
       const shieldT=blockBlend*blockBlend*(3-2*blockBlend);
       const shieldArc=Math.sin(Math.PI*shieldT);
@@ -1153,20 +1161,38 @@ function update(){
       const swordIdleX=-1.12 + Math.sin(walkCycle+Math.PI)*0.010*speedNorm;
       const swordIdleY=.02 + turnLean*0.02;
       const swordIdleZ=.02 + Math.sin(walkCycle*1.3+0.7)*0.008*speedNorm;
-      // Le glaive reste droit dans l'axe du personnage.
-      // Il part derrière la tête puis descend jusqu'à pointer droit devant.
+      // Le xiphos est roulé sur sa tranche : la caméra du dessus ne voit jamais sa grande face plate.
+      // En position armée, sa pointe vise le haut de l'écran ; la coupe descend ensuite dans le même axe.
       let swordAttackX=swordIdleX;
+      let swordAttackY=swordIdleY;
+      let swordAttackZ=swordIdleZ;
+      let swordPosY=-.004,swordPosZ=.01;
       if(attackTimer>0){
-        const swordRaisedX=1.38;
-        const swordImpactX=-1.50;
+        const swordRaisedX=-1.52;
+        const swordImpactX=1.10;
         if(attackStrike<1){
           swordAttackX=THREE.MathUtils.lerp(swordIdleX,swordRaisedX,attackLift);
           if(attackStrike>0)swordAttackX=THREE.MathUtils.lerp(swordRaisedX,swordImpactX,attackStrike);
         }else swordAttackX=THREE.MathUtils.lerp(swordImpactX,swordIdleX,attackRecover);
+        swordAttackY=0;
+        swordAttackZ=0;
+        const poseT=attackStrike>0?attackStrike:attackLift;
+        swordPosY=THREE.MathUtils.lerp(-.004,.014,attackLift);
+        swordPosZ=THREE.MathUtils.lerp(.01,-.022,attackLift);
+        if(attackStrike>0){
+          swordPosY=THREE.MathUtils.lerp(.014,-.012,attackStrike);
+          swordPosZ=THREE.MathUtils.lerp(-.022,-.006,attackStrike);
+        }
+        if(attackRecover>0){
+          swordPosY=THREE.MathUtils.lerp(-.012,-.004,attackRecover);
+          swordPosZ=THREE.MathUtils.lerp(-.006,.01,attackRecover);
+        }
       }
+      g.swordPivot.position.y=swordPosY;
+      g.swordPivot.position.z=swordPosZ;
       g.swordPivot.rotation.x=swordAttackX;
-      g.swordPivot.rotation.y=THREE.MathUtils.lerp(swordIdleY,0,attackWeight);
-      g.swordPivot.rotation.z=THREE.MathUtils.lerp(swordIdleZ,0,attackWeight);
+      g.swordPivot.rotation.y=swordAttackY;
+      g.swordPivot.rotation.z=swordAttackZ;
       g.crest.rotation.z=Math.sin(walkCycle*1.7)*0.05*speedNorm + Math.sin(idleCycle*1.5)*0.012;
 
       if(g.cape?.geometry?.attributes?.position){
