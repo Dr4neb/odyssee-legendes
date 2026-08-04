@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#080806">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Odyssée — Concept UI v1.10 TEST</title>
+<style>
+:root{
+  --gold:#c9a963;--gold2:#806533;--ivory:#eee3c6;--muted:#a79d87;
+  --black:#080806;--panel:rgba(10,10,8,.92);--panel2:rgba(22,20,15,.94);
+  --line:rgba(201,169,99,.42);--red:#8a2f28;--blue:#3b7187;--green:#62754b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#050504;color:var(--ivory);font-family:Georgia,"Times New Roman",serif;touch-action:none;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit}
+#app{position:fixed;inset:0;background:#080806;overflow:hidden}
+#rotate{display:none;position:fixed;inset:0;z-index:9999;place-items:center;padding:30px;text-align:center;background:#080806;color:var(--gold);font-size:20px;letter-spacing:.08em}
+#rotate small{display:block;margin-top:14px;color:var(--muted);font-size:12px;letter-spacing:.03em}
+@media (orientation:portrait){#rotate{display:grid}#app{visibility:hidden}}
+
+/* Title */
+#titleScreen{position:absolute;inset:0;z-index:7000;display:grid;place-items:center;overflow:hidden;background:#070806}
+#titleScreen.hidden{display:none}
+.titleBackdrop{position:absolute;inset:-6%;background:
+ radial-gradient(circle at 68% 28%,rgba(210,147,70,.30),transparent 19%),
+ linear-gradient(to bottom,rgba(0,0,0,.08),rgba(0,0,0,.76)),
+ radial-gradient(ellipse at 50% 88%,#14313d 0 22%,#0e2027 23% 35%,transparent 36%),
+ linear-gradient(145deg,#554329 0 17%,#1a221d 18% 32%,#0a1112 33% 100%);filter:saturate(.78)}
+.titleBackdrop:after{content:"";position:absolute;left:49%;top:28%;width:22%;height:32%;background:linear-gradient(100deg,transparent 47%,#2d2016 48% 52%,transparent 53%),linear-gradient(160deg,transparent 0 44%,#7f2e28 45% 74%,transparent 75%);clip-path:polygon(47% 0,54% 0,56% 55%,94% 79%,54% 78%,53% 100%,48% 100%,48% 79%,6% 80%,47% 55%);filter:drop-shadow(12px 14px 12px #000)}
+.titleVeil{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 5%,rgba(0,0,0,.3) 54%,rgba(0,0,0,.78) 100%)}
+.titleContent{position:relative;text-align:center;padding:22px}
+.titleContent h1{margin:0;color:#d7bd86;font-size:clamp(45px,8vw,94px);font-weight:500;letter-spacing:.06em;text-shadow:0 3px 0 #392b18,0 12px 32px #000}
+.titleContent .subtitle{margin-top:1px;color:#c8b17f;font-size:clamp(13px,2vw,22px);letter-spacing:.30em}
+.version{margin-top:11px;color:#8f856f;font:700 10px system-ui;letter-spacing:.18em}
+.primary{min-width:190px;margin-top:28px;padding:12px 25px;border:1px solid var(--gold);background:linear-gradient(#c7a45c,#7c5d28);color:#120d05;font-weight:900;letter-spacing:.12em;box-shadow:0 10px 30px #000}
+.secondary{display:block;margin:13px auto 0;padding:8px 14px;border:1px solid #65583e;background:#11100d;color:#aaa18e;font-size:11px}
+
+/* Main layout */
+#gameScreen{position:absolute;inset:0;display:grid;grid-template-rows:44px minmax(0,1fr) 61px;background:#090806}
+#topbar{display:flex;align-items:center;gap:12px;padding:calc(5px + env(safe-area-inset-top)) calc(9px + env(safe-area-inset-right)) 5px calc(12px + env(safe-area-inset-left));height:44px;background:linear-gradient(180deg,#14120d,#090806);border-bottom:1px solid var(--line);box-shadow:0 4px 16px #000;z-index:50}
+#brand{margin-right:auto;color:var(--gold);font-size:14px;letter-spacing:.13em;white-space:nowrap}
+#resources{display:flex;gap:5px;min-width:0;overflow:hidden}
+.resource{display:flex;align-items:center;gap:4px;min-width:68px;padding:5px 7px;border-left:1px solid #40351f;background:#0e0d0a;font:700 11px system-ui;white-space:nowrap}.resource i{font-style:normal;font-size:13px}.resource.gem{min-width:58px;color:#c9e6f8}.plus{width:28px;height:28px;border:1px solid #59492b;background:#17140e;color:var(--gold);font-size:20px;line-height:20px}
+#content{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(232px,.72fr);min-height:0}
+#campPane{position:relative;min-width:0;overflow:hidden;border-right:1px solid var(--line);background:#55452c}
+#world{display:block;width:100%;height:100%;background:#58472e}
+#questPanel{position:absolute;left:0;top:0;width:min(188px,36%);padding:9px 9px 8px;background:linear-gradient(90deg,rgba(7,7,6,.93),rgba(7,7,6,.73),transparent);pointer-events:none;text-shadow:0 2px 2px #000}
+.sectionTitle{color:var(--gold);font-size:11px;letter-spacing:.12em;border-bottom:1px solid rgba(201,169,99,.35);padding-bottom:6px;margin-bottom:6px}
+.quest{padding:4px 0 5px;border-bottom:1px solid rgba(255,255,255,.07);font-size:10px;line-height:1.18}.quest b{display:block;font-size:11px;font-weight:500}.quest span{color:#bdb29b;font-size:9px}.quest em{float:right;color:#967c49;font-style:normal}
+#heroCard{position:absolute;left:8px;bottom:7px;display:flex;align-items:center;gap:8px;width:190px;padding:6px 9px 6px 56px;background:linear-gradient(90deg,rgba(7,7,6,.92),rgba(7,7,6,.55),transparent);pointer-events:none}
+.heroPortrait{position:absolute;left:0;width:52px;height:52px;border-radius:50%;border:2px solid var(--gold);background:radial-gradient(circle at 50% 38%,#bb8c61 0 16%,#281f18 17% 27%,#161512 28% 60%,#69502d 61% 70%,#0a0908 71%);box-shadow:0 0 0 3px #272015,0 5px 12px #000}
+.heroText{width:120px;font-size:10px}.heroText strong{display:block;color:#f0dfba;font-size:12px;letter-spacing:.06em}.xp{height:7px;margin-top:4px;background:#17130e;border:1px solid #493a22}.xp>i{display:block;height:100%;width:74%;background:linear-gradient(90deg,#7b231e,#c45843)}
+#notice{position:absolute;left:50%;top:12px;transform:translateX(-50%);max-width:62%;padding:6px 10px;border:1px solid rgba(201,169,99,.48);background:rgba(7,7,6,.83);font:700 10px system-ui;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}.noticeShow{opacity:1!important}
+#joystick{position:absolute;left:calc(13px + env(safe-area-inset-left));bottom:calc(66px + env(safe-area-inset-bottom));width:102px;height:102px;border-radius:50%;border:1px solid rgba(234,227,198,.42);background:radial-gradient(circle,rgba(52,46,33,.52) 0 32%,rgba(10,10,8,.62) 33% 69%,rgba(0,0,0,.72) 70%);box-shadow:inset 0 0 25px #0008,0 8px 22px #0009;touch-action:none}
+#stick{position:absolute;left:29px;top:29px;width:44px;height:44px;border-radius:50%;border:1px solid #ead9ae;background:radial-gradient(circle at 38% 30%,#c2a05d,#5d441d);box-shadow:0 6px 12px #000;pointer-events:none}
+#actionBtn{position:absolute;right:calc(18px + env(safe-area-inset-right));bottom:calc(74px + env(safe-area-inset-bottom));width:75px;height:75px;border-radius:50%;border:2px solid #d0b16d;background:radial-gradient(circle at 38% 30%,#b24c3f,#702019);font:900 11px system-ui;letter-spacing:.08em;box-shadow:0 7px 18px #000,inset 0 0 0 4px rgba(0,0,0,.18)}
+#actionBtn:active,.navButton:active,.panelBtn:active{transform:scale(.96)}
+#rightRail{display:grid;grid-template-rows:minmax(0,1.04fr) minmax(0,.96fr);min-height:0;background:#0a0907}
+.railPanel{position:relative;min-height:0;overflow:hidden;border-bottom:1px solid var(--line)}
+.railTitle{height:31px;padding:8px 10px 5px;color:var(--gold);font-size:11px;letter-spacing:.08em;background:#12100c;border-bottom:1px solid rgba(201,169,99,.25)}
+#miniMap{position:absolute;left:0;right:0;top:31px;bottom:28px;width:100%;height:calc(100% - 59px);background:#18343a}
+.railTabs{position:absolute;left:0;right:0;bottom:0;height:28px;display:grid;grid-template-columns:repeat(4,1fr);background:#0d0c09}.railTabs button{border:0;border-right:1px solid #2e281b;background:transparent;color:#9f957f;font-size:8px}.railTabs button.active{color:var(--gold);border-bottom:2px solid var(--gold)}
+#shipArea{position:absolute;left:0;right:0;top:31px;bottom:0;display:grid;grid-template-columns:1.2fr .8fr;min-height:0}
+#shipCanvas{width:100%;height:100%;background:#23404a}
+.shipStats{padding:9px 8px;background:linear-gradient(90deg,#15140f,#090806);font:700 9px system-ui;overflow:auto}.levelLine{margin-bottom:8px;color:#d8c9a8}.bar{height:7px;margin-top:4px;border:1px solid #59472b;background:#0a0907}.bar i{display:block;height:100%;width:55%;background:linear-gradient(90deg,#8a6228,#d2a75a)}.statline{display:flex;align-items:center;justify-content:space-between;margin:7px 0}.blocks{display:flex;gap:2px}.blocks i{width:9px;height:8px;border:1px solid #6c5832;background:#b39052}.blocks i.off{background:#1c1a15;border-color:#333027}.upgradeMini{width:100%;padding:7px 4px;border:1px solid #6e5934;background:#211b11;color:#cdb681;font-size:9px}
+#bottomNav{display:grid;grid-template-columns:repeat(6,1fr);padding:0 calc(8px + env(safe-area-inset-right)) env(safe-area-inset-bottom) calc(8px + env(safe-area-inset-left));background:linear-gradient(#11100c,#080806);border-top:1px solid var(--line);z-index:60}
+.navButton{border:0;border-right:1px solid #2c2619;background:transparent;color:#b9aa8a;font-size:8px;letter-spacing:.04em}.navButton:last-child{border-right:0}.navIcon{display:block;margin-bottom:3px;color:var(--gold);font-size:22px;line-height:23px}.navButton.active{background:linear-gradient(transparent,rgba(201,169,99,.12));color:#eadbb9;border-top:2px solid var(--gold)}
+
+/* Modal */
+#modal{position:absolute;inset:44px 0 61px;z-index:500;display:none;align-items:center;justify-content:center;padding:12px;background:rgba(0,0,0,.68);backdrop-filter:blur(3px)}
+#modal.open{display:flex}.modalBox{position:relative;width:min(900px,96vw);max-height:96%;overflow:auto;border:1px solid var(--line);background:linear-gradient(135deg,#17150f,#090806 72%);box-shadow:0 24px 70px #000;padding:16px}.modalHead{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--line)}.modalHead h2{margin:0;color:var(--gold);font-size:17px;font-weight:500;letter-spacing:.10em}.closeBtn{width:34px;height:30px;border:1px solid #57482e;background:#100e0a;color:#c3b48f;font-size:18px}.modalBody{padding-top:13px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.uiCard{padding:11px;border:1px solid #57492d;background:linear-gradient(145deg,#1d1a12,#0c0b08);min-height:75px}.uiCard h3{margin:0 0 5px;color:#dbc38d;font-size:13px}.uiCard p{margin:0;color:#aaa18d;font:11px/1.45 system-ui}.panelBtn{margin-top:9px;padding:9px 12px;border:1px solid #8b7040;background:linear-gradient(#b18c48,#6d5023);color:#171006;font-weight:900;font-size:11px}.panelBtn.danger{background:linear-gradient(#a3483b,#65231e);color:#f3e4c7}.equipment{display:grid;grid-template-columns:120px minmax(150px,1fr);gap:16px}.warrior{height:235px;border:1px solid #4e422a;background:radial-gradient(circle at 50% 30%,#765633 0 10%,transparent 11%),linear-gradient(105deg,transparent 37%,#2a2419 38% 62%,transparent 63%),radial-gradient(ellipse at 50% 75%,#30281b,transparent 55%),#0b0a08;position:relative}.warrior:before{content:"";position:absolute;left:48%;top:32%;width:5px;height:56%;background:#96723a;transform:rotate(8deg)}.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.slot{aspect-ratio:1;border:1px solid #594a2e;background:#11100c;display:grid;place-items:center;color:#c5aa6d;font-size:25px}.skillTree{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:center;justify-items:center;padding:20px}.skill{width:50px;height:50px;border-radius:50%;border:2px solid #665735;background:#17140e;display:grid;place-items:center;font-size:21px;color:#746e60}.skill.on{border-color:#d0a957;color:#ffd678;box-shadow:0 0 20px rgba(217,170,72,.45)}.crewCards{display:grid;grid-template-columns:repeat(4,minmax(105px,1fr));gap:10px}.crewCard{height:190px;padding:8px;display:flex;flex-direction:column;justify-content:flex-end;border:2px solid #625b4d;background:radial-gradient(circle at 50% 34%,#9e7653 0 14%,#2b241b 15% 28%,transparent 29%),linear-gradient(to top,#080806 0 27%,transparent 62%),#211e18;text-align:center}.crewCard.legend{border-color:#cda64d;box-shadow:inset 0 0 18px #8b651e}.crewCard.epic{border-color:#8b4e9d}.crewCard.rare{border-color:#4382a2}.rarity{font:700 9px system-ui;letter-spacing:.10em;color:#d6c49c}.crewName{margin-top:5px;font-size:12px}.factionRow{display:grid;grid-template-columns:34px 1fr 80px;gap:9px;align-items:center;padding:9px;border-bottom:1px solid #332c1e}.crest{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#1f4252;border:1px solid #c7ad70}.factionRow b{font-size:11px}.factionRow small{color:#8c846f}.fbar{height:7px;background:#18150f;border:1px solid #463b27}.fbar i{display:block;height:100%;background:#b7924f}.mapLarge{height:285px;border:1px solid #514329;background:#17373e;position:relative;overflow:hidden}.mapLarge canvas{width:100%;height:100%}
+.toast{position:absolute;left:50%;bottom:72px;transform:translateX(-50%);z-index:900;padding:8px 13px;background:#090806;border:1px solid var(--gold);font:700 10px system-ui;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}
+@media (max-width:900px){
+ #gameScreen{grid-template-rows:39px minmax(0,1fr) 54px}#topbar{height:39px}.resource{min-width:54px;padding:4px 5px;font-size:9px}.resource:nth-child(3){display:none}#brand{font-size:11px}
+ #content{grid-template-columns:minmax(0,1.5fr) minmax(210px,.72fr)}#questPanel{width:145px}.quest:nth-child(3){display:none}#heroCard{left:108px;bottom:3px;width:145px;padding-left:48px}.heroPortrait{width:44px;height:44px}.heroText{width:95px}
+ #joystick{width:88px;height:88px;bottom:56px}#stick{left:25px;top:25px;width:38px;height:38px}#actionBtn{width:65px;height:65px;bottom:61px}.navIcon{font-size:18px}.navButton{font-size:7px}
+ #modal{inset:39px 0 54px}.crewCards{grid-template-columns:repeat(4,minmax(90px,1fr))}.crewCard{height:145px}.mapLarge{height:210px}
+}
+</style>
+</head>
+<body>
+<div id="rotate">↻ TOURNE L’IPHONE EN PAYSAGE<small>Cette version exploite toute la largeur de l’écran.</small></div>
+<div id="app">
+  <section id="titleScreen">
+    <div class="titleBackdrop"></div><div class="titleVeil"></div>
+    <div class="titleContent">
+      <h1>ODYSSEY</h1><div class="subtitle">LÉGENDES DE L’ÉGÉE</div>
+      <div class="version">CONCEPT UI · ALPHA v1.10 TEST</div>
+      <button id="startBtn" class="primary">ENTRER DANS LE CAMP</button>
+      <button id="resetTitle" class="secondary">Effacer la sauvegarde du test</button>
+    </div>
+  </section>
+
+  <section id="gameScreen">
+    <header id="topbar">
+      <div id="brand">ODYSSEY</div>
+      <div id="resources">
+        <div class="resource"><i>◉</i><b id="goldValue">12 450</b></div>
+        <div class="resource"><i>▰</i><b id="woodValue">2 850</b></div>
+        <div class="resource"><i>◆</i><b id="metalValue">1 430</b></div>
+        <div class="resource gem"><i>💎</i><b id="gemValue">320</b></div>
+      </div>
+      <button class="plus" id="shopTop">+</button>
+    </header>
+
+    <main id="content">
+      <section id="campPane">
+        <canvas id="world"></canvas>
+        <div id="questPanel">
+          <div class="sectionTitle">QUÊTES</div>
+          <div class="quest"><b>Préparer la flotte <em id="fleetQuest">0/1</em></b><span>Construire une trirème</span></div>
+          <div class="quest"><b>Entraînement <em id="trainingQuest">0/3</em></b><span>Toucher les cibles</span></div>
+          <div class="quest"><b>Les dieux nous guident <em>0/1</em></b><span>Prier à l’autel</span></div>
+        </div>
+        <div id="heroCard"><div class="heroPortrait"></div><div class="heroText"><strong>NIKON</strong>Niveau 12<div class="xp"><i></i></div></div></div>
+        <div id="notice"></div>
+        <div id="joystick"><div id="stick"></div></div>
+        <button id="actionBtn">ACTION</button>
+      </section>
+
+      <aside id="rightRail">
+        <section class="railPanel">
+          <div class="railTitle">CARTE DU MONDE</div>
+          <canvas id="miniMap"></canvas>
+          <div class="railTabs"><button class="active" data-open="map">CARTE</button><button data-open="quests">QUÊTES</button><button data-open="factions">FACTIONS</button><button data-open="ports">PORTS</button></div>
+        </section>
+        <section class="railPanel">
+          <div class="railTitle">TRIRÈME — LE VENT D’ATHÉNA</div>
+          <div id="shipArea">
+            <canvas id="shipCanvas"></canvas>
+            <div class="shipStats">
+              <div class="levelLine">NIVEAU <b id="shipLevel">5</b><div class="bar"><i id="shipXpBar"></i></div></div>
+              <div class="statline"><span>COQUE</span><span class="blocks"><i></i><i></i><i></i><i></i><i class="off"></i></span></div>
+              <div class="statline"><span>RAM</span><span class="blocks"><i></i><i></i><i></i><i class="off"></i><i class="off"></i></span></div>
+              <div class="statline"><span>VOILES</span><span class="blocks"><i></i><i></i><i></i><i></i><i class="off"></i></span></div>
+              <div class="statline"><span>ÉQUIPAGE</span><span class="blocks"><i></i><i></i><i></i><i></i><i class="off"></i></span></div>
+              <button class="upgradeMini" id="upgradeShipMini">AMÉLIORER</button>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <nav id="bottomNav">
+      <button class="navButton" data-open="crew"><span class="navIcon">◉</span>ÉQUIPAGE</button>
+      <button class="navButton" data-open="ship"><span class="navIcon">⛵</span>NAVIRE</button>
+      <button class="navButton" data-open="inventory"><span class="navIcon">⚱</span>INVENTAIRE</button>
+      <button class="navButton" data-open="skills"><span class="navIcon">✦</span>COMPÉTENCES</button>
+      <button class="navButton" data-open="map"><span class="navIcon">⌘</span>CARTE</button>
+      <button class="navButton" data-open="menu"><span class="navIcon">☰</span>MENU</button>
+    </nav>
+  </section>
+
+  <section id="modal"><div class="modalBox"><div class="modalHead"><h2 id="modalTitle"></h2><button class="closeBtn" id="closeModal">×</button></div><div class="modalBody" id="modalBody"></div></div></section>
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const SAVE_KEY='odyssey_concept_ui_v110';
+const state={gold:12450,wood:2850,metal:1430,gems:320,shipLevel:5,shipXp:650,training:0,fleetBuilt:false,player:{x:600,y:505,angle:-1.4},started:false};
+try{Object.assign(state,JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'));state.player=Object.assign({x:600,y:505,angle:-1.4},state.player||{});}catch(e){}
+const save=()=>{try{localStorage.setItem(SAVE_KEY,JSON.stringify(state));}catch(e){}};
+const fmt=n=>Math.floor(n).toLocaleString('fr-FR');
+function syncUI(){
+ $('#goldValue').textContent=fmt(state.gold);$('#woodValue').textContent=fmt(state.wood);$('#metalValue').textContent=fmt(state.metal);$('#gemValue').textContent=fmt(state.gems);
+ $('#trainingQuest').textContent=Math.min(3,state.training)+'/3';$('#fleetQuest').textContent=state.fleetBuilt?'1/1':'0/1';$('#shipLevel').textContent=state.shipLevel;$('#shipXpBar').style.width=Math.min(100,(state.shipXp/1200)*100)+'%';
+}
+syncUI();
+let toastTimer=0;function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1900)}
+let noticeTimer=0;function notice(msg){const n=$('#notice');n.textContent=msg;n.classList.add('noticeShow');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>n.classList.remove('noticeShow'),1600)}
+$('#startBtn').onclick=()=>{$('#titleScreen').classList.add('hidden');state.started=true;save();resizeAll();notice('Camp d’Ithaque — approchez Démos ou les cibles')};
+if(state.started)$('#titleScreen').classList.add('hidden');
+$('#resetTitle').onclick=()=>{localStorage.removeItem(SAVE_KEY);location.reload()};
+
+/* Modal content */
+const modal=$('#modal'), modalTitle=$('#modalTitle'), modalBody=$('#modalBody');
+function openModal(type){
+ let title='',html='';
+ if(type==='crew'){
+  title='ÉQUIPAGE';html=`<div class="crewCards"><div class="crewCard legend"><div class="rarity">LÉGENDAIRE</div><div class="crewName">ODYSSEUS</div></div><div class="crewCard epic"><div class="rarity">ÉPIQUE</div><div class="crewName">ACHILLEUS</div></div><div class="crewCard rare"><div class="rarity">RARE</div><div class="crewName">TELEMACHOS</div></div><div class="crewCard"><div class="rarity">COMMUN</div><div class="crewName">MARIN D’ITHAQUE</div></div></div>`;
+ }else if(type==='ship'){
+  title='NAVIRE — LE VENT D’ATHÉNA';html=`<div class="grid2"><div class="uiCard"><h3>Trirème — niveau ${state.shipLevel}</h3><p>Coque renforcée, voile pourpre et éperon de bronze. Prochaine amélioration : 300 bois, 120 métal et 650 or.</p><button class="panelBtn" data-action="upgradeShip">AMÉLIORER LA TRIRÈME</button></div><div class="uiCard"><h3>État opérationnel</h3><p>Vitesse 78 · Coque 84 · Équipage 62<br>Capacité : 42 marins et 18 soldats.</p></div></div>`;
+ }else if(type==='inventory'){
+  title='ÉQUIPEMENT';html=`<div class="equipment"><div class="warrior"></div><div><div class="slots"><div class="slot">⛑</div><div class="slot">♜</div><div class="slot">⚔</div><div class="slot">🛡</div><div class="slot">⌁</div><div class="slot">♢</div></div><div class="uiCard" style="margin-top:10px"><h3>Panoplie de Nikon</h3><p>Xiphos d’Ithaque · Lance de frêne · Cuirasse de lin renforcée · Aspis de bronze.</p></div></div></div>`;
+ }else if(type==='skills'){
+  title='COMPÉTENCES';html=`<div class="skillTree"><div></div><div></div><div class="skill on">⚔</div><div></div><div></div><div class="skill on">↟</div><div></div><div class="skill on">♞</div><div></div><div class="skill">◎</div><div class="skill">◌</div><div class="skill">⚡</div><div class="skill">🛡</div><div class="skill">✚</div><div class="skill">➶</div></div><div class="uiCard"><h3>Voie du stratège</h3><p>Les compétences dorées sont actives. Les autres se débloqueront avec les points de gloire.</p></div>`;
+ }else if(type==='map'||type==='ports'||type==='quests'){
+  title=type==='ports'?'PORTS DE L’ÉGÉE':type==='quests'?'JOURNAL DES QUÊTES':'CARTE DU MONDE';
+  if(type==='quests')html=`<div class="grid3"><div class="uiCard"><h3>Préparer la flotte</h3><p>${state.fleetBuilt?'Terminée':'Améliorer la trirème une fois.'}</p></div><div class="uiCard"><h3>Entraînement</h3><p>${Math.min(3,state.training)}/3 cibles touchées.</p></div><div class="uiCard"><h3>Les dieux nous guident</h3><p>Trouver l’autel du camp.</p></div></div>`;
+  else html=`<div class="mapLarge"><canvas id="largeMap"></canvas></div><div class="grid3" style="margin-top:10px"><div class="uiCard"><h3>Ithaque</h3><p>Port principal · territoire allié.</p></div><div class="uiCard"><h3>Athènes</h3><p>Relations favorables.</p></div><div class="uiCard"><h3>Troie</h3><p>Zone lointaine · danger élevé.</p></div></div>`;
+ }else if(type==='factions'){
+  title='FACTIONS';html=`<div class="factionRow"><div class="crest">🦉</div><div><b>ATHÈNES</b><br><small>Alliés</small></div><div class="fbar"><i style="width:78%"></i></div></div><div class="factionRow"><div class="crest" style="background:#642d29">Λ</div><div><b>SPARTE</b><br><small>Respect prudent</small></div><div class="fbar"><i style="width:52%"></i></div></div><div class="factionRow"><div class="crest" style="background:#31575b">♆</div><div><b>ITHAQUE</b><br><small>Votre royaume</small></div><div class="fbar"><i style="width:96%"></i></div></div><div class="factionRow"><div class="crest" style="background:#4b3158">◉</div><div><b>LES CYCLOPES</b><br><small>Hostiles</small></div><div class="fbar"><i style="width:18%"></i></div></div>`;
+ }else if(type==='shop'){
+  title='BOUTIQUE';html=`<div class="grid2"><div class="uiCard"><h3>500 gemmes — 4,49 €</h3><p>Maquette visuelle uniquement : aucun achat réel.</p></div><div class="uiCard"><h3>1 200 gemmes — 9,99 €</h3><p>La boutique restera désactivée pendant le prototype.</p></div><div class="uiCard"><h3>2 500 gemmes — 19,99 €</h3><p>Cosmétiques envisagés, jamais de puissance obligatoire.</p></div><div class="uiCard"><h3>6 500 gemmes — 49,99 €</h3><p>Présentation conceptuelle.</p></div></div>`;
+ }else{
+  title='MENU';html=`<div class="grid2"><div class="uiCard"><h3>Version de test</h3><p>Concept UI v1.10. Le fichier précédent n’est pas modifié.</p></div><div class="uiCard"><h3>Sauvegarde</h3><p>La progression de cette branche est enregistrée localement.</p><button class="panelBtn" data-action="save">SAUVEGARDER</button></div><div class="uiCard"><h3>Retour au titre</h3><button class="panelBtn" data-action="title">QUITTER LE CAMP</button></div><div class="uiCard"><h3>Réinitialisation</h3><button class="panelBtn danger" data-action="reset">EFFACER LE TEST</button></div></div>`;
+ }
+ modalTitle.textContent=title;modalBody.innerHTML=html;modal.classList.add('open');
+ modalBody.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>handlePanelAction(b.dataset.action));
+ if($('#largeMap'))drawMap($('#largeMap'));
+}
+function closeModal(){modal.classList.remove('open')}
+$('#closeModal').onclick=closeModal;modal.onclick=e=>{if(e.target===modal)closeModal()};
+$$('[data-open]').forEach(b=>b.onclick=()=>openModal(b.dataset.open));$('#shopTop').onclick=()=>openModal('shop');
+function handlePanelAction(a){
+ if(a==='upgradeShip')upgradeShip();else if(a==='save'){save();toast('Sauvegarde locale effectuée')}else if(a==='title'){closeModal();state.started=false;save();$('#titleScreen').classList.remove('hidden')}else if(a==='reset'){localStorage.removeItem(SAVE_KEY);location.reload()}
+}
+function upgradeShip(){
+ if(state.gold<650||state.wood<300||state.metal<120){toast('Ressources insuffisantes');return}
+ state.gold-=650;state.wood-=300;state.metal-=120;state.shipLevel++;state.shipXp=Math.min(1200,state.shipXp+180);state.fleetBuilt=true;syncUI();save();toast('Trirème améliorée au niveau '+state.shipLevel);if(modal.classList.contains('open'))openModal('ship')
+}
+$('#upgradeShipMini').onclick=upgradeShip;
+
+/* World */
+const canvas=$('#world'),ctx=canvas.getContext('2d');let cw=1,ch=1,dpr=1;
+const WORLD={w:1400,h:900};
+const tents=[{x:205,y:240,w:250,h:170},{x:910,y:175,w:260,h:185},{x:965,y:610,w:240,h:165}];
+const targets=[{x:585,y:130,r:56,hit:0},{x:760,y:145,r:60,hit:0},{x:920,y:125,r:55,hit:0}];
+const barrels=[{x:175,y:480,r:22},{x:235,y:505,r:18},{x:1115,y:420,r:21},{x:1160,y:440,r:16}];
+const rocks=[{x:80,y:110,r:48},{x:1300,y:170,r:70},{x:1260,y:780,r:55},{x:80,y:770,r:62}];
+const demos={name:'DÉMOS',x:855,y:470,angle:0,speed:38,target:0,t:0,path:[{x:820,y:470},{x:730,y:545},{x:650,y:460},{x:790,y:390},{x:900,y:455}]};
+const npcs=[{name:'NIKON',x:520,y:330,angle:0.8,speed:28,target:0,path:[{x:520,y:330},{x:620,y:290},{x:690,y:360},{x:590,y:420}],t:0},{name:'MARIN',x:385,y:560,angle:0,speed:24,target:0,path:[{x:385,y:560},{x:470,y:610},{x:530,y:565},{x:445,y:520}],t:0}];
+const fire={x:300,y:690};
+let keys={},joy={x:0,y:0,active:false},last=performance.now(),worldTime=0,cam={x:0,y:0};
+function resizeCanvas(c){const r=c.getBoundingClientRect(),q=Math.min(2,devicePixelRatio||1);c.width=Math.max(1,Math.round(r.width*q));c.height=Math.max(1,Math.round(r.height*q));return {w:r.width,h:r.height,d:q}}
+function resizeAll(){let r=resizeCanvas(canvas);cw=r.w;ch=r.h;dpr=r.d;ctx.setTransform(dpr,0,0,dpr,0,0);drawMap($('#miniMap'));drawShip()}
+addEventListener('resize',resizeAll);setTimeout(resizeAll,40);
+function circleRectCollide(x,y,r,o){const nx=Math.max(o.x,Math.min(x,o.x+o.w)),ny=Math.max(o.y,Math.min(y,o.y+o.h));return (x-nx)**2+(y-ny)**2<r*r}
+function blocked(x,y){if(x<35||y<35||x>WORLD.w-35||y>WORLD.h-35)return true;for(const t of tents)if(circleRectCollide(x,y,24,{x:t.x-10,y:t.y-10,w:t.w+20,h:t.h+20}))return true;for(const b of barrels)if(Math.hypot(x-b.x,y-b.y)<b.r+23)return true;for(const r of rocks)if(Math.hypot(x-r.x,y-r.y)<r.r+18)return true;return false}
+function moveEntity(e,dx,dy){const nx=e.x+dx,ny=e.y+dy;if(!blocked(nx,e.y))e.x=nx;if(!blocked(e.x,ny))e.y=ny}
+function updateNpc(e,dt){e.t+=dt;let p=e.path[e.target],dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy);if(d<12){e.target=(e.target+1)%e.path.length;return}e.angle=Math.atan2(dy,dx);moveEntity(e,dx/d*e.speed*dt,dy/d*e.speed*dt)}
+function update(dt){
+ worldTime+=dt;let dx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.q||keys.a?1:0)+joy.x,dy=(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.z||keys.w?1:0)+joy.y;let l=Math.hypot(dx,dy);if(l>.08){dx/=Math.max(1,l);dy/=Math.max(1,l);state.player.angle=Math.atan2(dy,dx);moveEntity(state.player,dx*128*dt,dy*128*dt)}
+ updateNpc(demos,dt);npcs.forEach(n=>updateNpc(n,dt));
+ cam.x=Math.max(0,Math.min(WORLD.w-cw,state.player.x-cw*.52));cam.y=Math.max(0,Math.min(WORLD.h-ch,state.player.y-ch*.52));
+}
+function sx(x){return x-cam.x}function sy(y){return y-cam.y}
+function drawGround(){
+ ctx.fillStyle='#66543a';ctx.fillRect(0,0,cw,ch);
+ ctx.save();ctx.translate(-cam.x%90,-cam.y%90);for(let y=-90;y<ch+90;y+=90)for(let x=-90;x<cw+90;x+=90){const n=Math.sin((x+cam.x)*.027+(y+cam.y)*.019);ctx.fillStyle=n>0?'rgba(92,70,43,.20)':'rgba(33,28,20,.12)';ctx.beginPath();ctx.ellipse(x+30+n*14,y+25,54,31,.3,0,Math.PI*2);ctx.fill()}ctx.restore();
+ ctx.strokeStyle='rgba(64,45,28,.32)';ctx.lineWidth=70;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(sx(170),sy(470));ctx.bezierCurveTo(sx(500),sy(430),sx(780),sy(570),sx(1210),sy(455));ctx.stroke();ctx.strokeStyle='rgba(174,133,76,.14)';ctx.lineWidth=42;ctx.stroke();
+ for(let i=0;i<90;i++){const x=((i*173)%WORLD.w)-cam.x,y=((i*317)%WORLD.h)-cam.y;if(x>-5&&y>-5&&x<cw+5&&y<ch+5){ctx.fillStyle=i%3?'rgba(40,32,21,.30)':'rgba(189,151,87,.20)';ctx.fillRect(x,y,2+(i%3),1+(i%2))}}
+}
+function drawTent(t){const x=sx(t.x),y=sy(t.y);ctx.save();ctx.shadowColor='rgba(0,0,0,.65)';ctx.shadowBlur=12;ctx.shadowOffsetX=18;ctx.shadowOffsetY=22;ctx.fillStyle='#8b8069';ctx.beginPath();ctx.moveTo(x,y+t.h);ctx.lineTo(x+t.w*.14,y+t.h*.12);ctx.lineTo(x+t.w*.5,y);ctx.lineTo(x+t.w*.86,y+t.h*.12);ctx.lineTo(x+t.w,y+t.h);ctx.closePath();ctx.fill();ctx.restore();ctx.strokeStyle='#4b4334';ctx.lineWidth=2;ctx.stroke();ctx.strokeStyle='rgba(233,220,180,.24)';ctx.beginPath();ctx.moveTo(x+t.w*.5,y);ctx.lineTo(x+t.w*.5,y+t.h);ctx.moveTo(x+t.w*.14,y+t.h*.12);ctx.lineTo(x+t.w*.5,y+t.h);ctx.moveTo(x+t.w*.86,y+t.h*.12);ctx.lineTo(x+t.w*.5,y+t.h);ctx.stroke();ctx.fillStyle='#251f17';ctx.beginPath();ctx.moveTo(x+t.w*.43,y+t.h);ctx.lineTo(x+t.w*.5,y+t.h*.52);ctx.lineTo(x+t.w*.58,y+t.h);ctx.fill()}
+function drawTarget(t,i){const x=sx(t.x),y=sy(t.y),shake=t.hit>0?Math.sin(worldTime*35)*3:0;ctx.save();ctx.translate(shake,0);ctx.strokeStyle='#47351e';ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(x,y+38);ctx.lineTo(x,y+105);ctx.stroke();ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x+25,y+95,55,20,0,0,Math.PI*2);ctx.fill();for(const [r,c] of [[t.r,'#d0bc83'],[t.r*.72,'#7e2f27'],[t.r*.43,'#c9b174'],[t.r*.20,'#70251f']]){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}ctx.strokeStyle='#3d2b18';ctx.lineWidth=3;ctx.stroke();ctx.restore();if(t.hit>0)t.hit=Math.max(0,t.hit-.12)}
+function drawBarrel(b){const x=sx(b.x),y=sy(b.y);ctx.fillStyle='#5e3d20';ctx.beginPath();ctx.ellipse(x,y,b.r,b.r*.72,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#1e1710';ctx.lineWidth=3;ctx.stroke();ctx.strokeStyle='#9b7442';ctx.beginPath();ctx.arc(x,y,b.r*.72,0,Math.PI*2);ctx.stroke()}
+function drawRock(r){const x=sx(r.x),y=sy(r.y);ctx.fillStyle='#51483b';ctx.beginPath();ctx.moveTo(x-r.r,y+r.r*.2);ctx.lineTo(x-r.r*.45,y-r.r*.8);ctx.lineTo(x+r.r*.4,y-r.r*.7);ctx.lineTo(x+r.r,y+r.r*.1);ctx.lineTo(x+r.r*.3,y+r.r*.75);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,235,190,.10)';ctx.beginPath();ctx.moveTo(x-r.r*.42,y-r.r*.65);ctx.lineTo(x+r.r*.28,y-r.r*.55);ctx.lineTo(x,y);ctx.closePath();ctx.fill()}
+function drawFire(){const x=sx(fire.x),y=sy(fire.y),f=Math.sin(worldTime*9);ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x,y+15,48,20,0,0,Math.PI*2);ctx.fill();for(let i=0;i<9;i++){let a=i/9*Math.PI*2;ctx.fillStyle='#4a3b2a';ctx.beginPath();ctx.arc(x+Math.cos(a)*25,y+Math.sin(a)*12,7,0,Math.PI*2);ctx.fill()}ctx.fillStyle='rgba(255,112,30,.18)';ctx.beginPath();ctx.arc(x,y,45+f*4,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e9772f';ctx.beginPath();ctx.moveTo(x-10,y+8);ctx.quadraticCurveTo(x-18,y-12,x,y-33-f*5);ctx.quadraticCurveTo(x+19,y-10,x+9,y+10);ctx.fill();ctx.fillStyle='#ffd45b';ctx.beginPath();ctx.moveTo(x-5,y+6);ctx.quadraticCurveTo(x-7,y-8,x,y-19);ctx.quadraticCurveTo(x+8,y-4,x+4,y+8);ctx.fill()}
+function drawCharacter(e,label,player=false){const x=sx(e.x),y=sy(e.y),a=e.angle||0,walking=player?(Math.abs(joy.x)+Math.abs(joy.y)>.08||Object.keys(keys).some(k=>keys[k])):true,swing=walking?Math.sin(worldTime*9+e.x*.01)*7:Math.sin(worldTime*2)*1.5;ctx.save();ctx.translate(x,y);ctx.rotate(a+Math.PI/2);ctx.fillStyle='rgba(0,0,0,.38)';ctx.beginPath();ctx.ellipse(12,20,18,30,-.35,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2c231a';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(-5,14);ctx.lineTo(-7+swing*.25,31);ctx.moveTo(5,14);ctx.lineTo(7-swing*.25,31);ctx.stroke();ctx.strokeStyle=player?'#9b7440':'#765c34';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(-9,-1);ctx.lineTo(-15,13+swing);ctx.moveTo(9,-1);ctx.lineTo(15,13-swing);ctx.stroke();ctx.fillStyle=player?'#29251d':'#343028';ctx.beginPath();ctx.ellipse(0,5,12,20,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=player?'#9a773d':'#6f5732';ctx.fillRect(-10,-2,20,5);ctx.fillStyle='#9f7354';ctx.beginPath();ctx.arc(0,-15,8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#252019';ctx.beginPath();ctx.arc(0,-17,8,Math.PI,Math.PI*2);ctx.fill();if(player){ctx.strokeStyle='#8f6f3d';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(10,-1);ctx.lineTo(19,28);ctx.stroke()}ctx.restore();ctx.font='700 10px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff5d8';ctx.shadowColor='#000';ctx.shadowBlur=4;ctx.fillText(label,x,y-34);ctx.shadowBlur=0}
+function drawDemosBubble(){const x=sx(demos.x),y=sy(demos.y);ctx.fillStyle='rgba(5,5,4,.9)';ctx.strokeStyle='#9c8150';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(x-17,y-66,34,24,5);ctx.fill();ctx.stroke();ctx.fillStyle='#e6d5ae';ctx.font='bold 14px system-ui';ctx.textAlign='center';ctx.fillText('•••',x,y-50)}
+function drawWorld(){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cw,ch);drawGround();rocks.forEach(drawRock);targets.forEach(drawTarget);tents.forEach(drawTent);barrels.forEach(drawBarrel);drawFire();npcs.forEach(n=>drawCharacter(n,n.name));drawCharacter(demos,'DÉMOS');drawDemosBubble();drawCharacter(state.player,'NIKON',true)}
+function loop(now){let dt=Math.min(.035,(now-last)/1000);last=now;if(!modal.classList.contains('open')&&state.started)update(dt);drawWorld();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+addEventListener('keydown',e=>{keys[e.key]=true;if(e.key===' '||e.key==='Enter')doAction()});addEventListener('keyup',e=>keys[e.key]=false);
+const joyEl=$('#joystick'),stick=$('#stick');function joyMove(ev){const p=ev.touches?ev.touches[0]:ev,r=joyEl.getBoundingClientRect(),dx=p.clientX-(r.left+r.width/2),dy=p.clientY-(r.top+r.height/2),m=Math.min(r.width*.35,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);joy.x=Math.cos(a)*(m/(r.width*.35));joy.y=Math.sin(a)*(m/(r.width*.35));stick.style.transform=`translate(${joy.x*27}px,${joy.y*27}px)`}
+joyEl.addEventListener('pointerdown',e=>{joy.active=true;joyEl.setPointerCapture(e.pointerId);joyMove(e)});joyEl.addEventListener('pointermove',e=>{if(joy.active)joyMove(e)});function joyEnd(){joy.active=false;joy.x=joy.y=0;stick.style.transform='translate(0,0)'}joyEl.addEventListener('pointerup',joyEnd);joyEl.addEventListener('pointercancel',joyEnd);
+$('#actionBtn').onclick=doAction;
+function doAction(){
+ let dd=Math.hypot(state.player.x-demos.x,state.player.y-demos.y);if(dd<115){notice('Démos : « La flotte sera prête avant la tombée du jour. »');return}
+ let best=null,bd=1e9;targets.forEach(t=>{let d=Math.hypot(state.player.x-t.x,state.player.y-t.y);if(d<bd){bd=d;best=t}});if(best&&bd<125){best.hit=1;state.training=Math.min(3,state.training+1);syncUI();save();notice(state.training>=3?'Entraînement terminé — les hommes vous observent.':'Cible touchée — '+state.training+'/3');return}
+ let df=Math.hypot(state.player.x-fire.x,state.player.y-fire.y);if(df<105){notice('Le feu crépite. Les marins racontent déjà votre prochaine légende.');return}
+ notice('Rien à portée. Approchez Démos, une cible ou le feu.')
+}
+
+/* Maps and ship */
+function drawMap(c){if(!c)return;const r=resizeCanvas(c),g=c.getContext('2d');g.setTransform(r.d,0,0,r.d,0,0);g.clearRect(0,0,r.w,r.h);const w=r.w,h=r.h;let gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#21434b');gr.addColorStop(1,'#10282e');g.fillStyle=gr;g.fillRect(0,0,w,h);g.strokeStyle='rgba(204,180,120,.10)';g.lineWidth=1;for(let i=0;i<12;i++){g.beginPath();g.arc(w*.5,h*.5,20+i*18,0,Math.PI*2);g.stroke()}g.fillStyle='#6f694c';const islands=[[.12,.32,.25,.20],[.38,.20,.18,.12],[.56,.43,.12,.22],[.72,.23,.20,.12],[.83,.60,.24,.20],[.32,.72,.20,.13],[.58,.76,.11,.10]];for(const q of islands){g.beginPath();g.ellipse(w*q[0],h*q[1],w*q[2]/2,h*q[3]/2,-.3,0,Math.PI*2);g.fill();g.strokeStyle='#a69668';g.stroke()}g.strokeStyle='rgba(216,191,130,.36)';g.setLineDash([4,4]);g.beginPath();g.moveTo(w*.18,h*.63);g.bezierCurveTo(w*.38,h*.46,w*.58,h*.72,w*.83,h*.48);g.stroke();g.setLineDash([]);const marks=[[.18,.63,'⌂'],[.48,.48,'⛵'],[.72,.66,'☠'],[.83,.48,'⚔']];for(const m of marks){g.fillStyle='rgba(10,10,8,.86)';g.beginPath();g.arc(w*m[0],h*m[1],11,0,Math.PI*2);g.fill();g.strokeStyle='#c7aa68';g.stroke();g.fillStyle='#e4d4af';g.font='12px system-ui';g.textAlign='center';g.textBaseline='middle';g.fillText(m[2],w*m[0],h*m[1])}g.strokeStyle='#c7aa68';g.lineWidth=1.5;g.beginPath();g.arc(w-28,28,19,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(w-28,5);g.lineTo(w-28,51);g.moveTo(w-51,28);g.lineTo(w-5,28);g.stroke()}
+function drawShip(){const c=$('#shipCanvas'),r=resizeCanvas(c),g=c.getContext('2d');g.setTransform(r.d,0,0,r.d,0,0);let w=r.w,h=r.h;g.clearRect(0,0,w,h);let sky=g.createLinearGradient(0,0,0,h*.62);sky.addColorStop(0,'#a7b3af');sky.addColorStop(1,'#d4c9aa');g.fillStyle=sky;g.fillRect(0,0,w,h*.58);g.fillStyle='#415c65';g.fillRect(0,h*.58,w,h*.42);g.strokeStyle='rgba(230,236,221,.45)';for(let y=h*.62;y<h;y+=10){g.beginPath();for(let x=0;x<w;x+=12)g.lineTo(x,y+Math.sin(x*.07+y)*2);g.stroke()}g.fillStyle='#51483b';g.beginPath();g.moveTo(0,h*.55);g.lineTo(w*.18,h*.35);g.lineTo(w*.32,h*.58);g.lineTo(0,h*.63);g.fill();g.beginPath();g.moveTo(w,h*.5);g.lineTo(w*.83,h*.32);g.lineTo(w*.68,h*.58);g.lineTo(w,h*.64);g.fill();g.fillStyle='#40271b';g.beginPath();g.moveTo(w*.18,h*.72);g.quadraticCurveTo(w*.52,h*.88,w*.84,h*.67);g.lineTo(w*.78,h*.79);g.quadraticCurveTo(w*.46,h*.96,w*.23,h*.80);g.closePath();g.fill();g.strokeStyle='#b38b51';g.lineWidth=2;g.stroke();g.strokeStyle='#3b281b';g.lineWidth=4;g.beginPath();g.moveTo(w*.51,h*.22);g.lineTo(w*.51,h*.76);g.stroke();g.fillStyle='#84372f';g.beginPath();g.moveTo(w*.49,h*.24);g.lineTo(w*.20,h*.35);g.lineTo(w*.49,h*.59);g.closePath();g.fill();g.strokeStyle='#c7a66a';g.lineWidth=1;g.stroke();g.fillStyle='#d9bd7b';g.font=`${Math.max(18,w*.08)}px Georgia`;g.textAlign='center';g.fillText('Ω',w*.39,h*.44)}
+
+syncUI();
+})();
+</script>
+</body>
+</html>
