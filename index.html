@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.11.2.3 — Shield edge profile</title>
+<title>Odyssée — v1.11.4 — Blacksmith and dialogue pass</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -51,7 +51,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.3 — CONTEXTUAL ATTACK</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.11.4 — FORGERON & DIALOGUES</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos et Myron ont maintenant chacun plusieurs répliques.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -80,8 +80,9 @@ const FOOTSTEP_URLS=[
 const els={game:document.getElementById('game'),fatal:document.getElementById('fatal'),loading:document.getElementById('loading3d'),loaderText:document.getElementById('loaderText'),title:document.getElementById('titleScreen'),start:document.getElementById('startBtn'),sound:document.getElementById('soundBtn'),hud:document.getElementById('hud'),controls:document.getElementById('controls'),credits:document.getElementById('credits'),stick:document.getElementById('stick'),knob:document.getElementById('knob'),audio:document.getElementById('menuTheme'),npcBubble:document.getElementById('npcBubble'),npcBubbleText:document.getElementById('npcBubbleText'),actionA:document.getElementById('actionA'),actionALabel:document.querySelector('#actionA .label'),actionB:document.getElementById('actionB')};
 window.addEventListener('error',e=>{els.fatal.style.display='block';els.fatal.textContent='Le prototype 3D a rencontré une erreur :\n\n'+(e.error?.stack||e.message||e)});
 
-let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0;
+let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,blacksmithNPC=null,activeBubbleNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0;
 const attackDuration=1.55;
+const attackSpeed=1.85;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,0), turnVelocity=0, stepParity=0;
 const normalizeAngle=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const keys=new Set();
@@ -252,7 +253,7 @@ function setupThree(){
   scene.add(new THREE.HemisphereLight(0xf3dfbd,0x2d211c,1.75));
   const sun=new THREE.DirectionalLight(0xffd39a,5.6);sun.position.set(-8,15,-6);sun.castShadow=true;sun.shadow.bias=-0.00018;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-13;sun.shadow.camera.right=13;sun.shadow.camera.top=13;sun.shadow.camera.bottom=-13;scene.add(sun);
   const rim=new THREE.DirectionalLight(0x7894a0,1.05);rim.position.set(8,8,8);scene.add(rim);
-  buildArena();createFarmerNPC();loadCharacter();onResize();addEventListener('resize',onResize);renderer.setAnimationLoop(update);
+  buildArena();createFarmerNPC();createBlacksmithNPC();loadCharacter();onResize();addEventListener('resize',onResize);renderer.setAnimationLoop(update);
 }
 function buildArena(){
   const texLoader=new THREE.TextureLoader();
@@ -604,10 +605,98 @@ function createFarmerNPC(){
     state:'walk',stateTime:0,targetIndex:1,rounds:0,walkCycle:0,idleCycle:0,dialogIndex:0,playerNear:false,
     route:[new THREE.Vector3(3.72,0,-3.18),new THREE.Vector3(5.55,0,-3.18),new THREE.Vector3(5.55,0,-1.95),new THREE.Vector3(3.72,0,-1.95)],
     rig:{motion,hips,torsoPivot,headPivot,leftLeg,rightLeg,leftArm,rightArm,hoePivot},
-    bubbleUntil:0
+    bubbleUntil:0,
+    name:'Démos',
+    dialogues:[
+      'Que les dieux protègent ta route, guerrier.',
+      'Déméter garde encore nos sillons, mais la terre demande du courage.',
+      'Le marché a besoin d’huile, de blé et d’hommes capables d’ouvrir la route.',
+      'Les champs paraissent calmes, pourtant on dort mieux quand un hoplite veille.',
+      'Si tu passes à l’agora, dis-leur que Démos attend toujours de bons outils.'
+    ]
   };
 }
 
+function createBlacksmithNPC(){
+  const station=new THREE.Group();station.position.set(-4.55,0,4.35);scene.add(station);
+  const stone=new THREE.MeshStandardMaterial({color:0x75685d,roughness:1});
+  const stoneDark=new THREE.MeshStandardMaterial({color:0x4a4038,roughness:1});
+  const ember=new THREE.MeshStandardMaterial({color:0xcf6122,roughness:.72,emissive:0x7a2b07,emissiveIntensity:1.3});
+  const wood=new THREE.MeshStandardMaterial({color:0x6a4730,roughness:.95});
+  const iron=new THREE.MeshStandardMaterial({color:0x595f64,roughness:.45,metalness:.62});
+  const leather=new THREE.MeshStandardMaterial({color:0x4f3524,roughness:.95});
+  const skin=new THREE.MeshStandardMaterial({color:0xb7825b,roughness:.94});
+  const tunic=new THREE.MeshStandardMaterial({color:0x5f4e43,roughness:.98});
+  const apron=new THREE.MeshStandardMaterial({color:0x3a3029,roughness:.96});
+
+  const forgeBase=new THREE.Mesh(new THREE.BoxGeometry(1.22,.44,.92),stoneDark);forgeBase.position.set(0,.22,0);forgeBase.castShadow=forgeBase.receiveShadow=true;station.add(forgeBase);
+  const forgeTop=new THREE.Mesh(new THREE.BoxGeometry(.92,.16,.68),stone);forgeTop.position.set(0,.53,0);forgeTop.castShadow=forgeTop.receiveShadow=true;station.add(forgeTop);
+  const coal=new THREE.Mesh(new THREE.BoxGeometry(.54,.06,.34),ember);coal.position.set(0,.64,0);coal.castShadow=true;station.add(coal);
+  const chimney=new THREE.Mesh(new THREE.BoxGeometry(.24,1.05,.24),stone);chimney.position.set(-.34,1.08,.05);chimney.castShadow=true;station.add(chimney);
+  const anvilBase=new THREE.Mesh(new THREE.CylinderGeometry(.13,.16,.32,10),stoneDark);anvilBase.position.set(.88,.16,.06);anvilBase.castShadow=anvilBase.receiveShadow=true;station.add(anvilBase);
+  const anvilTop=new THREE.Mesh(new THREE.BoxGeometry(.40,.10,.18),iron);anvilTop.position.set(.88,.37,.06);anvilTop.castShadow=true;station.add(anvilTop);
+  const anvilHorn=new THREE.Mesh(new THREE.ConeGeometry(.07,.22,10),iron);anvilHorn.rotation.z=-Math.PI/2;anvilHorn.position.set(1.09,.37,.06);anvilHorn.castShadow=true;station.add(anvilHorn);
+  const barrel=new THREE.Mesh(new THREE.CylinderGeometry(.16,.19,.34,12),wood);barrel.position.set(-.88,.17,.46);barrel.castShadow=true;station.add(barrel);
+  addBoxCollider(-4.55,4.35,1.24,.92,.18);
+  addBoxCollider(-3.67,4.41,.42,.34,.12);
+
+  const root=new THREE.Group();root.position.set(-3.82,0,4.12);scene.add(root);blacksmithNPC=root;
+  const motion=new THREE.Group();root.add(motion);
+  const hips=new THREE.Group();hips.position.set(0,.68,0);motion.add(hips);
+  const torsoPivot=new THREE.Group();torsoPivot.position.set(0,.16,0);hips.add(torsoPivot);
+  const headPivot=new THREE.Group();headPivot.position.set(0,.66,-.015);torsoPivot.add(headPivot);
+  const pelvis=new THREE.Mesh(new THREE.BoxGeometry(.36,.18,.27),leather);pelvis.castShadow=true;hips.add(pelvis);
+  const skirt=new THREE.Mesh(new THREE.CylinderGeometry(.22,.28,.28,10),apron);skirt.position.y=-.11;skirt.castShadow=true;hips.add(skirt);
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(.44,.52,.32),tunic);torso.position.y=.22;torso.castShadow=true;torsoPivot.add(torso);
+  const apronFront=new THREE.Mesh(new THREE.BoxGeometry(.29,.42,.06),apron);apronFront.position.set(0,.14,-.16);apronFront.castShadow=true;torsoPivot.add(apronFront);
+  const belt=new THREE.Mesh(new THREE.BoxGeometry(.46,.06,.33),leather);belt.position.y=.02;belt.castShadow=true;torsoPivot.add(belt);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.055,.065,.10,10),skin);neck.position.y=.54;neck.castShadow=true;torsoPivot.add(neck);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.145,14,12),skin);head.scale.set(.95,1.06,.95);head.castShadow=true;headPivot.add(head);
+  const beard=new THREE.Mesh(new THREE.BoxGeometry(.15,.10,.09),apron);beard.position.set(0,-.08,-.12);beard.castShadow=true;headPivot.add(beard);
+  const hair=new THREE.Mesh(new THREE.BoxGeometry(.22,.07,.16),apron);hair.position.set(0,.11,-.01);hair.castShadow=true;headPivot.add(hair);
+
+  const buildLeg=(side)=>{
+    const pivot=new THREE.Group();pivot.position.set(side*.10,-.12,0);hips.add(pivot);
+    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.047,.25,6,10),skin);leg.position.y=-.20;leg.castShadow=true;pivot.add(leg);
+    const foot=new THREE.Mesh(new THREE.BoxGeometry(.11,.07,.20),leather);foot.position.set(0,-.41,-.045);foot.castShadow=true;pivot.add(foot);
+    return {pivot,leg,foot};
+  };
+  const leftLeg=buildLeg(-1),rightLeg=buildLeg(1);
+  const buildArm=(side)=>{
+    const shoulder=new THREE.Vector3(side*.19,.33,-.015);
+    const upperLen=.24,foreLen=.22;
+    const sleeve=new THREE.Mesh(new THREE.SphereGeometry(.052,10,8),tunic);sleeve.scale.set(1,.88,1);sleeve.position.copy(shoulder);sleeve.castShadow=true;torsoPivot.add(sleeve);
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.043,upperLen-.086,6,10),skin);upper.castShadow=true;torsoPivot.add(upper);
+    const elbowJoint=new THREE.Mesh(new THREE.SphereGeometry(.043,10,8),skin);elbowJoint.castShadow=true;torsoPivot.add(elbowJoint);
+    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.039,foreLen-.078,6,10),skin);fore.castShadow=true;torsoPivot.add(fore);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.041,10,8),skin);hand.scale.set(1.08,.9,1.05);hand.castShadow=true;torsoPivot.add(hand);
+    return {side,shoulder,upper,elbowJoint,fore,hand,upperLen,foreLen,sleeve};
+  };
+  const leftArm=buildArm(-1),rightArm=buildArm(1);
+
+  const hammerPivot=new THREE.Group();
+  hammerPivot.position.set(.06,.18,-.18);
+  hammerPivot.rotation.set(-.35,-.28,.16);
+  torsoPivot.add(hammerPivot);
+  const hammerHandle=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,.56,10),wood);hammerHandle.rotation.z=Math.PI/2;hammerHandle.position.set(-.02,0,0);hammerHandle.castShadow=true;hammerPivot.add(hammerHandle);
+  const hammerHead=new THREE.Mesh(new THREE.BoxGeometry(.13,.08,.11),iron);hammerHead.position.set(.22,0,0);hammerHead.castShadow=true;hammerPivot.add(hammerHead);
+  const peen=new THREE.Mesh(new THREE.BoxGeometry(.06,.05,.07),iron);peen.position.set(.30,0,0);peen.castShadow=true;hammerPivot.add(peen);
+  const sparks=[];
+  for(let i=0;i<4;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(.02,6,6),new THREE.MeshStandardMaterial({color:0xffb457,emissive:0xff8b2f,emissiveIntensity:1.8,roughness:.5}));s.visible=false;s.position.set(.88,.48,.06);station.add(s);sparks.push(s)}
+
+  root.userData={
+    state:'work',stateTime:0,idleCycle:0,dialogIndex:0,playerNear:false,bubbleUntil:0,
+    name:'Myron',
+    dialogues:[
+      'Approche, hoplite. Le bronze est capricieux, mais l’acier écoute mieux.',
+      'Une lame se juge à son retour dans la main, pas seulement à son éclat.',
+      'Je peux redresser un bouclier tordu, pas un guerrier qui hésite.',
+      'L’enclume parle vrai : chaque coup raté s’entend dans tout l’atelier.',
+      'Si tu veux survivre au prochain combat, prends soin de ton tranchant.'
+    ],
+    rig:{motion,hips,torsoPivot,headPivot,leftLeg,rightLeg,leftArm,rightArm,hammerPivot,sparks}
+  };
+}
 
 function orientSegment(mesh,start,end){
   const dir=end.clone().sub(start);
@@ -644,31 +733,42 @@ function solveFarmerArm(arm,targetLocal,bend=1){
   arm.sleeve.position.copy(shoulder);
 }
 
-function showFarmerBubble(message,duration=2.8){
-  if(!els.npcBubble||!farmerNPC)return;
+function getTalkNPCs(){
+  return [farmerNPC,blacksmithNPC].filter(Boolean);
+}
+function getNearbyNPC(maxDist=1.58){
+  if(!started)return null;
+  let best=null,bestDist=maxDist;
+  for(const npc of getTalkNPCs()){
+    const dist=Math.hypot(player.x-npc.position.x,player.z-npc.position.z);
+    if(dist<bestDist){best=npc;bestDist=dist;}
+  }
+  return best;
+}
+function showNPCBubble(npc,message,duration=2.8){
+  if(!els.npcBubble||!npc)return;
+  activeBubbleNPC=npc;
   els.npcBubbleText.textContent=message;
   els.npcBubble.classList.add('visible');
-  farmerNPC.userData.bubbleUntil=performance.now()+duration*1000;
+  npc.userData.bubbleUntil=performance.now()+duration*1000;
 }
-function updateFarmerBubble(){
-  if(!farmerNPC||!els.npcBubble)return;
-  if(performance.now()>farmerNPC.userData.bubbleUntil){els.npcBubble.classList.remove('visible');return;}
-  const p=farmerNPC.position.clone();p.y=1.72;p.project(camera);
+function updateNPCBubble(){
+  if(!activeBubbleNPC||!els.npcBubble)return;
+  if(performance.now()>activeBubbleNPC.userData.bubbleUntil){els.npcBubble.classList.remove('visible');activeBubbleNPC=null;return;}
+  const p=activeBubbleNPC.position.clone();p.y=1.72;p.project(camera);
   if(p.z<-1||p.z>1){els.npcBubble.classList.remove('visible');return;}
+  els.npcBubble.classList.add('visible');
   els.npcBubble.style.left=((p.x*.5+.5)*innerWidth)+'px';
   els.npcBubble.style.top=((-p.y*.5+.5)*innerHeight)+'px';
 }
-function canTalkToFarmer(){
-  if(!started||!farmerNPC)return false;
-  return Math.hypot(player.x-farmerNPC.position.x,player.z-farmerNPC.position.z)<1.48;
-}
 function updateActionButtons(){
-  const nearNPC=canTalkToFarmer();
-  farmerNPC&&(farmerNPC.userData.playerNear=nearNPC);
+  const nearNPC=getNearbyNPC();
+  for(const npc of getTalkNPCs())npc.userData.playerNear=(npc===nearNPC);
   els.actionA?.classList.add('available');
-  els.actionA?.classList.toggle('interact',nearNPC);
+  els.actionA?.classList.toggle('interact',!!nearNPC);
   els.actionA?.setAttribute('aria-disabled','false');
-  els.actionA?.setAttribute('aria-label',nearNPC?'Interagir avec Démos':'Attaquer au xiphos');
+  const label=nearNPC?`Interagir avec ${nearNPC.userData?.name||'le PNJ'}`:'Attaquer au xiphos';
+  els.actionA?.setAttribute('aria-label',label);
   if(els.actionALabel)els.actionALabel.textContent=nearNPC?'INTERAGIR':'ATTAQUER';
 }
 function startSwordAttack(){
@@ -679,20 +779,17 @@ function startSwordAttack(){
 }
 function performPrimaryAction(){
   if(!started)return;
-  if(canTalkToFarmer())talkToFarmer();
+  const nearNPC=getNearbyNPC();
+  if(nearNPC)talkToNPC(nearNPC);
   else startSwordAttack();
 }
-function talkToFarmer(){
-  if(!canTalkToFarmer())return;
-  const d=farmerNPC.userData;
-  const lines=[
-    'Que les dieux protègent ta route, guerrier.',
-    'La terre est sèche cette saison, mais Déméter veille encore sur nos récoltes.',
-    'Le marché manque d’huile et de blé. Les routes ne sont plus aussi sûres qu’autrefois.'
-  ];
+function talkToNPC(npc){
+  if(!npc)return;
+  const d=npc.userData;
+  const lines=d.dialogues||['Bonjour, guerrier.'];
   d.state='talk';
-  d.stateTime=3.6;
-  showFarmerBubble(lines[d.dialogIndex%lines.length],3.6);
+  d.stateTime=3.8;
+  showNPCBubble(npc,lines[d.dialogIndex%lines.length],3.8);
   d.dialogIndex=(d.dialogIndex+1)%lines.length;
 }
 function updateFarmerNPC(dt){
@@ -768,14 +865,69 @@ function updateFarmerNPC(dt){
 
   solveFarmerArm(r.leftArm,leftGripLocal,1.0);
   solveFarmerArm(r.rightArm,rightGripLocal,.72);
+}
 
-  updateFarmerBubble();
-  updateActionButtons();
+function updateBlacksmithNPC(dt){
+  if(!blacksmithNPC)return;
+  const d=blacksmithNPC.userData,r=d.rig;
+  d.idleCycle+=dt;
+  const dxp=player.x-blacksmithNPC.position.x,dzp=player.z-blacksmithNPC.position.z;
+  let strike=0;
+  if(d.state==='talk'){
+    const targetRot=Math.atan2(dxp,dzp)+Math.PI;
+    blacksmithNPC.rotation.y=normalizeAngle(blacksmithNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-blacksmithNPC.rotation.y),-dt*4.2,dt*4.2));
+    r.torsoPivot.rotation.x=.08+Math.sin(d.idleCycle*2.0)*.01;
+    r.hips.rotation.z=Math.sin(d.idleCycle*1.5)*.01;
+    d.stateTime-=dt;
+    if(d.stateTime<=0)d.state='work';
+  }else{
+    const targetRot=Math.atan2(.88,.06)+Math.PI;
+    blacksmithNPC.rotation.y=normalizeAngle(blacksmithNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-blacksmithNPC.rotation.y),-dt*3.8,dt*3.8));
+    strike=(Math.sin(d.idleCycle*5.1)+1)*.5;
+    strike=Math.pow(strike,1.35);
+    r.torsoPivot.rotation.x=.10+strike*.15;
+    r.hips.rotation.z=Math.sin(d.idleCycle*5.1)*.015;
+  }
+  r.motion.position.y=.01+Math.sin(d.idleCycle*3.0)*.003;
+  r.leftLeg.pivot.rotation.x=.04;
+  r.rightLeg.pivot.rotation.x=-.06;
+  r.headPivot.rotation.z=Math.sin(d.idleCycle*1.4)*.012;
+
+  const restHX=-.35, restHY=-.28, restHZ=.16;
+  r.hammerPivot.rotation.x=restHX-strike*.98;
+  r.hammerPivot.rotation.y=restHY+strike*.05;
+  r.hammerPivot.rotation.z=restHZ-strike*.10;
+  r.hammerPivot.position.y=.18+Math.sin(d.idleCycle*3.0)*.003;
+
+  r.hammerPivot.updateMatrix();
+  const rightGripLocal=new THREE.Vector3(.06,0,0).applyMatrix4(r.hammerPivot.matrix);
+  const leftGripLocal=new THREE.Vector3(-.09,0,0).applyMatrix4(r.hammerPivot.matrix);
+  leftGripLocal.x-=.02; leftGripLocal.y+=.03;
+  const supportLocal=new THREE.Vector3(-.12,.07,.06);
+  if(d.state==='talk'){
+    solveFarmerArm(r.rightArm,new THREE.Vector3(.12,.18,-.14),.72);
+    solveFarmerArm(r.leftArm,new THREE.Vector3(-.15,.15,-.02),.55);
+  }else{
+    solveFarmerArm(r.rightArm,rightGripLocal,.92);
+    solveFarmerArm(r.leftArm,leftGripLocal,.68);
+    r.leftArm.hand.position.lerp(supportLocal,.15);
+  }
+
+  if(r.sparks){
+    const flash=d.state!=='talk'&&strike>.92;
+    r.sparks.forEach((s,i)=>{
+      s.visible=flash;
+      if(flash){
+        s.position.set(.88+(i-1.5)*.04,.46+Math.random()*.05,.06+(Math.random()-.5)*.08);
+        s.scale.setScalar(.75+Math.random()*.55);
+      }
+    });
+  }
 }
 
 function loadCharacter(){
   els.loading.classList.add('visible');
-  els.loaderText.textContent='Chargement du décor grec et du hoplite…';
+  els.loaderText.textContent='Chargement du décor grec, du hoplite et des villageois…';
   setTimeout(()=>{
     character=new THREE.Group();
     scene.add(character);
@@ -783,7 +935,7 @@ function loadCharacter(){
     greekGear=addGreekGear(character);
     loaded=true;
     els.loading.classList.remove('visible');
-    els.loaderText.textContent='Décor grec et premier fermier intelligent prêts.';
+    els.loaderText.textContent='Décor grec, fermier et forgeron prêts.';
   },120);
 }
 
@@ -1021,7 +1173,7 @@ function update(){
   if(!renderer)return;
   const dt=Math.min(clock.getDelta(),.04);
   if(attackTimer>0){
-    attackTimer=Math.max(0,attackTimer-dt);
+    attackTimer=Math.max(0,attackTimer-dt*attackSpeed);
     if(attackTimer===0)els.actionA?.classList.remove('attacking');
   }
   const attackProgress=attackTimer>0?1-attackTimer/attackDuration:0;
@@ -1066,9 +1218,10 @@ function update(){
   proposed.x+=velocity.x*dt;
   proposed.z+=velocity.y*dt;
   resolveCollisions(proposed,.24);
-  if(farmerNPC){
-    const dx=proposed.x-farmerNPC.position.x,dz=proposed.z-farmerNPC.position.z,dist=Math.hypot(dx,dz),minDist=.48;
-    if(dist<minDist){const safe=dist||.001;proposed.x=farmerNPC.position.x+dx/safe*minDist;proposed.z=farmerNPC.position.z+dz/safe*minDist;}
+  for(const npc of [farmerNPC,blacksmithNPC]){
+    if(!npc)continue;
+    const dx=proposed.x-npc.position.x,dz=proposed.z-npc.position.z,dist=Math.hypot(dx,dz),minDist=.48;
+    if(dist<minDist){const safe=dist||.001;proposed.x=npc.position.x+dx/safe*minDist;proposed.z=npc.position.z+dz/safe*minDist;}
   }
   const movedDist=Math.hypot(proposed.x-player.x,proposed.z-player.z);
   player.copy(proposed);
@@ -1200,8 +1353,10 @@ function update(){
           swordAttackX=THREE.MathUtils.lerp(swordIdleX,swordRaisedX,attackLift);
           if(attackStrike>0)swordAttackX=THREE.MathUtils.lerp(swordRaisedX,swordImpactX,attackStrike);
         }else swordAttackX=THREE.MathUtils.lerp(swordImpactX,swordIdleX,attackRecover);
-        swordAttackY=0;
-        swordAttackZ=0;
+        swordAttackY=THREE.MathUtils.lerp(.10,.18,attackLift*(1-attackStrike));
+        if(attackStrike>0)swordAttackY=THREE.MathUtils.lerp(.18,.06,attackStrike);
+        if(attackRecover>0)swordAttackY=THREE.MathUtils.lerp(.06,swordIdleY,attackRecover);
+        swordAttackZ=THREE.MathUtils.lerp(.10,.05,attackStrike||attackLift);
         const poseT=attackStrike>0?attackStrike:attackLift;
         swordPosY=THREE.MathUtils.lerp(-.004,.014,attackLift);
         swordPosZ=THREE.MathUtils.lerp(.01,-.022,attackLift);
@@ -1242,6 +1397,9 @@ function update(){
     }
   }
   updateFarmerNPC(dt);
+  updateBlacksmithNPC(dt);
+  updateNPCBubble();
+  updateActionButtons();
   camera.position.x=THREE.MathUtils.lerp(camera.position.x,player.x,.12);
   camera.position.z=THREE.MathUtils.lerp(camera.position.z,player.z+.001,.12);
   camera.lookAt(player.x,0,player.z);
