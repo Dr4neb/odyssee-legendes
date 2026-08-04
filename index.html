@@ -940,48 +940,74 @@ function addGreekGear(root){
   swordPivot.rotation.y=.02;
   swordPivot.rotation.z=.02;
   rightArm.hand.add(swordPivot);
-  const swordGrip=new THREE.Mesh(new THREE.CylinderGeometry(.028,.032,.20,10), matLeather);
+  // Xiphos plus crédible : poignée plus lisible, garde grecque compacte et lame en feuille.
+  const xiphosGripGroup=new THREE.Group();
+  swordPivot.add(xiphosGripGroup);
+
+  const swordGrip=new THREE.Mesh(new THREE.CylinderGeometry(.024,.028,.22,12), matLeather);
   swordGrip.rotation.x=Math.PI/2;
-  swordGrip.position.set(.00,.00,.025);
+  swordGrip.position.set(.00,.00,.03);
   swordGrip.castShadow=true;
-  swordPivot.add(swordGrip);
-  const swordGuard=new THREE.Mesh(new THREE.BoxGeometry(.21,.036,.05), matSteel);
-  // Vu du dessus, la garde et surtout la lame présentent leur tranche, pas leur face plate.
-  swordGuard.rotation.y=Math.PI/2;
-  swordGuard.position.set(.00,.00,-.09);
-  swordGuard.castShadow=true;
-  swordPivot.add(swordGuard);
-  const bladeGeom=new THREE.BufferGeometry();
-  bladeGeom.setAttribute('position',new THREE.Float32BufferAttribute([
-    -0.032, 0.00, 0.00,
-     0.032, 0.00, 0.00,
-    -0.024, 0.42,-0.012,
-     0.024, 0.42,-0.012,
-     0.00, 0.56,-0.024,
-    -0.024, 0.42, 0.026,
-     0.024, 0.42, 0.026,
-     0.00, 0.56, 0.018
-  ],3));
-  bladeGeom.setIndex([
-    0,1,2, 1,3,2,
-    2,3,4,
-    0,5,1, 1,5,6,
-    5,7,6,
-    2,5,4, 5,7,4,
-    3,4,6, 6,4,7
-  ]);
-  bladeGeom.computeVertexNormals();
-  const blade=new THREE.Mesh(bladeGeom,matSteel);
-  // Rotation de 90° autour de l'axe longitudinal : seule la tranche fine reste visible.
-  blade.rotation.y=Math.PI/2;
-  blade.castShadow=true;
-  blade.position.set(.00,.00,-.09);
-  swordPivot.add(blade);
-  const pommel=new THREE.Mesh(new THREE.SphereGeometry(.038,10,8),matSteel);
-  pommel.scale.set(1,.7,1);
+  xiphosGripGroup.add(swordGrip);
+
+  const gripRingA=new THREE.Mesh(new THREE.TorusGeometry(.029,.004,6,12), matSteel);
+  gripRingA.rotation.y=Math.PI/2;
+  gripRingA.position.set(.00,.00,.11);
+  xiphosGripGroup.add(gripRingA);
+  const gripRingB=gripRingA.clone();
+  gripRingB.position.z=-.045;
+  xiphosGripGroup.add(gripRingB);
+
+  const pommel=new THREE.Mesh(new THREE.SphereGeometry(.035,12,10),matSteel);
+  pommel.scale.set(1,.82,1.08);
   pommel.position.set(.00,.00,.16);
   pommel.castShadow=true;
-  swordPivot.add(pommel);
+  xiphosGripGroup.add(pommel);
+
+  const swordGuard=new THREE.Group();
+  swordGuard.position.set(.00,.00,-.085);
+  swordPivot.add(swordGuard);
+  const guardCore=new THREE.Mesh(new THREE.BoxGeometry(.14,.026,.045), matSteel);
+  guardCore.rotation.y=Math.PI/2;
+  guardCore.castShadow=true;
+  swordGuard.add(guardCore);
+  const quillonL=new THREE.Mesh(new THREE.CapsuleGeometry(.010,.062,4,8), matSteel);
+  quillonL.rotation.set(0,Math.PI/2,.42);
+  quillonL.position.set(-.055,.0,.0);
+  quillonL.castShadow=true;
+  swordGuard.add(quillonL);
+  const quillonR=quillonL.clone();
+  quillonR.rotation.z=-.42;
+  quillonR.position.x=.055;
+  swordGuard.add(quillonR);
+
+  const bladeShape=new THREE.Shape();
+  bladeShape.moveTo(0,0);
+  bladeShape.bezierCurveTo(.020,.030,.050,.080,.062,.155);
+  bladeShape.bezierCurveTo(.070,.235,.050,.330,.028,.430);
+  bladeShape.bezierCurveTo(.016,.495,.006,.540,0,.60);
+  bladeShape.bezierCurveTo(-.006,.540,-.016,.495,-.028,.430);
+  bladeShape.bezierCurveTo(-.050,.330,-.070,.235,-.062,.155);
+  bladeShape.bezierCurveTo(-.050,.080,-.020,.030,0,0);
+  const bladeGeom=new THREE.ExtrudeGeometry(bladeShape,{depth:.014,bevelEnabled:false,steps:1});
+  bladeGeom.center();
+  const blade=new THREE.Mesh(bladeGeom,matSteel);
+  blade.rotation.set(Math.PI/2,Math.PI/2,0);
+  blade.position.set(.00,.30,-.087);
+  blade.castShadow=true;
+  swordPivot.add(blade);
+
+  const fuller=new THREE.Mesh(new THREE.BoxGeometry(.016,.37,.006), new THREE.MeshStandardMaterial({color:0xcfd4db,roughness:.34,metalness:.82}));
+  fuller.rotation.set(Math.PI/2,Math.PI/2,0);
+  fuller.position.set(.00,.20,-.086);
+  fuller.castShadow=true;
+  swordPivot.add(fuller);
+
+  const bladeTip=new THREE.Mesh(new THREE.ConeGeometry(.010,.05,10), matSteel);
+  bladeTip.rotation.set(Math.PI/2,0,0);
+  bladeTip.position.set(.00,.595,-.087);
+  bladeTip.castShadow=true;
+  swordPivot.add(bladeTip);
 
   gear.userData={gear,motion,hips,torsoPivot,headPivot,capeAnchor,cape,crest,leftLeg,rightLeg,leftArm,rightArm,shieldArm,shieldPivot,shieldRestPosition,shieldBlockPosition,shieldRestNormal,shieldBlockNormal,shieldLocalNormal,backSpearPivot,swordPivot};
   return gear;
