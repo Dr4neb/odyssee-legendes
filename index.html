@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.12.5 — Côtes naturelles d’Ithaque</title>
+<title>Odyssée — v1.11.4.5.2 — Startup hotfix</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.5 — CÔTES NATURELLES D’ITHAQUE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos parcourt ses quatre cultures, Níkon patrouille dans le camp et le temple de Déméter devient transparent à l’entrée. A près de Myron ouvre la forge.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.5 — PONTON, GARDES & NÍKON</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos parcourt ses quatre cultures, Níkon patrouille dans le camp et le temple de Déméter devient transparent à l’entrée. A près de Myron ouvre la forge.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -96,6 +96,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const MODEL_URL='https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb';
 const FLOOR_URL='https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/stone_floor/stone_floor_diff_1k.jpg';
 const ANVIL_SFX_URL='https://assets.mixkit.co/active_storage/sfx/833/833-preview.mp3';
+const GATE_SFX_URL='https://assets.mixkit.co/active_storage/sfx/195/195-preview.mp3';
 const FOOTSTEP_URLS=[
   'https://raw.githubusercontent.com/Faisal18Ansari/StarLight-Dash/main/Audio/footstep00.ogg',
   'https://raw.githubusercontent.com/Faisal18Ansari/StarLight-Dash/main/Audio/footstep01.ogg',
@@ -105,7 +106,7 @@ const FOOTSTEP_URLS=[
 const els={game:document.getElementById('game'),fatal:document.getElementById('fatal'),loading:document.getElementById('loading3d'),loaderText:document.getElementById('loaderText'),title:document.getElementById('titleScreen'),start:document.getElementById('startBtn'),sound:document.getElementById('soundBtn'),hud:document.getElementById('hud'),controls:document.getElementById('controls'),credits:document.getElementById('credits'),stick:document.getElementById('stick'),knob:document.getElementById('knob'),audio:document.getElementById('menuTheme'),npcBubble:document.getElementById('npcBubble'),npcBubbleText:document.getElementById('npcBubbleText'),actionA:document.getElementById('actionA'),actionALabel:document.querySelector('#actionA .label'),actionB:document.getElementById('actionB'),forgeMenu:document.getElementById('forgeMenu'),forgeMenuText:document.getElementById('forgeMenuText'),forgeClose:document.getElementById('forgeClose')};
 window.addEventListener('error',e=>{els.fatal.style.display='block';els.fatal.textContent='Le prototype 3D a rencontré une erreur :\n\n'+(e.error?.stack||e.message||e)});
 
-let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,blacksmithNPC=null,trainingNPC=null,activeBubbleNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0,forgeMenuOpen=false,startingGame=false,threeReady=false,joystickReady=false;
+let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,blacksmithNPC=null,trainingNPC=null,patrolGuards=[],activeBubbleNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0,forgeMenuOpen=false,startingGame=false,threeReady=false,joystickReady=false;
 const attackDuration=1.55;
 const attackSpeed=1.85;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,7.2), turnVelocity=0, stepParity=0;
@@ -122,64 +123,6 @@ const farmPlotCenters=[
   {name:'terre',pos:new THREE.Vector3(10.40,0,6.77)},
   {name:'carottes',pos:new THREE.Vector3(6.50,0,6.77)}
 ];
-
-// Silhouette irrégulière de l'île. Les anses, pointes et petites péninsules
-// remplacent définitivement l'ancienne ellipse régulière.
-const ISLAND_OUTLINE=[
-  new THREE.Vector2(-11.55,-8.10),new THREE.Vector2(-10.10,-8.92),new THREE.Vector2(-8.15,-9.32),
-  new THREE.Vector2(-6.15,-8.83),new THREE.Vector2(-4.05,-9.46),new THREE.Vector2(-1.72,-9.05),
-  new THREE.Vector2(.35,-9.58),new THREE.Vector2(2.72,-9.10),new THREE.Vector2(4.05,-8.18),
-  new THREE.Vector2(5.55,-9.34),new THREE.Vector2(7.48,-8.66),new THREE.Vector2(9.62,-8.90),
-  new THREE.Vector2(11.42,-7.48),new THREE.Vector2(12.22,-5.78),new THREE.Vector2(11.58,-4.23),
-  new THREE.Vector2(12.52,-2.62),new THREE.Vector2(11.86,-.88),new THREE.Vector2(12.62,1.02),
-  new THREE.Vector2(11.18,2.05),new THREE.Vector2(12.18,4.72),new THREE.Vector2(12.45,6.72),
-  new THREE.Vector2(11.18,8.42),new THREE.Vector2(8.92,9.02),new THREE.Vector2(7.34,8.72),
-  new THREE.Vector2(5.13,8.52),new THREE.Vector2(3.03,9.34),new THREE.Vector2(.18,8.46),
-  new THREE.Vector2(-1.42,9.52),new THREE.Vector2(-3.38,8.78),new THREE.Vector2(-5.38,9.20),
-  new THREE.Vector2(-7.35,8.48),new THREE.Vector2(-9.38,8.78),new THREE.Vector2(-11.18,7.48),
-  new THREE.Vector2(-11.86,5.62),new THREE.Vector2(-11.25,4.18),new THREE.Vector2(-12.25,2.66),
-  new THREE.Vector2(-10.42,.18),new THREE.Vector2(-12.48,-.82),new THREE.Vector2(-11.62,-2.48),
-  new THREE.Vector2(-12.25,-4.55),new THREE.Vector2(-11.48,-6.48)
-];
-const ISLAND_SIGNED_AREA=ISLAND_OUTLINE.reduce((sum,p,i)=>{
-  const q=ISLAND_OUTLINE[(i+1)%ISLAND_OUTLINE.length];
-  return sum+p.x*q.y-q.x*p.y;
-},0)*.5;
-function pointInsideIsland(x,z){
-  let inside=false;
-  for(let i=0,j=ISLAND_OUTLINE.length-1;i<ISLAND_OUTLINE.length;j=i++){
-    const a=ISLAND_OUTLINE[i],b=ISLAND_OUTLINE[j];
-    const crosses=((a.y>z)!==(b.y>z))&&(x<(b.x-a.x)*(z-a.y)/((b.y-a.y)||1e-8)+a.x);
-    if(crosses)inside=!inside;
-  }
-  return inside;
-}
-function nearestIslandEdge(x,z){
-  let best=null,bestD2=Infinity;
-  for(let i=0;i<ISLAND_OUTLINE.length;i++){
-    const a=ISLAND_OUTLINE[i],b=ISLAND_OUTLINE[(i+1)%ISLAND_OUTLINE.length];
-    const abx=b.x-a.x,abz=b.y-a.y,len2=abx*abx+abz*abz;
-    const t=THREE.MathUtils.clamp(((x-a.x)*abx+(z-a.y)*abz)/(len2||1),0,1);
-    const px=a.x+abx*t,pz=a.y+abz*t,dx=x-px,dz=z-pz,d2=dx*dx+dz*dz;
-    if(d2<bestD2){
-      const inv=ISLAND_SIGNED_AREA>0?new THREE.Vector2(-abz,abx):new THREE.Vector2(abz,-abx);
-      inv.normalize();best={x:px,z:pz,d2,normal:inv};bestD2=d2;
-    }
-  }
-  return best;
-}
-function constrainToIsland(pos,radius=.24){
-  const edge=nearestIslandEdge(pos.x,pos.z);if(!edge)return;
-  const inside=pointInsideIsland(pos.x,pos.z),dist=Math.sqrt(edge.d2);
-  if(!inside||dist<radius){
-    pos.x=edge.x+edge.normal.x*(radius+.035);
-    pos.z=edge.z+edge.normal.y*(radius+.035);
-    if(!pointInsideIsland(pos.x,pos.z)){
-      // sécurité dans les angles concaves : repli léger vers le centre de l'île.
-      pos.x=THREE.MathUtils.lerp(pos.x,0,.18);pos.z=THREE.MathUtils.lerp(pos.z,0,.18);
-    }
-  }
-}
 
 function addBoxCollider(x,z,w,d,pad=.16){colliders.push({x1:x-w/2-pad,x2:x+w/2+pad,z1:z-d/2-pad,z2:z+d/2+pad})}
 function resolveCollisions(pos,radius=.24){
@@ -202,11 +145,20 @@ function resolveCollisions(pos,radius=.24){
   if(trainingGate && trainingGate.open < .62){
     applyRectCollision({x1:trainingGate.center.x-trainingGate.width*.5,x2:trainingGate.center.x+trainingGate.width*.5,z1:trainingGate.center.z-trainingGate.depth*.5,z2:trainingGate.center.z+trainingGate.depth*.5});
   }
-  // Limite réelle basée sur la côte irrégulière, avec prise en compte du rayon du joueur.
-  constrainToIsland(pos,radius);
+  // Limite elliptique naturelle de l'île. Une ouverture centrale au sud permet d'emprunter le ponton.
+  const onPontoon=Math.abs(pos.x)<.78 && pos.z>8.45 && pos.z<11.75;
+  if(onPontoon){
+    pos.x=THREE.MathUtils.clamp(pos.x,-.70,.70);
+    pos.z=THREE.MathUtils.clamp(pos.z,8.45,11.55);
+  }else{
+    const rx=12.45-radius, rz=9.55-radius;
+    const q=Math.hypot(pos.x/rx,pos.z/rz);
+    if(q>1){pos.x/=q;pos.z/=q;}
+  }
   return pos;
 }
 function getTerrainHeight(x,z){
+  if(Math.abs(x)<.78 && z>8.45 && z<11.75)return .11;
   // Plateau du temple et véritable montée par l'escalier sud.
   const onPlateau=Math.abs(x)<4.45 && z>-4.10 && z<1.45;
   if(onPlateau)return .58;
@@ -230,6 +182,23 @@ function ensureAudio(){
   fieldBus.gain.value=0;
   fieldBus.connect(audioCtx.destination);
 }
+
+function ensureGateAudio(){
+  if(gateAudio)return;
+  gateAudio=new Audio(GATE_SFX_URL);
+  gateAudio.preload='auto';
+  gateAudio.volume=.32;
+}
+function playGateOpenSound(){
+  ensureGateAudio();
+  try{
+    gateAudio.pause();
+    gateAudio.currentTime=0;
+    const p=gateAudio.play();
+    p?.catch?.(()=>{});
+  }catch{}
+}
+
 function zoneGain(dist,nearDist,farDist,maxGain=1){
   if(dist<=nearDist) return maxGain;
   if(dist>=farDist) return 0;
@@ -567,6 +536,7 @@ let audioCtx=null, footstepBus=null, footstepBuffers=[], footstepLoading=false;
 let ambientBus=null, ambientNoiseSource=null, ambientNoiseGain=null, ambientLfo=null, ambientBirdTimer=null, ambientStarted=false;
 let anvilBus=null, anvilLastTime=0, anvilSfxBuffer=null, anvilSfxLoading=false, cameraShake=0, cameraShakeX=0, cameraShakeZ=0;
 let fieldBus=null, fieldAmbienceStarted=false, fieldNoiseSource=null, fieldCricketSource=null, fieldNoiseGain=null, fieldCricketGain=null, fieldNoiseLfo=null, fieldCricketLfo=null;
+let gateAudio=null;
 
 function setupThree(){
   renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
@@ -577,52 +547,22 @@ function setupThree(){
   scene.add(new THREE.HemisphereLight(0xf3dfbd,0x2d211c,1.75));
   const sun=new THREE.DirectionalLight(0xffd39a,5.6);sun.position.set(-8,15,-6);sun.castShadow=true;sun.shadow.bias=-0.00018;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-13;sun.shadow.camera.right=13;sun.shadow.camera.top=13;sun.shadow.camera.bottom=-13;scene.add(sun);
   const rim=new THREE.DirectionalLight(0x7894a0,1.05);rim.position.set(8,8,8);scene.add(rim);
-  buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();loadCharacter();onResize();addEventListener('resize',onResize,{passive:true,once:false});renderer.setAnimationLoop(update);
+  buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();createPatrolGuards();loadCharacter();onResize();addEventListener('resize',onResize,{passive:true,once:false});renderer.setAnimationLoop(update);
 }
 function buildArena(){
-  const makeOutlineShape=(scale=1,offsetX=0,offsetZ=0)=>{
-    const shape=new THREE.Shape();
-    ISLAND_OUTLINE.forEach((p,i)=>{
-      const x=p.x*scale+offsetX,z=p.y*scale+offsetZ;
-      if(i===0)shape.moveTo(x,z);else shape.lineTo(x,z);
-    });
-    shape.closePath();return shape;
-  };
-  const createRibbonGeometry=(innerScale,outerScale,y=0)=>{
-    const vertices=[],indices=[],n=ISLAND_OUTLINE.length;
-    for(let i=0;i<n;i++){
-      const p=ISLAND_OUTLINE[i];vertices.push(p.x*innerScale,y,p.y*innerScale,p.x*outerScale,y,p.y*outerScale);
-    }
-    for(let i=0;i<n;i++){
-      const ni=(i+1)%n,a=i*2,b=i*2+1,c=ni*2,d=ni*2+1;
-      indices.push(a,c,b,b,c,d);
-    }
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();return g;
-  };
-  const seaMat=new THREE.MeshStandardMaterial({color:0x286b80,roughness:.28,metalness:.08});
-  const sea=new THREE.Mesh(new THREE.PlaneGeometry(60,48),seaMat);sea.rotation.x=-Math.PI/2;sea.position.y=-.46;sea.receiveShadow=true;scene.add(sea);
-  const shallow=new THREE.Mesh(createRibbonGeometry(1.005,1.085,-.405),new THREE.MeshBasicMaterial({color:0x56a9ad,transparent:true,opacity:.26,side:THREE.DoubleSide,depthWrite:false}));
-  shallow.renderOrder=1;scene.add(shallow);
-  const foamRing=new THREE.Mesh(createRibbonGeometry(1.014,1.038,-.385),new THREE.MeshBasicMaterial({color:0xd7ece4,transparent:true,opacity:.34,side:THREE.DoubleSide,depthWrite:false}));
-  foamRing.renderOrder=2;scene.add(foamRing);
-
-  const cliffShape=makeOutlineShape(1.035);
-  const cliffGeom=new THREE.ExtrudeGeometry(cliffShape,{depth:.42,bevelEnabled:false,steps:1});
-  cliffGeom.rotateX(Math.PI/2);
-  const cliffBase=new THREE.Mesh(cliffGeom,new THREE.MeshStandardMaterial({color:0x655b4e,roughness:1,flatShading:true}));
-  cliffBase.position.y=-.03;cliffBase.castShadow=cliffBase.receiveShadow=true;scene.add(cliffBase);
-
+  const seaMat=new THREE.MeshStandardMaterial({color:0x2f6f82,roughness:.32,metalness:.06});
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(60,48),seaMat);sea.rotation.x=-Math.PI/2;sea.position.y=-.36;sea.receiveShadow=true;scene.add(sea);
+  const rockBase=new THREE.Mesh(new THREE.CircleGeometry(15.45,72),new THREE.MeshStandardMaterial({color:0x675d50,roughness:1}));
+  rockBase.rotation.x=-Math.PI/2;rockBase.scale.set(1,.73,1);rockBase.position.y=-.16;rockBase.receiveShadow=true;scene.add(rockBase);
   const texLoader=new THREE.TextureLoader();
   texLoader.setCrossOrigin('anonymous');
-  const createLandTop=(material)=>{
-    material.side=THREE.DoubleSide;
-    const floor=new THREE.Mesh(new THREE.ShapeGeometry(makeOutlineShape(.995)),material);
-    floor.rotation.x=Math.PI/2;floor.position.y=.012;floor.receiveShadow=true;scene.add(floor);
-  };
   texLoader.load(FLOOR_URL,tex=>{
-    tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(.12,.12);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
-    createLandTop(new THREE.MeshStandardMaterial({map:tex,color:0xa9916b,roughness:.97,metalness:0}));
-  },undefined,()=>createLandTop(new THREE.MeshStandardMaterial({color:0x9b835e,roughness:1})));
+    tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(13,10);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+    const mat=new THREE.MeshStandardMaterial({map:tex,color:0xb6a27c,roughness:.96,metalness:0});
+    const floor=new THREE.Mesh(new THREE.CircleGeometry(15.0,72),mat);floor.rotation.x=-Math.PI/2;floor.scale.set(1,.72,1);floor.position.y=-.02;floor.receiveShadow=true;scene.add(floor);
+  },undefined,()=>{
+    const floor=new THREE.Mesh(new THREE.CircleGeometry(15.0,72),new THREE.MeshStandardMaterial({color:0x9b835e,roughness:1}));floor.rotation.x=-Math.PI/2;floor.scale.set(1,.72,1);floor.position.y=-.02;floor.receiveShadow=true;scene.add(floor);
+  });
 
   const wallMat=new THREE.MeshStandardMaterial({color:0xd0c0a2,roughness:.92});
   const capMat=new THREE.MeshStandardMaterial({color:0x594639,roughness:.96});
@@ -665,8 +605,30 @@ function buildArena(){
     const foliage=new THREE.Group(); foliage.position.set(x,0,z); scene.add(foliage);
     for(let i=0;i<12;i++){
       const ball=new THREE.Mesh(new THREE.IcosahedronGeometry((.24+Math.random()*.12)*s,1),leafMat);
-      ball.scale.set(1,.58,1);ball.position.set((Math.random()-.5)*.95*s,.95*s+Math.random()*.42*s,(Math.random()-.5)*.95*s);ball.castShadow=true;foliage.add(ball);
+      ball.scale.set(1,.58,1);ball.position.set((Math.random()-.5)*.95*s,.95*s+Math.random()*.42*s);ball.position.z=(Math.random()-.5)*.95*s;ball.castShadow=true;foliage.add(ball);
     }
+  };
+  const addPontoon=(x,z,length=3.25,width=1.28)=>{
+    const dock=new THREE.Group();dock.position.set(x,0,z);scene.add(dock);
+    const plankMat=new THREE.MeshStandardMaterial({color:0x705035,roughness:.94});
+    const darkWood=new THREE.MeshStandardMaterial({color:0x4f3828,roughness:.98});
+    const ropeMat=new THREE.MeshStandardMaterial({color:0xb89a67,roughness:1});
+    const count=11,step=length/count;
+    for(let i=0;i<count;i++){
+      const plank=new THREE.Mesh(new THREE.BoxGeometry(width,.12,step*.88),plankMat);
+      plank.position.set(0,.11,-length*.5+step*(i+.5));
+      plank.rotation.y=(i%2?-.012:.014);
+      plank.castShadow=plank.receiveShadow=true;dock.add(plank);
+    }
+    for(const sx of [-width*.43,width*.43]){
+      const beam=new THREE.Mesh(new THREE.BoxGeometry(.12,.10,length),darkWood);beam.position.set(sx,.04,0);beam.castShadow=true;dock.add(beam);
+      for(const pz of [-length*.42,-length*.12,length*.18,length*.44]){
+        const post=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,.95,10),darkWood);post.position.set(sx,.02,pz);post.castShadow=true;dock.add(post);
+      }
+      const rope=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,length*.84,8),ropeMat);rope.rotation.x=Math.PI/2;rope.position.set(sx,.43,0);rope.castShadow=true;dock.add(rope);
+    }
+    const landing=new THREE.Mesh(new THREE.BoxGeometry(width+1.0,.14,.82),new THREE.MeshStandardMaterial({color:0xb4a080,roughness:.97}));
+    landing.position.set(0,.07,-length*.5-.22);landing.castShadow=landing.receiveShadow=true;dock.add(landing);
   };
   const addRoad=(x,z,w,d,rot=0,color=0xbea782)=> addStonePatch(x,z,w,d,.018,rot,color);
   const addStepStairs=(x,z,steps=7,w=3.4,d=.54,stepH=.055,dir='south')=>{
@@ -893,7 +855,7 @@ function buildArena(){
     const leftDoor=new THREE.Mesh(doorGeo,wood2); leftDoor.position.set(.51,0,0); leftDoor.castShadow=true; leftPivot.add(leftDoor);
     const rightDoor=new THREE.Mesh(doorGeo,wood2); rightDoor.position.set(-.51,0,0); rightDoor.castShadow=true; rightPivot.add(rightDoor);
     for(const d of [leftDoor,rightDoor]) for(let i=-1;i<=1;i++){ const brace=new THREE.Mesh(new THREE.BoxGeometry(.82,.05,.025),capMat); brace.position.set(0,.22*i,.07); brace.rotation.z=i===0?0:(i<0?.28:-.28); d.add(brace); }
-    trainingGate={center:new THREE.Vector2(x,z+2.85),width:2.12,depth:.42,open:0,target:0,autoClose:0,leftPivot,rightPivot};
+    trainingGate={center:new THREE.Vector2(x,z+2.85),width:2.12,depth:.42,open:0,target:0,autoClose:0,soundOpened:false,leftPivot,rightPivot};
     const rack=new THREE.Group(); rack.position.set(-2.0,0,-1.25); camp.add(rack);
     for(const px of [-.55,.55]){ const p=new THREE.Mesh(new THREE.CylinderGeometry(.05,.06,.95,8),wood2); p.position.set(px,.46,0); p.castShadow=true; rack.add(p); }
     const bar=new THREE.Mesh(new THREE.BoxGeometry(1.35,.08,.08),wood2); bar.position.set(0,.84,0); bar.castShadow=true; rack.add(bar);
@@ -1004,67 +966,14 @@ function buildArena(){
     const door=new THREE.Mesh(new THREE.BoxGeometry(.42*s,.72*s,.08*s),capMat);door.position.set(0,.38*s,.86*s);door.castShadow=true;g.add(door);
     addBoxCollider(x,z,2.2*s,1.7*s,.06);
   };
-  const beachZones=[
-    {x:4.0,z:-8.45,r:1.55},{x:-10.85,z:.05,r:1.30},{x:.25,z:8.72,r:1.45}
-  ];
-  const nearBeach=(x,z)=>beachZones.some(b=>Math.hypot(x-b.x,z-b.z)<b.r);
-  const addBeachPatch=(pts,color=0xcbb47d)=>{
-    const shape=new THREE.Shape();pts.forEach((p,i)=>i?shape.lineTo(p[0],p[1]):shape.moveTo(p[0],p[1]));shape.closePath();
-    const beach=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({color,roughness:1,side:THREE.DoubleSide}));
-    beach.rotation.x=Math.PI/2;beach.position.y=.030;beach.receiveShadow=true;scene.add(beach);
-    for(let i=0;i<12;i++){
-      const p=pts[i%pts.length],q=pts[(i+1)%pts.length],t=(i*.618)%1;
-      const pebble=new THREE.Mesh(new THREE.DodecahedronGeometry(.045+(i%3)*.018,0),stoneDark);
-      pebble.position.set(THREE.MathUtils.lerp(p[0],q[0],t),.055,THREE.MathUtils.lerp(p[1],q[1],t));
-      pebble.scale.set(1.3,.55,1);pebble.rotation.y=i*.71;pebble.castShadow=true;scene.add(pebble);
-    }
-  };
-  const addRockIslet=(cx,cz,scale=1,phase=0)=>{
-    const pts=[];
-    for(let i=0;i<11;i++){
-      const a=i/11*Math.PI*2,r=(.62+.18*Math.sin(i*2.17+phase)+.08*Math.cos(i*3.41-phase))*scale;
-      pts.push(new THREE.Vector2(Math.cos(a)*r,Math.sin(a)*r));
-    }
-    const shape=new THREE.Shape();pts.forEach((pt,i)=>i?shape.lineTo(pt.x,pt.y):shape.moveTo(pt.x,pt.y));shape.closePath();
-    const geom=new THREE.ExtrudeGeometry(shape,{depth:.34*scale,bevelEnabled:false,steps:1});geom.rotateX(Math.PI/2);
-    const rock=new THREE.Mesh(geom,new THREE.MeshStandardMaterial({color:0x5d574e,roughness:1,flatShading:true}));
-    rock.position.set(cx,-.18,cz);rock.castShadow=rock.receiveShadow=true;scene.add(rock);
-    const top=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshStandardMaterial({color:0x81745f,roughness:1,side:THREE.DoubleSide}));
-    top.rotation.x=Math.PI/2;top.position.set(cx,.02,cz);top.receiveShadow=true;scene.add(top);
-    for(let i=0;i<7;i++){
-      const a=i/7*Math.PI*2,r=.55*scale;
-      const stone=new THREE.Mesh(new THREE.DodecahedronGeometry((.10+(i%3)*.035)*scale,0),stoneDark);
-      stone.position.set(cx+Math.cos(a)*r,.02+Math.sin(i)*.02,cz+Math.sin(a)*r);stone.scale.set(1.2,.65,1);stone.castShadow=true;scene.add(stone);
-    }
-  };
   const addCoastRocks=()=>{
-    const foamMat=new THREE.MeshBasicMaterial({color:0xe2f0e8,transparent:true,opacity:.30,side:THREE.DoubleSide,depthWrite:false});
-    for(let i=0;i<ISLAND_OUTLINE.length;i++){
-      const a=ISLAND_OUTLINE[i],b=ISLAND_OUTLINE[(i+1)%ISLAND_OUTLINE.length];
-      const dx=b.x-a.x,dz=b.y-a.y,len=Math.hypot(dx,dz),steps=Math.max(1,Math.floor(len/.48));
-      const inward=ISLAND_SIGNED_AREA>0?new THREE.Vector2(-dz,dx):new THREE.Vector2(dz,-dx);inward.normalize();
-      const outward=inward.clone().multiplyScalar(-1),angle=Math.atan2(dz,dx);
-      for(let s=0;s<steps;s++){
-        const t=(s+.22+(i%3)*.11)/steps;
-        const x=THREE.MathUtils.lerp(a.x,b.x,t),z=THREE.MathUtils.lerp(a.y,b.y,t);
-        const beach=nearBeach(x,z);
-        if(!beach||s%4===0){
-          const size=(.14+((i*17+s*13)%11)*.018)*(beach?.72:1);
-          const jitter=(((i*31+s*19)%17)/17-.5)*.18;
-          const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(size,0),stoneDark);
-          rock.position.set(x+inward.x*jitter,-.07+((i+s)%5)*.035,z+inward.y*jitter);
-          rock.rotation.set((i+s)*.37,(i*3+s)*.29,(i*7+s)*.17);rock.scale.set(1.25+((i+s)%4)*.12,.58+((i*2+s)%3)*.10,1);rock.castShadow=rock.receiveShadow=true;scene.add(rock);
-        }
-        if(s%3===0){
-          const strip=new THREE.Mesh(new THREE.PlaneGeometry(Math.min(.58,len/steps*.9),.07+((i+s)%3)*.025),foamMat.clone());
-          strip.rotation.x=-Math.PI/2;strip.rotation.z=-angle;strip.position.set(x+outward.x*.18,-.375,z+outward.y*.18);strip.renderOrder=3;scene.add(strip);
-        }
-      }
+    for(let i=0;i<58;i++){
+      const a=i/58*Math.PI*2;
+      const rx=13.15+(Math.random()-.5)*.55, rz=9.72+(Math.random()-.5)*.42;
+      const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(.18+Math.random()*.22,0),stoneDark);
+      rock.position.set(Math.cos(a)*rx,-.02+Math.random()*.12,Math.sin(a)*rz);
+      rock.rotation.set(Math.random()*2,Math.random()*2,Math.random()*2);rock.scale.set(1.25,.72,1);rock.castShadow=rock.receiveShadow=true;scene.add(rock);
     }
-    addBeachPatch([[2.52,-9.02],[3.96,-8.10],[5.52,-9.15],[5.02,-8.42],[4.00,-7.72],[2.92,-8.42]],0xcbb67f);
-    addBeachPatch([[-12.02,-.72],[-10.44,.16],[-11.27,.88],[-10.72,.63],[-9.94,.08],[-11.12,-.78]],0xc8b079);
-    addBeachPatch([[-1.35,9.34],[.18,8.45],[2.86,9.18],[2.17,8.52],[.22,7.93],[-.92,8.54]],0xcdb781);
-    addRockIslet(-14.10,5.55,.92,.6);addRockIslet(14.15,-5.05,.78,1.4);addRockIslet(-13.65,-6.55,.48,2.3);
   };
   // relief général de l'île et réseau de chemins
   addSteppedRise(0,-1.10,9.15,7.15,4,.145,.28,0xa68f67);
@@ -1090,6 +999,7 @@ function buildArena(){
   addFieldComplex(8.45,5.65);
   addForgeHouse(forgeCenterPos.x,forgeCenterPos.z,1.08);
   addTrainingCamp(trainingCampCenter.x,trainingCampCenter.z);
+  addPontoon(0,10.05,3.35,1.30);
   addMarketSquare();
   addFarmDetails();
   addForgeYard();
@@ -1098,30 +1008,37 @@ function buildArena(){
   // Maisons grecques, oliveraies et emplacements futurs.
   addGreekHouse(-8.65,-5.85,.08,1.03);addGreekHouse(-4.75,-7.35,-.06,.95);addGreekHouse(-10.1,-2.55,.15,.90);
   addFuturePad(-1.8,7.65,2.2,1.7);addFuturePad(2.0,7.6,2.1,1.6);addFuturePad(4.15,-7.55,2.0,1.55);
-  for(const [x,z] of [[-11.1,-7.7],[-10.6,7.45],[11.0,-7.5],[11.3,7.5],[-10.7,2.0],[10.9,1.8],[-3.0,8.2],[3.1,8.15],[-2.8,-8.6],[8.0,8.45]]) addOlive(x,z,1.0+Math.random()*.12);
+  for(const [x,z] of [[-11.1,-7.7],[-11.2,7.7],[11.0,-7.5],[11.3,7.5],[-10.7,2.0],[10.9,1.8],[-3.0,8.2],[3.1,8.15],[-2.8,-8.6],[8.0,8.45]]) addOlive(x,z,1.0+Math.random()*.12);
   for(const args of [[-6.0,7.1,1.7,.9,.04],[-4.6,7.5,1.4,.8,-.06],[-9.8,1.9,1.5,.9,.08],[9.7,7.6,1.7,.9,.04],[0,6.0,1.5,1.0,0],[0,-4.9,1.9,1.15,0]]) addStonePatch(args[0],args[1],args[2],args[3],.022,args[4],0xbea887);
   addBrokenStones(-8.9,-3.9,8,1.8,1.1);addBrokenStones(9.0,.9,7,1.7,1.2);addBrokenStones(0,8.4,7,2.2,.9);
   addCoastRocks();
 
-  // La côte irrégulière, les anses et les falaises remplacent définitivement les formes rondes.
+  // La côte rocheuse et la limite elliptique remplacent les murs rectangulaires.
 
 }
 
 function updateTrainingGate(dt){
   if(!trainingGate)return;
-  const dx=player.x-trainingGate.center.x, dz=player.z-trainingGate.center.y;
+  const dx=player.x-trainingGate.center.x,dz=player.z-trainingGate.center.y;
   const dist=Math.hypot(dx,dz);
-  const moving=velocity.lengthSq()>.012;
-  if(dist<1.75 && moving){trainingGate.target=1;trainingGate.autoClose=2.0;}
+  const moving=started&&(Math.abs(velocity.x)+Math.abs(velocity.y)>.08);
+  if(dist<1.75&&moving){trainingGate.target=1;trainingGate.autoClose=2.0;}
   else if(dist<1.15){trainingGate.target=1;trainingGate.autoClose=2.0;}
   else if(trainingGate.autoClose>0){trainingGate.autoClose-=dt;trainingGate.target=1;}
   else if(dist>2.25)trainingGate.target=0;
+
+  if(trainingGate.target>0.5&&!trainingGate.soundOpened){
+    trainingGate.soundOpened=true;
+    playGateOpenSound();
+  }
+  if(trainingGate.target<0.5&&trainingGate.open<.08)trainingGate.soundOpened=false;
+
   trainingGate.open=THREE.MathUtils.lerp(trainingGate.open,trainingGate.target,1-Math.exp(-6.5*dt));
   const eased=trainingGate.open*trainingGate.open*(3-2*trainingGate.open);
-  const ang=eased*1.32;
+  const ang=eased*1.22;
   trainingGate.leftPivot.rotation.y=-ang;
   trainingGate.rightPivot.rotation.y=ang;
-  const lift=Math.sin(eased*Math.PI)*.025;
+  const lift=Math.sin(eased*Math.PI)*.035;
   trainingGate.leftPivot.position.y=.50+lift;
   trainingGate.rightPivot.position.y=.50+lift;
 }
@@ -1158,46 +1075,140 @@ function updateTempleVisibility(dt){
   for(const mesh of templeWallParts){mesh.material.opacity=THREE.MathUtils.lerp(1,.24,smooth);mesh.material.depthWrite=smooth<.16;}
 }
 
-function createTrainingNPC(){
-  const root=new THREE.Group(); root.position.set(trainingCampCenter.x,0,trainingCampCenter.z+.55); scene.add(root); trainingNPC=root;
+function createArmoredSoldier({position,name='Soldat',role='',weapon='spear',capeColor=0x76241d,shieldColor=0x343a3d,training=false}){
+  const root=new THREE.Group();root.position.copy(position);scene.add(root);
   const skin=new THREE.MeshStandardMaterial({color:0xb27a57,roughness:.95});
-  const armor=new THREE.MeshStandardMaterial({color:0x202327,roughness:.72,metalness:.28});
+  const armor=new THREE.MeshStandardMaterial({color:0x24282c,roughness:.62,metalness:.34});
+  const armorDark=new THREE.MeshStandardMaterial({color:0x171a1d,roughness:.72,metalness:.24});
   const leather=new THREE.MeshStandardMaterial({color:0x4b3428,roughness:.96});
-  const wood=new THREE.MeshStandardMaterial({color:0x725235,roughness:.96});
   const linen=new THREE.MeshStandardMaterial({color:0xcab88f,roughness:.98});
-  const shieldMat=new THREE.MeshStandardMaterial({color:0x8c7045,roughness:.9});
-  const motion=new THREE.Group(); root.add(motion);
-  const hips=new THREE.Group(); hips.position.set(0,.78,0); motion.add(hips);
-  const torsoPivot=new THREE.Group(); torsoPivot.position.set(0,.12,0); hips.add(torsoPivot);
-  const pelvis=new THREE.Mesh(new THREE.BoxGeometry(.36,.20,.29),leather); pelvis.castShadow=true; hips.add(pelvis);
-  const torso=new THREE.Mesh(new THREE.BoxGeometry(.46,.56,.34),armor); torso.position.y=.26; torso.castShadow=true; torsoPivot.add(torso);
-  const belt=new THREE.Mesh(new THREE.BoxGeometry(.49,.07,.37),leather); belt.position.y=.03; belt.castShadow=true; torsoPivot.add(belt);
-  const headPivot=new THREE.Group(); headPivot.position.set(0,.66,-.015); torsoPivot.add(headPivot);
-  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.055,.062,.10,10),skin); neck.position.y=.53; neck.castShadow=true; torsoPivot.add(neck);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.15,14,12),skin); head.scale.set(.94,1.02,.95); head.castShadow=true; headPivot.add(head);
-  const helmet=new THREE.Mesh(new THREE.SphereGeometry(.17,16,12),armor); helmet.scale.set(1,.92,1); helmet.position.y=.03; helmet.castShadow=true; headPivot.add(helmet);
-  const crest=new THREE.Mesh(new THREE.BoxGeometry(.08,.17,.30),new THREE.MeshStandardMaterial({color:0x6e1f18,roughness:.9})); crest.position.set(0,.21,.01); crest.castShadow=true; headPivot.add(crest);
-  const nose=new THREE.Mesh(new THREE.ConeGeometry(.025,.07,7),skin); nose.rotation.x=Math.PI/2; nose.position.set(0,-.01,-.145); nose.castShadow=true; headPivot.add(nose);
-  const leftLegPivot=new THREE.Group(); leftLegPivot.position.set(-.11,-.12,0); hips.add(leftLegPivot);
-  const rightLegPivot=new THREE.Group(); rightLegPivot.position.set(.11,-.12,0); hips.add(rightLegPivot);
-  for(const p of [leftLegPivot,rightLegPivot]){ const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.048,.28,6,10),linen); leg.position.y=-.20; leg.castShadow=true; p.add(leg); const foot=new THREE.Mesh(new THREE.BoxGeometry(.12,.07,.18),leather); foot.position.set(0,-.42,-.04); foot.castShadow=true; p.add(foot); }
-  const leftShoulder=new THREE.Group(); leftShoulder.position.set(-.22,.33,-.02); torsoPivot.add(leftShoulder);
-  const rightShoulder=new THREE.Group(); rightShoulder.position.set(.22,.31,-.02); torsoPivot.add(rightShoulder);
-  leftShoulder.rotation.set(.18,0,.62); rightShoulder.rotation.set(.32,0,-.58);
-  const leftUpper=new THREE.Mesh(new THREE.CapsuleGeometry(.04,.16,6,10),skin); leftUpper.position.y=-.12; leftUpper.castShadow=true; leftShoulder.add(leftUpper);
-  const leftFore=new THREE.Group(); leftFore.position.set(0,-.21,0); leftShoulder.add(leftFore); leftFore.rotation.z=.24;
-  const leftForeMesh=new THREE.Mesh(new THREE.CapsuleGeometry(.036,.12,6,10),skin); leftForeMesh.position.y=-.10; leftForeMesh.castShadow=true; leftFore.add(leftForeMesh);
-  const shieldPivot=new THREE.Group(); shieldPivot.position.set(.03,-.21,-.02); leftFore.add(shieldPivot); shieldPivot.rotation.z=.08;
-  const shieldEdge=new THREE.Mesh(new THREE.BoxGeometry(.12,.34,.12),shieldMat); shieldEdge.castShadow=true; shieldPivot.add(shieldEdge);
-  const shieldLip=new THREE.Mesh(new THREE.CapsuleGeometry(.055,.18,5,10),new THREE.MeshStandardMaterial({color:0x3a2c21,roughness:.95})); shieldLip.rotation.z=Math.PI/2; shieldLip.castShadow=true; shieldPivot.add(shieldLip);
-  const rightUpper=new THREE.Mesh(new THREE.CapsuleGeometry(.04,.17,6,10),skin); rightUpper.position.y=-.13; rightUpper.castShadow=true; rightShoulder.add(rightUpper);
-  const rightFore=new THREE.Group(); rightFore.position.set(0,-.22,0); rightShoulder.add(rightFore); rightFore.rotation.z=-.20;
-  const rightForeMesh=new THREE.Mesh(new THREE.CapsuleGeometry(.036,.13,6,10),skin); rightForeMesh.position.y=-.10; rightForeMesh.castShadow=true; rightFore.add(rightForeMesh);
-  const swordPivot=new THREE.Group(); swordPivot.position.set(0,-.21,-.02); rightFore.add(swordPivot); swordPivot.rotation.z=-.38;
-  const swordHandle=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.11,8), leather); swordHandle.rotation.z=Math.PI/2; swordHandle.position.set(.05,-.01,0); swordHandle.castShadow=true; swordPivot.add(swordHandle);
-  const guard=new THREE.Mesh(new THREE.BoxGeometry(.02,.10,.03), armor); guard.position.set(.10,-.01,0); guard.castShadow=true; swordPivot.add(guard);
-  const blade=new THREE.Mesh(new THREE.BoxGeometry(.02,.30,.05), wood); blade.position.set(.22,-.01,0); blade.rotation.z=-.04; blade.castShadow=true; swordPivot.add(blade);
-  root.userData={name:'Níkon',role:'soldat instructeur',dialogIndex:0,state:'idle',stateTime:0,bubbleUntil:0,dialogues:[
+  const capeMat=new THREE.MeshStandardMaterial({color:capeColor,roughness:.94,side:THREE.DoubleSide});
+  const shieldMat=new THREE.MeshStandardMaterial({color:shieldColor,roughness:.74,metalness:.12});
+  const woodMat=new THREE.MeshStandardMaterial({color:training?0x8a6541:0x66452d,roughness:.94});
+  const bronzeMat=new THREE.MeshStandardMaterial({color:0x8e6b3f,roughness:.54,metalness:.32});
+
+  const motion=new THREE.Group();root.add(motion);
+  const hips=new THREE.Group();hips.position.set(0,.77,0);motion.add(hips);
+  const torsoPivot=new THREE.Group();torsoPivot.position.set(0,.12,0);hips.add(torsoPivot);
+  const pelvis=new THREE.Mesh(new THREE.BoxGeometry(.38,.20,.30),leather);pelvis.castShadow=true;hips.add(pelvis);
+  const skirt=new THREE.Mesh(new THREE.CylinderGeometry(.21,.28,.30,10),armorDark);skirt.position.y=-.12;skirt.castShadow=true;hips.add(skirt);
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(.48,.56,.36),armor);torso.position.y=.26;torso.castShadow=true;torsoPivot.add(torso);
+  const chestPlate=new THREE.Mesh(new THREE.BoxGeometry(.36,.33,.055),bronzeMat);chestPlate.position.set(0,.30,-.205);chestPlate.castShadow=true;torsoPivot.add(chestPlate);
+  const belt=new THREE.Mesh(new THREE.BoxGeometry(.51,.07,.39),leather);belt.position.y=.03;belt.castShadow=true;torsoPivot.add(belt);
+
+  const headPivot=new THREE.Group();headPivot.position.set(0,.67,-.02);torsoPivot.add(headPivot);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.055,.064,.10,10),skin);neck.position.y=.54;neck.castShadow=true;torsoPivot.add(neck);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.15,14,12),skin);head.scale.set(.94,1.02,.95);head.castShadow=true;headPivot.add(head);
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(.175,16,12),armor);helmet.scale.set(1,.93,1);helmet.position.y=.035;helmet.castShadow=true;headPivot.add(helmet);
+  const cheekL=new THREE.Mesh(new THREE.BoxGeometry(.04,.15,.08),armor);cheekL.position.set(-.12,-.05,-.075);cheekL.castShadow=true;headPivot.add(cheekL);
+  const cheekR=cheekL.clone();cheekR.position.x=.12;headPivot.add(cheekR);
+  const crest=new THREE.Mesh(new THREE.BoxGeometry(.085,.19,.32),new THREE.MeshStandardMaterial({color:capeColor,roughness:.92}));crest.position.set(0,.22,.01);crest.castShadow=true;headPivot.add(crest);
+
+  const leftLegPivot=new THREE.Group();leftLegPivot.position.set(-.11,-.12,0);hips.add(leftLegPivot);
+  const rightLegPivot=new THREE.Group();rightLegPivot.position.set(.11,-.12,0);hips.add(rightLegPivot);
+  for(const p of [leftLegPivot,rightLegPivot]){
+    const thigh=new THREE.Mesh(new THREE.CapsuleGeometry(.052,.24,6,10),linen);thigh.position.y=-.18;thigh.castShadow=true;p.add(thigh);
+    const greave=new THREE.Mesh(new THREE.CapsuleGeometry(.048,.18,6,10),bronzeMat);greave.position.set(0,-.38,-.01);greave.castShadow=true;p.add(greave);
+    const foot=new THREE.Mesh(new THREE.BoxGeometry(.12,.07,.21),leather);foot.position.set(0,-.52,-.05);foot.castShadow=true;p.add(foot);
+  }
+
+  const buildVisibleArm=(side)=>{
+    const shoulder=new THREE.Vector3(side*.235,.36,-.025);
+    const sleeve=new THREE.Mesh(new THREE.SphereGeometry(.068,10,8),armor);sleeve.scale.set(1.12,.88,1.05);sleeve.castShadow=true;torsoPivot.add(sleeve);
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.047,.16,6,10),skin);upper.castShadow=true;torsoPivot.add(upper);
+    const elbowJoint=new THREE.Mesh(new THREE.SphereGeometry(.047,10,8),skin);elbowJoint.castShadow=true;torsoPivot.add(elbowJoint);
+    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(.043,.15,6,10),skin);fore.castShadow=true;torsoPivot.add(fore);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.045,10,8),skin);hand.scale.set(1.08,.92,1.05);hand.castShadow=true;torsoPivot.add(hand);
+    return {side,shoulder,upper,elbowJoint,fore,hand,upperLen:.255,foreLen:.235,sleeve};
+  };
+  const leftArm=buildVisibleArm(-1),rightArm=buildVisibleArm(1);
+
+  const capePivot=new THREE.Group();capePivot.position.set(0,.31,.18);torsoPivot.add(capePivot);
+  const capePanels=[];
+  for(let i=0;i<3;i++){
+    const panel=new THREE.Mesh(new THREE.BoxGeometry(.16,.045,.58),capeMat);
+    panel.position.set((i-1)*.15,-.20,.29);panel.castShadow=true;capePivot.add(panel);capePanels.push(panel);
+  }
+
+  const shieldPivot=new THREE.Group();torsoPivot.add(shieldPivot);
+  const shield=new THREE.Mesh(new THREE.SphereGeometry(.285,24,14),shieldMat);shield.scale.set(1,.11,1);shield.castShadow=true;shieldPivot.add(shield);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.285,.024,8,26),bronzeMat);rim.rotation.x=Math.PI/2;rim.castShadow=true;shieldPivot.add(rim);
+  const boss=new THREE.Mesh(new THREE.SphereGeometry(.075,12,10),bronzeMat);boss.scale.set(1,.35,1);boss.castShadow=true;shieldPivot.add(boss);
+
+  const weaponPivot=new THREE.Group();torsoPivot.add(weaponPivot);
+  if(weapon==='spear'){
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,1.42,9),woodMat);shaft.rotation.x=Math.PI/2;shaft.position.z=-.14;shaft.castShadow=true;weaponPivot.add(shaft);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.045,.18,8),bronzeMat);tip.rotation.x=-Math.PI/2;tip.position.z=-.94;tip.castShadow=true;weaponPivot.add(tip);
+    const butt=new THREE.Mesh(new THREE.ConeGeometry(.032,.12,8),bronzeMat);butt.rotation.x=Math.PI/2;butt.position.z=.64;butt.castShadow=true;weaponPivot.add(butt);
+  }else{
+    const grip=new THREE.Mesh(new THREE.CylinderGeometry(.021,.024,.15,8),leather);grip.rotation.x=Math.PI/2;grip.position.z=.03;grip.castShadow=true;weaponPivot.add(grip);
+    const guard=new THREE.Mesh(new THREE.BoxGeometry(.18,.035,.045),bronzeMat);guard.position.z=-.06;guard.castShadow=true;weaponPivot.add(guard);
+    const blade=new THREE.Mesh(new THREE.BoxGeometry(.075,.035,.54),woodMat);blade.position.z=-.35;blade.castShadow=true;weaponPivot.add(blade);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.038,.14,8),woodMat);tip.rotation.x=-Math.PI/2;tip.position.z=-.68;tip.castShadow=true;weaponPivot.add(tip);
+  }
+
+  root.userData={name,role,weaponType:weapon,animClock:0,walkCycle:0,rig:{motion,hips,torsoPivot,headPivot,leftLegPivot,rightLegPivot,leftArm,rightArm,capePivot,capePanels,shieldPivot,weaponPivot}};
+  applySoldierPose(root,0,{moving:false});
+  return root;
+}
+
+function applySoldierPose(root,dt,{moving=false,practice=0,talking=false,alert=0}={}){
+  const d=root.userData,r=d.rig;if(!r)return;
+  d.animClock=(d.animClock||0)+dt;
+  if(moving)d.walkCycle=(d.walkCycle||0)+dt*6.1;
+  const swing=Math.sin(d.walkCycle||0);
+  const bounce=moving?Math.abs(swing)*.028:Math.sin(d.animClock*2.0)*.006;
+  r.motion.position.y=.01+bounce;
+  r.leftLegPivot.rotation.x=moving?-swing*.52:THREE.MathUtils.lerp(r.leftLegPivot.rotation.x,0,.12);
+  r.rightLegPivot.rotation.x=moving?swing*.52:THREE.MathUtils.lerp(r.rightLegPivot.rotation.x,0,.12);
+  r.torsoPivot.rotation.z=moving?swing*.032:Math.sin(d.animClock*1.55)*.012;
+  r.headPivot.rotation.z=moving?-swing*.024:Math.sin(d.animClock*1.15)*.025;
+
+  let leftTarget=new THREE.Vector3(-.38,.20,-.16);
+  let rightTarget=new THREE.Vector3(.30,.20,-.05);
+  let shieldYaw=-.08,weaponYaw=.05,weaponRoll=-.06;
+  if(moving){
+    leftTarget.z+=swing*.045;leftTarget.x-=Math.abs(swing)*.018;
+    rightTarget.z-=swing*.075;rightTarget.x+=swing*.025;
+    shieldYaw+=Math.sin(d.animClock*2.2)*.06;
+    weaponYaw+=swing*.035;
+  }
+  if(talking){
+    const g=(Math.sin(d.animClock*3.2)+1)*.5;
+    rightTarget.set(.28+.10*g,.26,-.10-.14*g);
+    weaponYaw=.18+.18*g;weaponRoll=-.12;
+    leftTarget.set(-.38,.21,-.18);
+  }
+  if(practice>0){
+    const strike=practice;
+    rightTarget.set(.25+.12*strike,.27,-.10-.34*strike);
+    leftTarget.set(-.40,.22,-.19-.06*strike);
+    shieldYaw=-.12+.22*strike;
+    weaponYaw=.18-.55*strike;weaponRoll=-.12-.22*strike;
+    r.torsoPivot.rotation.z+=(strike-.5)*.14;
+  }
+  if(alert>0){
+    rightTarget.z-=.08*alert;leftTarget.z-=.06*alert;
+  }
+
+  solveFarmerArm(r.leftArm,leftTarget,.90);
+  solveFarmerArm(r.rightArm,rightTarget,.68);
+  r.shieldPivot.position.copy(leftTarget).add(new THREE.Vector3(-.055,-.025,-.025));
+  r.shieldPivot.rotation.set(0,shieldYaw,.04);
+  r.weaponPivot.position.copy(rightTarget).add(new THREE.Vector3(.015,-.025,-.02));
+  r.weaponPivot.rotation.set(0,weaponYaw,weaponRoll);
+
+  const capeLift=moving?.06+.05*Math.abs(swing):.025+Math.sin(d.animClock*1.6)*.012;
+  r.capePivot.rotation.x=.10+capeLift;
+  r.capePanels.forEach((panel,i)=>{
+    panel.position.z=.29+capeLift*(.55+i*.08);
+    panel.rotation.y=(i-1)*.035+Math.sin(d.animClock*2.1+i)*.018;
+  });
+}
+
+function createTrainingNPC(){
+  trainingNPC=createArmoredSoldier({position:new THREE.Vector3(trainingCampCenter.x,0,trainingCampCenter.z+.55),name:'Níkon',role:'soldat instructeur',weapon:'sword',capeColor:0x76241d,shieldColor:0x6f5737,training:true});
+  Object.assign(trainingNPC.userData,{dialogIndex:0,state:'patrol',stateTime:0,bubbleUntil:0,dialogues:[
     'Derrière ces portes, on forge des réflexes avant de forger des victoires.',
     'Je peux t’enseigner la garde haute, la parade au bouclier et la poussée de lance.',
     'Les armes d’entraînement pardonnent l’erreur. Les vraies, beaucoup moins.',
@@ -1210,7 +1221,21 @@ function createTrainingNPC(){
     new THREE.Vector3(trainingCampCenter.x+2.20,0,trainingCampCenter.z+1.95),
     new THREE.Vector3(trainingCampCenter.x,0,trainingCampCenter.z+1.85),
     new THREE.Vector3(trainingCampCenter.x-2.20,0,trainingCampCenter.z+1.90)
-  ],targetIndex:1,walkCycle:0,clock:0,rig:{motion,torsoPivot,headPivot,leftShoulder,rightShoulder,leftFore,rightFore,shieldPivot,swordPivot,leftLegPivot,rightLegPivot}};
+  ],targetIndex:1});
+}
+
+function createPatrolGuards(){
+  patrolGuards=[
+    createArmoredSoldier({position:new THREE.Vector3(-2.2,0,7.25),name:'Garde ouest',role:'patrouille',weapon:'spear',capeColor:0x70251d,shieldColor:0x30363a}),
+    createArmoredSoldier({position:new THREE.Vector3(2.2,0,7.25),name:'Garde est',role:'patrouille',weapon:'spear',capeColor:0x70251d,shieldColor:0x30363a})
+  ];
+  patrolGuards[0].userData.route=[
+    new THREE.Vector3(-2.2,0,7.25),new THREE.Vector3(-5.0,0,4.45),new THREE.Vector3(-5.75,0,.15),new THREE.Vector3(-4.4,0,-5.65),new THREE.Vector3(-.85,0,-7.15),new THREE.Vector3(-.8,0,4.95)
+  ];
+  patrolGuards[1].userData.route=[
+    new THREE.Vector3(2.2,0,7.25),new THREE.Vector3(5.0,0,4.45),new THREE.Vector3(5.75,0,.15),new THREE.Vector3(4.4,0,-5.65),new THREE.Vector3(.85,0,-7.15),new THREE.Vector3(.8,0,4.95)
+  ];
+  patrolGuards.forEach((g,i)=>Object.assign(g.userData,{targetIndex:1,state:'patrol',pause:0,guardIndex:i}));
 }
 
 function createFarmerNPC(){
@@ -1631,73 +1656,57 @@ function updateFarmerNPC(dt){
 
 function updateTrainingNPC(dt){
   if(!trainingNPC)return;
-  const d=trainingNPC.userData,r=d.rig;if(!r)return;
-  d.clock=(d.clock||0)+dt;
-  let moving=false,practice=0;
+  const d=trainingNPC.userData;
+  let moving=false,practice=0,talking=false;
   if(d.state==='talk'){
-    d.stateTime-=dt;
+    d.stateTime-=dt;talking=true;
     const dx=player.x-trainingNPC.position.x,dz=player.z-trainingNPC.position.z;
     const targetRot=Math.atan2(dx,dz)+Math.PI;
-    trainingNPC.rotation.y=normalizeAngle(trainingNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-trainingNPC.rotation.y),-dt*4.5,dt*4.5));
-    const gesture=(Math.sin(d.clock*3.1)+1)*.5;
-    r.rightShoulder.rotation.x=.20+gesture*.22;
-    r.rightShoulder.rotation.z=-.55+gesture*.35;
-    r.rightFore.rotation.z=-.20+gesture*.22;
-    r.leftShoulder.rotation.x=.14;
-    r.leftShoulder.rotation.z=.60;
-    r.leftFore.rotation.z=.24;
+    trainingNPC.rotation.y=normalizeAngle(trainingNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-trainingNPC.rotation.y),-dt*4.6,dt*4.6));
     if(d.stateTime<=0){d.state='patrol';d.stateTime=0;}
   }else if(d.state==='practice'){
-    d.stateTime-=dt;practice=1;
-    const phase=(Math.sin(d.clock*5.0)+1)*.5;
-    const guardPhase=(Math.sin(d.clock*2.5+.6)+1)*.5;
-    r.rightShoulder.rotation.x=.18+phase*.40;
-    r.rightShoulder.rotation.z=-.92+phase*1.18;
-    r.rightFore.rotation.z=-.42+phase*.54;
-    r.swordPivot.rotation.x=.05+phase*.32;
-    r.leftShoulder.rotation.x=.18+guardPhase*.12;
-    r.leftShoulder.rotation.z=.52-guardPhase*.22;
-    r.leftFore.rotation.z=.30+guardPhase*.18;
-    r.shieldPivot.rotation.y=-.10+guardPhase*.24;
-    r.torsoPivot.rotation.z=(phase-.5)*.10;
-    r.headPivot.rotation.z=(guardPhase-.5)*.05;
+    d.stateTime-=dt;
+    practice=(Math.sin((d.animClock||0)*4.6)+1)*.5;
     if(d.stateTime<=0){d.targetIndex=(d.targetIndex+1)%d.route.length;d.state='patrol';}
   }else{
     d.state='patrol';
     const target=d.route[d.targetIndex]||d.route[0];
     const dir=target.clone().sub(trainingNPC.position);dir.y=0;
     const dist=dir.length();
-    if(dist<.15){d.state='practice';d.stateTime=1.7+Math.random()*1.6;}
+    if(dist<.16){d.state='practice';d.stateTime=1.8+Math.random()*1.8;}
     else{
-      dir.normalize();moving=true;d.walkCycle=(d.walkCycle||0)+dt*5.4;
+      dir.normalize();moving=true;
       const targetRot=Math.atan2(dir.x,dir.z)+Math.PI;
-      trainingNPC.rotation.y=normalizeAngle(trainingNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-trainingNPC.rotation.y),-dt*4.3,dt*4.3));
-      const proposed=trainingNPC.position.clone().addScaledVector(dir,.48*dt);
+      trainingNPC.rotation.y=normalizeAngle(trainingNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-trainingNPC.rotation.y),-dt*4.4,dt*4.4));
+      const proposed=trainingNPC.position.clone().addScaledVector(dir,.54*dt);
       proposed.x=THREE.MathUtils.clamp(proposed.x,trainingCampCenter.x-2.42,trainingCampCenter.x+2.42);
       proposed.z=THREE.MathUtils.clamp(proposed.z,trainingCampCenter.z-2.25,trainingCampCenter.z+2.18);
       const pdx=proposed.x-player.x,pdz=proposed.z-player.z;
-      if(Math.hypot(pdx,pdz)>.55)trainingNPC.position.copy(proposed);
+      if(Math.hypot(pdx,pdz)>.58)trainingNPC.position.copy(proposed);
     }
   }
+  applySoldierPose(trainingNPC,dt,{moving,practice,talking,alert:practice});
+}
 
-  const swing=Math.sin(d.walkCycle||0);
-  r.motion.position.y=.01+Math.abs(swing)*.025*(moving?1:0)+Math.sin(d.clock*2.0)*.006;
-  r.leftLegPivot.rotation.x=-swing*.46*(moving?1:0);
-  r.rightLegPivot.rotation.x=swing*.46*(moving?1:0);
-  if(moving){
-    r.leftShoulder.rotation.x=.12-swing*.18;
-    r.leftShoulder.rotation.z=.58;
-    r.leftFore.rotation.z=.24+swing*.05;
-    r.rightShoulder.rotation.x=.22+swing*.20;
-    r.rightShoulder.rotation.z=-.62;
-    r.rightFore.rotation.z=-.22-swing*.06;
-    r.shieldPivot.rotation.y=Math.sin(d.clock*2.2)*.07;
-    r.swordPivot.rotation.x=.10+Math.sin(d.clock*2.0)*.04;
-    r.torsoPivot.rotation.z=swing*.025;
-    r.headPivot.rotation.z=-swing*.018;
-  }else if(!practice&&d.state!=='talk'){
-    r.leftLegPivot.rotation.x=THREE.MathUtils.lerp(r.leftLegPivot.rotation.x,0,.12);
-    r.rightLegPivot.rotation.x=THREE.MathUtils.lerp(r.rightLegPivot.rotation.x,0,.12);
+function updatePatrolGuards(dt){
+  for(const guard of patrolGuards){
+    const d=guard.userData;
+    if(d.pause>0){d.pause-=dt;applySoldierPose(guard,dt,{moving:false,alert:.2});continue;}
+    const target=d.route[d.targetIndex]||d.route[0];
+    const dir=target.clone().sub(guard.position);dir.y=0;
+    const dist=dir.length();
+    if(dist<.20){d.targetIndex=(d.targetIndex+1)%d.route.length;d.pause=.35+Math.random()*.55;applySoldierPose(guard,dt,{moving:false,alert:.25});continue;}
+    dir.normalize();
+    const targetRot=Math.atan2(dir.x,dir.z)+Math.PI;
+    guard.rotation.y=normalizeAngle(guard.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-guard.rotation.y),-dt*4.1,dt*4.1));
+    const proposed=guard.position.clone().addScaledVector(dir,.58*dt);
+    resolveCollisions(proposed,.28);
+    proposed.y=getTerrainHeight(proposed.x,proposed.z);
+    const blockers=[farmerNPC,blacksmithNPC,trainingNPC,...patrolGuards].filter(n=>n&&n!==guard);
+    let blocked=Math.hypot(proposed.x-player.x,proposed.z-player.z)<.60;
+    for(const npc of blockers){if(Math.hypot(proposed.x-npc.position.x,proposed.z-npc.position.z)<.58){blocked=true;break;}}
+    if(!blocked)guard.position.copy(proposed);
+    applySoldierPose(guard,dt,{moving:!blocked,alert:.18});
   }
 }
 
@@ -2138,7 +2147,7 @@ function update(){
   proposed.x+=velocity.x*dt;
   proposed.z+=velocity.y*dt;
   resolveCollisions(proposed,.24);
-  for(const npc of [farmerNPC,blacksmithNPC,trainingNPC]){
+  for(const npc of [farmerNPC,blacksmithNPC,trainingNPC,...patrolGuards]){
     if(!npc)continue;
     const dx=proposed.x-npc.position.x,dz=proposed.z-npc.position.z,dist=Math.hypot(dx,dz),minDist=.48;
     if(dist<minDist){const safe=dist||.001;proposed.x=npc.position.x+dx/safe*minDist;proposed.z=npc.position.z+dz/safe*minDist;}
@@ -2320,6 +2329,7 @@ function update(){
   updateFarmerNPC(dt);
   updateBlacksmithNPC(dt);
   updateTrainingNPC(dt);
+  updatePatrolGuards(dt);
   updateTrainingGate(dt);
   updateForgeVisibility(dt);
   updateTempleVisibility(dt);
@@ -2383,6 +2393,7 @@ async function start(){
   immersive();
   ensureAudio();
   ensureFieldAmbience();
+  ensureGateAudio();
   try{await audioCtx?.resume?.()}catch{}
   // Les sons de pas se chargent en arrière-plan : le joueur entre immédiatement dans le jeu même si le réseau est lent.
   loadFootstepAssets().catch(err=>console.warn('Sons de pas différés.',err));
