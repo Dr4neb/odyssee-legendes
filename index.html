@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.27.0 | 2026-08-06T06:42+11:00 | Métiers et progression des PNJ -->
-<meta name="build-id" content="odyssee-v1.27.0-professions-progression-20260806-0642-nc">
+<!-- VERIFIED BUILD: Odyssée v1.28.0 | 2026-08-06T06:55+11:00 | Stabilisation avant la V2 -->
+<meta name="build-id" content="odyssee-v1.28.0-stabilisation-v2-20260806-0655-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.27.0 — Métiers et progression des PNJ</title>
+<title>Odyssée — v1.28.0 — Stabilisation avant la V2</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -191,6 +191,25 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 @media(max-width:620px){#professionList{grid-template-columns:1fr}.professionPanelTitle{font-size:18px}}
 @media(max-height:520px){#professionBtn{top:calc(8px + env(safe-area-inset-top));right:calc(128px + env(safe-area-inset-right));width:56px;height:39px}#professionList{max-height:calc(88vh - 84px)}.professionPanelHead{padding-top:12px}.professionCard{padding:10px}}
 
+
+/* ===================== ODYSSÉE v1.28.0 — STABILISATION V2 ===================== */
+#v128PauseBuild{margin:-1px 0 2px;color:#7f8a8a;font:750 7px/1.2 system-ui;letter-spacing:.12em;text-align:center;text-transform:uppercase}
+.pauseMenuAction.v128Secondary{border:1px solid rgba(142,164,164,.28);background:rgba(23,31,33,.72);color:#c9d2cf}
+#v128RestoreBackupBtn[disabled]{display:none}
+#v128DiagnosticsPanel{position:fixed;inset:0;z-index:6950;display:none;place-items:center;padding:calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));background:rgba(3,6,7,.78);backdrop-filter:blur(8px)}
+#v128DiagnosticsPanel.open{display:grid}
+.v128DiagnosticsCard{position:relative;width:min(92vw,530px);max-height:88vh;overflow:auto;padding:22px 18px 18px;border:1px solid rgba(215,189,134,.36);border-radius:14px;background:linear-gradient(155deg,rgba(15,22,24,.98),rgba(7,11,12,.98));box-shadow:0 24px 70px rgba(0,0,0,.72);color:#e8ddc5}
+#v128DiagnosticsClose{position:absolute;right:9px;top:8px;width:34px;height:34px;border:1px solid rgba(215,189,134,.25);border-radius:50%;background:rgba(0,0,0,.22);color:#e9d7b1;font:400 24px/1 system-ui}
+.v128DiagKicker{color:#9a8660;font:850 8px/1.2 system-ui;letter-spacing:.18em;text-transform:uppercase}
+.v128DiagTitle{margin-top:5px;font:950 20px/1.05 Georgia,serif;letter-spacing:.06em}
+.v128DiagStatus{margin:12px 0;padding:9px 10px;border-left:4px solid #6e8b6f;background:rgba(73,101,76,.13);color:#c8d8c8;font:800 10px/1.35 system-ui}
+.v128DiagStatus.warning{border-left-color:#a87645;background:rgba(133,83,40,.14);color:#e0c4a0}
+.v128DiagGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.v128DiagGrid>div{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:9px 10px;border:1px solid rgba(215,189,134,.13);border-radius:8px;background:rgba(255,255,255,.025)}
+.v128DiagGrid span{color:#8f9b99;font:750 8px/1.2 system-ui;letter-spacing:.06em;text-transform:uppercase}
+.v128DiagGrid b{min-width:0;overflow:hidden;color:#eee0c2;font:900 10px/1.2 system-ui;text-overflow:ellipsis;white-space:nowrap}
+.v128DiagWarnings{margin-top:10px;padding:10px;border-radius:8px;background:rgba(0,0,0,.20);color:#9da9a6;font:700 8px/1.45 system-ui;white-space:pre-line}
+@media(max-width:430px){.v128DiagGrid{grid-template-columns:1fr}.v128DiagnosticsCard{padding:20px 14px 15px}.v128DiagTitle{font-size:17px}}
 </style>
 <meta name="runtime-fix" content="v1192-native-fullscreen-ios-safari">
 <style>
@@ -271,7 +290,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.27.0 — MÉTIERS ET PROGRESSION</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.0 — STABILISATION AVANT LA V2</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -296,7 +315,32 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
     <div class="pauseMenuTitle">MENU DE PARTIE</div>
     <div class="pauseMenuText">La partie est mise en pause pendant l’ouverture de ce menu.</div>
     <button id="pauseSaveBtn" class="pauseMenuAction primary" type="button">Sauvegarder</button>
+    <button id="v128DiagnosticsBtn" class="pauseMenuAction v128Secondary" type="button">Diagnostic technique</button>
+    <button id="v128RestoreBackupBtn" class="pauseMenuAction v128Secondary" type="button">Restaurer la sauvegarde de secours</button>
+    <div id="v128PauseBuild">v1.28.0 • moteur stabilisé</div>
     <button id="pauseQuitBtn" class="pauseMenuAction danger" type="button">Sauvegarder et quitter</button>
+  </div>
+</div>
+
+<div id="v128DiagnosticsPanel" aria-hidden="true">
+  <div class="v128DiagnosticsCard" role="dialog" aria-modal="true" aria-label="Diagnostic technique">
+    <button id="v128DiagnosticsClose" type="button" aria-label="Fermer le diagnostic">×</button>
+    <div class="v128DiagKicker">Moteur d’Astérion</div>
+    <div class="v128DiagTitle">DIAGNOSTIC TECHNIQUE</div>
+    <div id="v128DiagStatus" class="v128DiagStatus">Analyse du monde…</div>
+    <div class="v128DiagGrid">
+      <div><span>Images/s</span><b id="v128DiagFps">—</b></div>
+      <div><span>Appels 3D</span><b id="v128DiagCalls">—</b></div>
+      <div><span>Triangles</span><b id="v128DiagTriangles">—</b></div>
+      <div><span>Qualité</span><b id="v128DiagQuality">—</b></div>
+      <div><span>PNJ</span><b id="v128DiagNpcs">—</b></div>
+      <div><span>Bâtiments</span><b id="v128DiagBuildings">—</b></div>
+      <div><span>Collisions</span><b id="v128DiagColliders">—</b></div>
+      <div><span>Interactions</span><b id="v128DiagInteractives">—</b></div>
+      <div><span>Sauvegarde</span><b id="v128DiagSave">—</b></div>
+      <div><span>Secours</span><b id="v128DiagBackup">—</b></div>
+    </div>
+    <div id="v128DiagWarnings" class="v128DiagWarnings">Aucune anomalie détectée.</div>
   </div>
 </div>
 
@@ -372,7 +416,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <button id="bellActionBtn" type="button" aria-label="Faire sonner la cloche et rassembler les troupes"><span><span class="bellIcon">◕</span>Sonner<br>la cloche</span></button>
 <div id="storyOverlay" aria-hidden="true"><div id="storyCard" role="dialog" aria-modal="true" aria-label="Histoire de la cité"><button id="storyClose" type="button" aria-label="Fermer">×</button><div id="storyKicker">Bienvenue à Astérion</div><h2>La cité de Gregorius</h2><p>Fondée en <strong>1186 av. J.-C.</strong> par des marins revenus des guerres de l’Égée, Astérion s’est élevée autour de son port, de sa forge et de ses terres nourricières.</p><p>La cité est dirigée par <strong>Gregorius</strong>, chef militaire et protecteur de ses habitants. Sous son autorité, les remparts s’élèvent, les patrouilles veillent et les ateliers préparent les prochaines expéditions.</p><p>Les habitants honorent principalement <strong>Déméter</strong>, déesse des moissons, de la terre cultivée et du retour des saisons. Les marins d’Astérion invoquent également <strong>Poséidon</strong>, maître des mers et des tempêtes. Son futur sanctuaire doit encore être élevé près du port.</p><div id="storyFacts"><div class="storyFact"><b>Fondation</b><span>1186 av. J.-C.</span></div><div class="storyFact"><b>Chef</b><span>Gregorius</span></div><div class="storyFact"><b>Divinités</b><span>Déméter · Poséidon</span></div><div class="storyFact"><b>Terre</b><span>Île d’Astérion</span></div></div></div></div>
 <div id="npcBubble"><strong>Démos — fermier</strong><span id="npcBubbleText">Que les dieux protègent ta route, guerrier.</span></div>
-<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.27.0</div>
+<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.28.0</div>
 
 <div id="forgeMenu" aria-hidden="true">
   <div class="forgeKicker">Atelier de forge</div>
@@ -5848,7 +5892,7 @@ if(typeof window!=='undefined'){
 
 
 /* ===================== ODYSSÉE v1.24.0 — FONDATION DE SAUVEGARDE ===================== */
-const V124_BUILD='v1.27.0 — professions-progression-20260806-0642-NC';
+const V124_BUILD='v1.28.0 — stabilisation-v2-20260806-0655-NC';
 const V124_SAVE_KEY='odyssee.asterion.save';
 const V124_SAVE_SCHEMA=4;
 const V124_AUTOSAVE_SECONDS=15;
@@ -6308,10 +6352,132 @@ v127ApplyProfessions(null);
 if(typeof window!=='undefined'){window.ODYSSEE_BUILD_V127=V127_BUILD;window.ODYSSEE_PROFESSIONS={definitions:V127_PROFESSION_DEFS,get:v127CaptureProfessions,addXp:v127AddProfessionXp,level:v127ProfessionLevel,open:()=>v127SetProfessionPanel(true)};}
 /* =================== FIN ODYSSÉE v1.27.0 =================== */
 
+
+/* ===================== ODYSSÉE v1.28.0 — STABILISATION AVANT LA V2 ===================== */
+const V128_BUILD='v1.28.0 — stabilisation-v2-20260806-0655-NC';
+const V128_SAVE_SCHEMA=5;
+const V128_BACKUP_KEY='odyssee.asterion.save.backup';
+const V128_BACKUP_INTERVAL=90000;
+const v128DiagnosticsBtn=document.getElementById('v128DiagnosticsBtn');
+const v128DiagnosticsPanel=document.getElementById('v128DiagnosticsPanel');
+const v128DiagnosticsClose=document.getElementById('v128DiagnosticsClose');
+const v128RestoreBackupBtn=document.getElementById('v128RestoreBackupBtn');
+const v128DiagEls={
+  status:document.getElementById('v128DiagStatus'),fps:document.getElementById('v128DiagFps'),calls:document.getElementById('v128DiagCalls'),triangles:document.getElementById('v128DiagTriangles'),quality:document.getElementById('v128DiagQuality'),npcs:document.getElementById('v128DiagNpcs'),buildings:document.getElementById('v128DiagBuildings'),colliders:document.getElementById('v128DiagColliders'),interactives:document.getElementById('v128DiagInteractives'),save:document.getElementById('v128DiagSave'),backup:document.getElementById('v128DiagBackup'),warnings:document.getElementById('v128DiagWarnings')
+};
+let v128DiagnosticsOpen=false,v128LastBackupAt=0,v128RegistryClock=0,v128HealthClock=0,v128DiagClock=0,v128QualityReduced=false;
+const v128RuntimeErrors=[];
+const v128Perf={frames:0,elapsed:0,fps:60,lowSamples:0,calls:0,triangles:0,geometries:0,textures:0};
+const v128Registry={buildings:new Map(),npcs:new Map(),colliders:new Map(),interactives:new Map(),sections:new Map(),targets:new Map(),duplicates:0,lastSync:0};
+const v128Systems=new Map();
+
+function v128Slug(value='item'){return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'item';}
+function v128RegisterSystem(name,interval,run,priority=0){v128Systems.set(name,{name,interval:Math.max(0,Number(interval)||0),run,priority,last:0,errors:0,enabled:true});return name;}
+function v128RunSystems(dt,now){for(const system of [...v128Systems.values()].sort((a,b)=>a.priority-b.priority)){if(!system.enabled||typeof system.run!=='function')continue;if(system.interval>0&&now-system.last<system.interval)continue;try{system.run(dt,now);system.last=now;}catch(err){system.errors++;v128RecordError(`Système ${system.name}`,err);if(system.errors>=4)system.enabled=false;}}}
+function v128RecordError(context,error){const message=`${context}: ${error?.message||error||'erreur inconnue'}`;v128RuntimeErrors.unshift({at:Date.now(),message});if(v128RuntimeErrors.length>8)v128RuntimeErrors.length=8;console.warn('[Odyssée v1.28]',message);}
+addEventListener('error',event=>v128RecordError('Runtime',event.error||event.message));
+addEventListener('unhandledrejection',event=>v128RecordError('Promesse',event.reason));
+
+function v128ColliderFingerprint(c){if(!c)return'null';const n=v=>Math.round((Number(v)||0)*1000)/1000;return c.oriented?`o:${n(c.cx)}:${n(c.cz)}:${n(c.w)}:${n(c.d)}:${n(c.rot)}`:`b:${n(c.x1)}:${n(c.x2)}:${n(c.z1)}:${n(c.z2)}`;}
+function v128SyncRegistry(){
+  v128Registry.buildings.clear();v128Registry.npcs.clear();v128Registry.colliders.clear();v128Registry.interactives.clear();v128Registry.sections.clear();v128Registry.targets.clear();
+  const seen=new Map();v128Registry.duplicates=0;
+  for(const [index,c] of (colliders||[]).entries()){const fingerprint=v128ColliderFingerprint(c),duplicateOf=seen.get(fingerprint);if(duplicateOf!==undefined)v128Registry.duplicates++;else seen.set(fingerprint,index);const id=`collider-${index}`;v128Registry.colliders.set(id,{id,index,fingerprint,duplicateOf:duplicateOf??null,object:c});}
+  for(const [index,b] of (v119BuildingZones||[]).entries()){if(!b)continue;const id=`building-${v128Slug(b.name)}-${index}`;v128Registry.buildings.set(id,{id,name:b.name||`Bâtiment ${index+1}`,zone:b,object:scene?.getObjectByName?.(b.name)||null});}
+  const npcEntries=[['myron','Myron','forgeron',blacksmithNPC],['demos','Démos','cultivateur',farmerNPC],['nikon','Níkon','maître d’armes',trainingNPC],['theron','Théron','maître d’œuvre',builderNPC]];
+  for(const [id,name,role,object] of npcEntries)if(object)v128Registry.npcs.set(id,{id,name,role,object});
+  for(const [index,guard] of (patrolGuards||[]).entries())if(guard)v128Registry.npcs.set(`guard-${index+1}`,{id:`guard-${index+1}`,name:`Patrouilleur ${index+1}`,role:'garnison',object:guard});
+  for(const [index,s] of (constructionSections||[]).entries())if(s)v128Registry.sections.set(`rampart-${index}`,{id:`rampart-${index}`,object:s,complete:!!s.complete});
+  for(const [index,t] of (trainingTargets||[]).entries())if(t)v128Registry.targets.set(`target-${index}`,{id:`target-${index}`,object:t,destroyed:!!t.userData?.destroyed});
+  const domInteractiveIds=['actionA','actionB','actionX','pocketBtn','bellActionBtn','guardCommandBtn','prayBtn','questJournalBtn','professionBtn','pauseMenuBtn'];
+  for(const id of domInteractiveIds){const object=document.getElementById(id);if(object)v128Registry.interactives.set(`ui-${id}`,{id:`ui-${id}`,type:'ui',object});}
+  for(const [id,data] of v128Registry.targets)v128Registry.interactives.set(`interactive-${id}`,{id:`interactive-${id}`,type:'target',object:data.object});
+  for(const [id,data] of v128Registry.sections)v128Registry.interactives.set(`interactive-${id}`,{id:`interactive-${id}`,type:'construction',object:data.object});
+  for(const [index,bell] of (typeof v120Bells!=='undefined'&&v120Bells||[]).entries())if(bell)v128Registry.interactives.set(`bell-${index}`,{id:`bell-${index}`,type:'bell',object:bell});
+  v128Registry.lastSync=performance.now();
+}
+
+// Toutes les futures collisions passent par la même porte d’entrée, sans modifier les dimensions historiques.
+const v128AddBoxColliderBase=addBoxCollider;addBoxCollider=function(...args){const before=colliders.length;const result=v128AddBoxColliderBase(...args);for(let i=before;i<colliders.length;i++){const c=colliders[i];if(c&&!c.v128Source)c.v128Source='axis-box';}return result;};
+const v128AddOrientedColliderBase=addOrientedBoxCollider;addOrientedBoxCollider=function(...args){const before=colliders.length;const result=v128AddOrientedColliderBase(...args);for(let i=before;i<colliders.length;i++){const c=colliders[i];if(c&&!c.v128Source)c.v128Source='oriented-box';}return result;};
+
+function v128WorldHealth(){
+  const warnings=[];
+  if(started&&loaded){
+    if(!character)warnings.push('Gregorius non initialisé');
+    if(!blacksmithNPC||!farmerNPC||!trainingNPC||!builderNPC)warnings.push('Un PNJ principal manque');
+    if(v128Registry.duplicates>warnings.length+6)warnings.push(`${v128Registry.duplicates} collisions strictement dupliquées`);
+    if((trainingTargets||[]).length!==2)warnings.push(`${(trainingTargets||[]).length} cibles actives au lieu de 2`);
+    if(!renderer||!scene||!camera)warnings.push('Moteur 3D incomplet');
+  }
+  if(v128RuntimeErrors.length)warnings.push(`${v128RuntimeErrors.length} erreur(s) runtime enregistrée(s)`);
+  return warnings;
+}
+function v128BackupExists(){try{const raw=localStorage.getItem(V128_BACKUP_KEY);return !!(raw&&JSON.parse(raw));}catch{return false;}}
+function v128UpdateBackupButton(){if(!v128RestoreBackupBtn)return;const available=v128BackupExists();v128RestoreBackupBtn.disabled=!available;v128RestoreBackupBtn.style.display=available?'block':'none';}
+function v128RotateBackup(reason='AUTO',force=false){
+  if(!v124StorageAvailable())return false;const now=Date.now();if(!force&&reason==='AUTO'&&now-v128LastBackupAt<V128_BACKUP_INTERVAL)return false;
+  try{const raw=localStorage.getItem(V124_SAVE_KEY);if(!raw)return false;const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=='object')return false;parsed.meta={...(parsed.meta||{}),backupCreatedAt:now,backupReason:reason};localStorage.setItem(V128_BACKUP_KEY,JSON.stringify(parsed));v128LastBackupAt=now;v128UpdateBackupButton();return true;}catch(err){v128RecordError('Sauvegarde de secours',err);return false;}
+}
+function v128RestoreBackup(){
+  if(!v128BackupExists())return false;if(!confirm('Restaurer la sauvegarde de secours ? La progression actuelle sera remplacée.'))return false;
+  try{const raw=localStorage.getItem(V128_BACKUP_KEY),parsed=v124MigrateSave(JSON.parse(raw));if(!parsed)throw new Error('copie de secours incompatible');localStorage.setItem(V124_SAVE_KEY,JSON.stringify(parsed));started=false;v128SetDiagnostics(false);v1261ReturnToTitle?.();v124RefreshTitleMenu();v124ShowSaveIndicator('Sauvegarde de secours restaurée');return true;}catch(err){v128RecordError('Restauration de secours',err);v124ShowSaveIndicator('Secours incompatible',true);return false;}
+}
+
+// Schéma 5 : registre moteur et profil qualité, compatible avec tous les schémas précédents.
+const v128MigrateSaveBase=v124MigrateSave;v124MigrateSave=function(raw){if(!raw||typeof raw!=='object')return null;if(raw.schema===V128_SAVE_SCHEMA)return raw;const migrated=v128MigrateSaveBase(raw);if(!migrated)return null;return {...migrated,schema:V128_SAVE_SCHEMA,meta:{...(migrated.meta||{}),migratedFrom:migrated.schema||raw.schema},engine:migrated.engine||null};};
+const v128CaptureSaveBase=v124CaptureSave;v124CaptureSave=function(){const save=v128CaptureSaveBase();save.schema=V128_SAVE_SCHEMA;save.meta={...(save.meta||{}),build:V128_BUILD};save.engine={qualityReduced:v128QualityReduced,registryVersion:1,counts:{buildings:v128Registry.buildings.size,npcs:v128Registry.npcs.size,colliders:v128Registry.colliders.size,interactives:v128Registry.interactives.size}};return save;};
+const v128ApplySaveBase=v124ApplySave;v124ApplySave=function(save){const ok=v128ApplySaveBase(save);if(ok&&save?.engine?.qualityReduced)v128QualityReduced=true;return ok;};
+const v128BeforeStartBase=v124BeforeStart;v124BeforeStart=function(){if(v124RequestedMode==='new')v128RotateBackup('AVANT NOUVELLE PARTIE',true);v128BeforeStartBase();};
+const v128WriteSaveBase=v124WriteSave;v124WriteSave=function(reason='AUTO'){v128RotateBackup(reason,false);const ok=v128WriteSaveBase(reason);if(ok&&!v128BackupExists())v128RotateBackup('PREMIÈRE COPIE',true);return ok;};
+const v128ResetSaveBase=v124ResetSave;v124ResetSave=function(){v128ResetSaveBase();try{localStorage.removeItem(V128_BACKUP_KEY);}catch{}v128UpdateBackupButton();};
+
+function v128ApplyReducedQuality(){if(!renderer||v128QualityReduced)return;const ratio=Math.min(Number(devicePixelRatio)||1,1.35);renderer.setPixelRatio(Math.max(1,ratio));renderer.setSize(innerWidth,innerHeight,false);v128QualityReduced=true;v124MarkDirty();v117Toast?.('QUALITÉ ADAPTÉE — PERFORMANCE STABILISÉE');}
+function v128SamplePerformance(dt){
+  v128Perf.frames++;v128Perf.elapsed+=dt;if(v128Perf.elapsed<2)return;v128Perf.fps=Math.round(v128Perf.frames/v128Perf.elapsed);v128Perf.frames=0;v128Perf.elapsed=0;
+  const info=renderer?.info;v128Perf.calls=info?.render?.calls||0;v128Perf.triangles=info?.render?.triangles||0;v128Perf.geometries=info?.memory?.geometries||0;v128Perf.textures=info?.memory?.textures||0;
+  if(started&&loaded&&!v1261PauseOpen&&!v128DiagnosticsOpen){if(v128Perf.fps<34)v128Perf.lowSamples++;else v128Perf.lowSamples=Math.max(0,v128Perf.lowSamples-1);if(v128Perf.lowSamples>=3)v128ApplyReducedQuality();}
+}
+function v128RenderDiagnostics(){
+  if(!v128DiagnosticsOpen)return;v128SyncRegistry();const warnings=v128WorldHealth(),save=v124ReadSave();
+  const set=(el,value)=>{if(el)el.textContent=String(value)};
+  set(v128DiagEls.fps,v128Perf.fps||'—');set(v128DiagEls.calls,v128Perf.calls.toLocaleString('fr-FR'));set(v128DiagEls.triangles,v128Perf.triangles.toLocaleString('fr-FR'));set(v128DiagEls.quality,v128QualityReduced?'Adaptée':'Élevée');set(v128DiagEls.npcs,v128Registry.npcs.size);set(v128DiagEls.buildings,v128Registry.buildings.size);set(v128DiagEls.colliders,`${v128Registry.colliders.size}${v128Registry.duplicates?` (${v128Registry.duplicates} doubl.)`:''}`);set(v128DiagEls.interactives,v128Registry.interactives.size);set(v128DiagEls.save,save?`Schéma ${save.schema}`:'Aucune');set(v128DiagEls.backup,v128BackupExists()?'Disponible':'Absente');
+  if(v128DiagEls.status){v128DiagEls.status.textContent=warnings.length?'Stabilisation active avec avertissements.':'Moteur stable — registres synchronisés.';v128DiagEls.status.classList.toggle('warning',warnings.length>0);}
+  if(v128DiagEls.warnings)v128DiagEls.warnings.textContent=warnings.length?warnings.map(w=>`• ${w}`).join('\n'):'Aucune anomalie bloquante détectée.\nLes systèmes sont isolés et surveillés avant la V2.';
+}
+function v128SetDiagnostics(open){v128DiagnosticsOpen=!!open;v128DiagnosticsPanel?.classList.toggle('open',v128DiagnosticsOpen);v128DiagnosticsPanel?.setAttribute('aria-hidden',String(!v128DiagnosticsOpen));if(v128DiagnosticsOpen){joy.x=joy.y=0;joy.active=false;keys.clear();setBuildHeld(false);blocking=false;v128RenderDiagnostics();}}
+v128DiagnosticsBtn?.addEventListener('pointerdown',e=>{e.preventDefault();v128SetDiagnostics(true);},{passive:false});
+v128DiagnosticsClose?.addEventListener('pointerdown',e=>{e.preventDefault();v128SetDiagnostics(false);},{passive:false});
+v128DiagnosticsPanel?.addEventListener('pointerdown',e=>{if(e.target===v128DiagnosticsPanel)v128SetDiagnostics(false);},{passive:true});
+v128RestoreBackupBtn?.addEventListener('pointerdown',e=>{e.preventDefault();v128RestoreBackup();},{passive:false});
+
+// Nettoyage non destructif des anciens restes d’interface et des objets de développement.
+function v128CleanupLegacy(){document.body.classList.remove('v1232-screen-aim','bowAimMode','aiming');document.getElementById('actionA')?.classList.remove('bowAimMode');if(scene)scene.traverse(object=>{const name=String(object.name||'').toLowerCase();if(name.includes('debug-helper')||name.includes('collision-helper')||name.includes('nav-helper'))object.visible=false;});}
+
+v128RegisterSystem('performance',0,(dt)=>v128SamplePerformance(dt),0);
+v128RegisterSystem('registry',1,()=>v128SyncRegistry(),10);
+v128RegisterSystem('legacy-cleanup',5,()=>v128CleanupLegacy(),20);
+v128RegisterSystem('diagnostics',.5,()=>v128RenderDiagnostics(),30);
+v128RegisterSystem('backup-button',3,()=>v128UpdateBackupButton(),40);
+
+const v128UpdateBase=update;let v128FrameStamp=performance.now();update=function(){const now=performance.now(),dt=Math.min(.1,(now-v128FrameStamp)/1000||.016);v128FrameStamp=now;v128UpdateBase();v128RunSystems(dt,now/1000);};
+
+v128SyncRegistry();v128CleanupLegacy();v128UpdateBackupButton();
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V128=V128_BUILD;
+  window.ODYSSEE_ENGINE={
+    version:V128_BUILD,schema:V128_SAVE_SCHEMA,registry:v128Registry,systems:v128Systems,
+    sync:v128SyncRegistry,health:v128WorldHealth,diagnostics:{open:()=>v128SetDiagnostics(true),close:()=>v128SetDiagnostics(false)},
+    backup:{key:V128_BACKUP_KEY,create:()=>v128RotateBackup('MANUEL',true),restore:v128RestoreBackup,exists:v128BackupExists},
+    performance:v128Perf,registerSystem:v128RegisterSystem
+  };
+}
+/* =================== FIN ODYSSÉE v1.28.0 =================== */
+
 v124RefreshTitleMenu();
 if(typeof window!=='undefined'){
   window.ODYSSEE_BUILD_V124=V124_BUILD;
-  window.ODYSSEE_SAVE={key:V124_SAVE_KEY,schema:V124_SAVE_SCHEMA,save:()=>v124WriteSave('MANUEL'),load:v124ReadSave,reset:v124ResetSave};
+  window.ODYSSEE_SAVE={key:V124_SAVE_KEY,schema:V128_SAVE_SCHEMA,save:()=>v124WriteSave('MANUEL'),load:v124ReadSave,reset:v124ResetSave};
 }
 /* =================== FIN ODYSSÉE v1.24.0 =================== */
 
@@ -6319,4 +6485,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.27.0-20260806-0642-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.28.0-20260806-0655-NC -->
