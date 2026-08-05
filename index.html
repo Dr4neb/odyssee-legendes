@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.26.0 | 2026-08-06T06:01+11:00 | Ressources persistantes d’Astérion -->
-<meta name="build-id" content="odyssee-v1.26.0-resource-system-20260806-0601-nc">
+<!-- VERIFIED BUILD: Odyssée v1.26.1 | 2026-08-06T06:21+11:00 | Menu pause, récoltes ralenties et cibles réalistes -->
+<meta name="build-id" content="odyssee-v1.26.1-pause-crops-targets-20260806-0621-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.23.4 — Myron stable et nouveau xiphos</title>
+<title>Odyssée — v1.26.1 — Menu pause, Déméter et cibles réalistes</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -230,6 +230,23 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 
 </style>
 
+
+<style>
+/* ===================== ODYSSÉE v1.26.1 — MENU, HUD ET COOLDOWN ===================== */
+#pauseMenuBtn{position:fixed;z-index:5755;right:calc(84px + env(safe-area-inset-right));top:calc(18px + env(safe-area-inset-top));display:none;place-items:center;width:48px;height:45px;border:1px solid rgba(215,189,134,.5);border-left:4px solid #7c2b21;border-radius:8px;background:linear-gradient(145deg,rgba(24,31,32,.96),rgba(8,12,13,.94));color:#ead8b2;box-shadow:0 9px 26px rgba(0,0,0,.42);font:950 20px/1 system-ui;touch-action:manipulation}
+#pauseMenuBtn.visible{display:grid}#pauseMenuBtn:active{transform:scale(.96)}
+#pauseMenuOverlay{position:fixed;inset:0;z-index:7100;display:none;align-items:center;justify-content:center;padding:calc(18px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));background:rgba(3,6,7,.78);backdrop-filter:blur(10px)}
+#pauseMenuOverlay.open{display:flex;animation:v1261Fade .18s ease-out}@keyframes v1261Fade{from{opacity:0}to{opacity:1}}
+.pauseMenuCard{position:relative;width:min(88vw,360px);padding:22px 18px 18px;border:1px solid rgba(215,189,134,.44);border-left:6px solid #7c2b21;border-radius:10px;background:linear-gradient(145deg,#171f20,#090d0f 82%);box-shadow:0 28px 75px rgba(0,0,0,.72);text-align:center}
+.pauseMenuKicker{color:#9f885c;font:900 8px/1 system-ui;letter-spacing:.17em;text-transform:uppercase}.pauseMenuTitle{margin-top:7px;color:#f0dfbd;font:950 22px/1 system-ui;letter-spacing:.08em}.pauseMenuText{margin:10px 0 17px;color:#87918f;font:750 9px/1.45 system-ui}
+.pauseMenuAction{display:block;width:100%;min-height:44px;margin-top:9px;border:1px solid rgba(215,189,134,.32);border-radius:7px;background:#111819;color:#e6d3aa;font:900 10px/1 system-ui;letter-spacing:.08em;text-transform:uppercase}.pauseMenuAction.primary{background:linear-gradient(145deg,#6f552e,#3d2d1b);color:#fff0cf}.pauseMenuAction.danger{border-color:rgba(167,76,61,.45);color:#e9b5a9}
+#pauseMenuClose{position:absolute;right:10px;top:10px;width:34px;height:34px;border:1px solid rgba(215,189,134,.28);border-radius:50%;background:#0d1314;color:#e6d3aa;font:300 25px/1 system-ui}
+#resourceHud{width:158px!important;padding:8px!important;border-radius:10px!important}
+#resourceHud.visible{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}.resourceHudItem{gap:7px!important;padding:7px 8px!important;font-size:8px!important;line-height:1.1!important;white-space:nowrap}.resourceHudItem span{display:flex;align-items:center;min-width:0}.resourceHudIcon{margin-right:5px!important;font-size:11px!important}.resourceHudValue{min-width:28px;text-align:right;font-size:11px!important}
+#prayBtn.cooldown{opacity:.58;filter:saturate(.45);box-shadow:0 8px 20px rgba(0,0,0,.34),inset 0 0 0 4px rgba(10,12,13,.35);pointer-events:none}
+@media(max-height:520px){#pauseMenuBtn{top:calc(8px + env(safe-area-inset-top));right:calc(76px + env(safe-area-inset-right));width:44px;height:39px}#resourceHud{top:138px!important;width:142px!important;padding:6px!important}.resourceHudItem{padding:5px 6px!important}.resourceHudValue{font-size:10px!important}}
+</style>
+
 </head>
 <body>
 <div id="game"></div>
@@ -239,7 +256,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.26.0 — RESSOURCES D’ASTÉRION</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.26.1 — STABILISATION DES SYSTÈMES</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -255,6 +272,19 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
   <div class="resourceHudItem"><span><i class="resourceHudIcon">◉</i>Bronze</span><b id="resourceHudBronze" class="resourceHudValue">0</b></div>
   <div class="resourceHudItem"><span><i class="resourceHudIcon">Δ</i>Drachmes</span><b id="resourceHudDrachmes" class="resourceHudValue">0</b></div>
 </div>
+
+<button id="pauseMenuBtn" type="button" aria-label="Ouvrir le menu de partie" aria-expanded="false">☰</button>
+<div id="pauseMenuOverlay" aria-hidden="true">
+  <div class="pauseMenuCard" role="dialog" aria-modal="true" aria-label="Menu de partie">
+    <button id="pauseMenuClose" type="button" aria-label="Fermer">×</button>
+    <div class="pauseMenuKicker">Astérion</div>
+    <div class="pauseMenuTitle">MENU DE PARTIE</div>
+    <div class="pauseMenuText">La partie est mise en pause pendant l’ouverture de ce menu.</div>
+    <button id="pauseSaveBtn" class="pauseMenuAction primary" type="button">Sauvegarder</button>
+    <button id="pauseQuitBtn" class="pauseMenuAction danger" type="button">Sauvegarder et quitter</button>
+  </div>
+</div>
+
 <button id="questJournalBtn" type="button" aria-label="Ouvrir le journal de quêtes" aria-expanded="false"><span><span class="questIcon">▤</span>Journal</span></button>
 <div id="questTracker" aria-live="polite"><div class="questTrackerKicker">Objectif suivi</div><div id="questTrackerTitle" class="questTrackerTitle">Le Premier Départ</div><div id="questTrackerObjective" class="questTrackerObjective">Consulter les habitants d’Astérion.</div><div class="questTrackerProgress"><i id="questTrackerFill" style="width:0%"></i></div></div>
 <div id="controls">
@@ -316,7 +346,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <button id="bellActionBtn" type="button" aria-label="Faire sonner la cloche et rassembler les troupes"><span><span class="bellIcon">◕</span>Sonner<br>la cloche</span></button>
 <div id="storyOverlay" aria-hidden="true"><div id="storyCard" role="dialog" aria-modal="true" aria-label="Histoire de la cité"><button id="storyClose" type="button" aria-label="Fermer">×</button><div id="storyKicker">Bienvenue à Astérion</div><h2>La cité de Gregorius</h2><p>Fondée en <strong>1186 av. J.-C.</strong> par des marins revenus des guerres de l’Égée, Astérion s’est élevée autour de son port, de sa forge et de ses terres nourricières.</p><p>La cité est dirigée par <strong>Gregorius</strong>, chef militaire et protecteur de ses habitants. Sous son autorité, les remparts s’élèvent, les patrouilles veillent et les ateliers préparent les prochaines expéditions.</p><p>Les habitants honorent principalement <strong>Déméter</strong>, déesse des moissons, de la terre cultivée et du retour des saisons. Les marins d’Astérion invoquent également <strong>Poséidon</strong>, maître des mers et des tempêtes. Son futur sanctuaire doit encore être élevé près du port.</p><div id="storyFacts"><div class="storyFact"><b>Fondation</b><span>1186 av. J.-C.</span></div><div class="storyFact"><b>Chef</b><span>Gregorius</span></div><div class="storyFact"><b>Divinités</b><span>Déméter · Poséidon</span></div><div class="storyFact"><b>Terre</b><span>Île d’Astérion</span></div></div></div></div>
 <div id="npcBubble"><strong>Démos — fermier</strong><span id="npcBubbleText">Que les dieux protègent ta route, guerrier.</span></div>
-<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • ODYSSÉE v1.26.0</div>
+<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.26.1</div>
 
 <div id="forgeMenu" aria-hidden="true">
   <div class="forgeKicker">Atelier de forge</div>
@@ -5769,7 +5799,7 @@ function v1234RebuildXiphos(){
 function v1234ApplyXiphosPose(){
   if(!greekGear||!v1234RebuildXiphos())return;const g=greekGear.userData,pivot=g.swordPivot;
   if(equipmentStowed){pivot.visible=false;return;}pivot.visible=true;
-  const basePos=new THREE.Vector3(.018,-.018,.018),baseQ=V1234_SAVED_BOW_POSE.quaternion;
+  const basePos=new THREE.Vector3(.018,-.018,.018),baseQ=V1261_XIPHOS_QUAT;
   if(attackTimer>0){
     const p=THREE.MathUtils.clamp(1-attackTimer/attackDuration,0,1);let swing;
     if(p<.30){const t=p/.30;swing=new THREE.Euler(-.28*t,.24*t,-.18*t,'YXZ');}
@@ -5792,7 +5822,7 @@ if(typeof window!=='undefined'){
 
 
 /* ===================== ODYSSÉE v1.24.0 — FONDATION DE SAUVEGARDE ===================== */
-const V124_BUILD='v1.26.0 — resource-system-20260806-0601-NC';
+const V124_BUILD='v1.26.1 — pause-crops-targets-20260806-0621-NC';
 const V124_SAVE_KEY='odyssee.asterion.save';
 const V124_SAVE_SCHEMA=3;
 const V124_AUTOSAVE_SECONDS=15;
@@ -5895,7 +5925,7 @@ function v124ApplyCropState(savedCrops){
   if(!Array.isArray(savedCrops))return;
   (v119CropPlots||[]).forEach((plot,i)=>{
     const raw=savedCrops[i];if(!plot?.userData||!raw)return;const age=v124ClampNumber(raw.age,0,1e6,0);plot.userData.age=age;plot.userData.matureHold=v124ClampNumber(raw.matureHold,0,100,0);
-    const growth=THREE.MathUtils.clamp(age/44,0,1),ease=growth*growth*(3-2*growth),scale=.08+.92*ease;plot.userData.growth=growth;
+    const growth=THREE.MathUtils.clamp(age/300,0,1),ease=growth*growth*(3-2*growth),scale=.08+.92*ease;plot.userData.growth=growth;
     for(const child of plot.children)if(child.userData?.v119Plant)child.scale.setScalar(scale);
   });
 }
@@ -5960,7 +5990,7 @@ addEventListener('beforeunload',()=>v124WriteSave('SORTIE'));
 
 
 /* ===================== ODYSSÉE v1.25.0 — JOURNAL DE QUÊTES ===================== */
-const V125_BUILD='v1.26.0 — resource-system-20260806-0601-NC';
+const V125_BUILD='v1.26.1 — pause-crops-targets-20260806-0621-NC';
 const V125_QUEST_DEFS=[
   {id:'first_departure',type:'main',title:'Le Premier Départ',giver:'Conseil d’Astérion',description:'Avant de prendre la mer, Gregorius doit réunir les responsables de la cité et confirmer que les hommes répondront à l’appel.',reward:'10 nourriture • 8 bois • 8 pierre • 4 bronze • 30 drachmes.',objectives:[
     {id:'meet_myron',label:'Consulter Myron à la forge',target:1},
@@ -6050,7 +6080,7 @@ if(typeof window!=='undefined'){window.ODYSSEE_BUILD_V125=V125_BUILD;window.ODYS
 
 
 /* ===================== ODYSSÉE v1.26.0 — SYSTÈME DE RESSOURCES ===================== */
-const V126_BUILD='v1.26.0 — resource-system-20260806-0601-NC';
+const V126_BUILD='v1.26.1 — pause-crops-targets-20260806-0621-NC';
 const V126_RESOURCE_DEFS={
   food:{label:'Nourriture',icon:'◈'},wood:{label:'Bois',icon:'▥'},stone:{label:'Pierre',icon:'◆'},bronze:{label:'Bronze',icon:'◉'},drachmes:{label:'Drachmes',icon:'Δ'}
 };
@@ -6117,6 +6147,81 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.26.0 =================== */
 
+
+/* ===================== ODYSSÉE v1.26.1 — STABILISATION ===================== */
+const V1261_BUILD='v1.26.1 — pause-crops-targets-20260806-0621-NC';
+const V1261_XIPHOS_QUAT=(()=>{const o=new THREE.Object3D();o.rotateY(THREE.MathUtils.degToRad(75));o.rotateX(THREE.MathUtils.degToRad(90));return o.quaternion.clone();})();
+const V1261_TARGET_TEXTURE='data:image/png;base64,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';
+const v1261PauseBtn=document.getElementById('pauseMenuBtn'),v1261PauseOverlay=document.getElementById('pauseMenuOverlay'),v1261PauseClose=document.getElementById('pauseMenuClose'),v1261SaveBtn=document.getElementById('pauseSaveBtn'),v1261QuitBtn=document.getElementById('pauseQuitBtn');
+let v1261PauseOpen=false,v1261PrayerCooldown=0,v1261PrayerTickStamp=performance.now(),v1261TargetTexture=null;
+
+function v1261SetPause(open){
+  v1261PauseOpen=!!open;v1261PauseOverlay?.classList.toggle('open',v1261PauseOpen);v1261PauseOverlay?.setAttribute('aria-hidden',String(!v1261PauseOpen));v1261PauseBtn?.setAttribute('aria-expanded',String(v1261PauseOpen));
+  if(v1261PauseOpen){joy.x=joy.y=0;joy.active=false;keys.clear();setBuildHeld(false);blocking=false;setPocketMenu?.(false);v125CloseJournal?.();}
+}
+function v1261ReturnToTitle(){
+  if(started)v124WriteSave('MANUEL');v1261SetPause(false);started=false;startingGame=false;joy.x=joy.y=0;joy.active=false;keys.clear();setBuildHeld(false);blocking=false;
+  els.controls?.classList.remove('visible');els.vitals?.classList.remove('visible');els.credits?.classList.remove('visible');v126ResourceHud?.classList.remove('visible');v119MiniMapWrap?.classList.remove('visible');v125QuestButton?.classList.remove('visible');v125QuestTracker?.classList.remove('visible');v119PrayBtn?.classList.remove('visible');
+  try{stopAmbient();}catch{}try{v119BirdAudio?.pause?.();}catch{}try{if(v119WaterGain)v119WaterGain.gain.value=0;}catch{}
+  els.title?.classList.remove('hidden','leaving');els.start.disabled=false;v124RefreshTitleMenu();try{els.audio.volume=.22;els.audio.play().catch(()=>{});}catch{}
+}
+v1261PauseBtn?.addEventListener('pointerdown',e=>{e.preventDefault();v1261SetPause(!v1261PauseOpen);},{passive:false});
+v1261PauseClose?.addEventListener('pointerdown',e=>{e.preventDefault();v1261SetPause(false);},{passive:false});
+v1261PauseOverlay?.addEventListener('pointerdown',e=>{if(e.target===v1261PauseOverlay)v1261SetPause(false);},{passive:true});
+v1261SaveBtn?.addEventListener('pointerdown',e=>{e.preventDefault();v124WriteSave('MANUEL');v1261SaveBtn.textContent='Sauvegarde effectuée';setTimeout(()=>{v1261SaveBtn.textContent='Sauvegarder';},1100);},{passive:false});
+v1261QuitBtn?.addEventListener('pointerdown',e=>{e.preventDefault();v1261ReturnToTitle();},{passive:false});
+els.start?.addEventListener('pointerdown',()=>{try{if(v119WaterGain)v119WaterGain.gain.value=.020;}catch{}},{capture:true,passive:true});
+
+// Croissance plus lente : un cycle complet dure plusieurs minutes et Démos n'accélère que légèrement la pousse.
+v119UpdateCrops=function(dt){
+  let harvests=0;const growthDuration=300,cycleDuration=420,matureDuration=60;
+  for(const plot of v119CropPlots||[]){const d=plot.userData,nearFarmer=farmerNPC&&Math.hypot(plot.position.x-farmerNPC.position.x,plot.position.z-farmerNPC.position.z)<2.25;d.age+=dt*(nearFarmer?1.15:1);const g=THREE.MathUtils.clamp(d.age/growthDuration,0,1),ease=g*g*(3-2*g),plantScale=.08+.92*ease;for(const child of plot.children)if(child.userData?.v119Plant)child.scale.setScalar(plantScale);d.growth=g;if(d.age>cycleDuration){d.matureHold=(d.matureHold||0)+dt;if(d.matureHold>matureDuration){d.age=0;d.matureHold=0;harvests++;for(const child of plot.children)if(child.userData?.v119Plant)child.scale.setScalar(.08);v117Dust(plot.position.clone().add(new THREE.Vector3(0,.25,0)),.45,0xa98a5d);}}}
+  if(harvests)v126AddResources({food:harvests*2},'RÉCOLTE DE DÉMOS');
+};
+// La bénédiction reste utile sans transformer les champs en imprimante à nourriture.
+const v1261BlessingBase=v121BlessingTick;v121BlessingTick=function(dt){if(v121BlessingTimer<=0)return;v121BlessingTimer=Math.max(0,v121BlessingTimer-dt);playerStamina=Math.min(100,playerStamina+dt*2.8);playerHealth=Math.min(100,playerHealth+dt*.16);for(const plot of v119CropPlots||[])if(plot?.userData)plot.userData.age+=dt*.12;if(v121BlessingTimer<=0&&!v121BlessingAnnounced){v121BlessingAnnounced=true;document.body.classList.remove('v121-demeter-blessing');v117Toast('LA BÉNÉDICTION DE DÉMÉTER S’ESTOMPE');}};
+
+// Cooldown de 30 secondes pour la prière, intercepté avant les anciens gestionnaires.
+v119PrayBtn?.addEventListener('pointerdown',e=>{if(v1261PrayerCooldown>0){e.preventDefault();e.stopImmediatePropagation();v117Toast(`DÉMÉTER — ${Math.ceil(v1261PrayerCooldown)} S`);return;}v1261PrayerCooldown=30;v124MarkDirty();},{capture:true,passive:false});
+
+function v1261GetTargetTexture(){
+  if(v1261TargetTexture)return v1261TargetTexture;v1261TargetTexture=new THREE.TextureLoader().load(V1261_TARGET_TEXTURE);v1261TargetTexture.colorSpace=THREE.SRGBColorSpace;v1261TargetTexture.anisotropy=Math.min(4,renderer?.capabilities?.getMaxAnisotropy?.()||1);return v1261TargetTexture;
+}
+function v1261UpgradeTargets(){
+  const tex=v1261GetTargetTexture(),wood=new THREE.MeshStandardMaterial({color:0x5c3d25,roughness:.94}),woodDark=new THREE.MeshStandardMaterial({color:0x2f2118,roughness:.98}),straw=new THREE.MeshStandardMaterial({color:0xb9965e,roughness:1}),face=new THREE.MeshStandardMaterial({map:tex,color:0xffffff,roughness:.78,metalness:0}),back=new THREE.MeshStandardMaterial({color:0x8b7148,roughness:1}),iron=new THREE.MeshStandardMaterial({color:0x4e5152,roughness:.55,metalness:.55});
+  for(const target of trainingTargets||[]){const d=target.userData;if(!d||d.v1261RealTarget)continue;d.v1261RealTarget=true;const oldFill=d.healthBar,oldLabel=d.healthLabel;for(const child of [...target.children])target.remove(child);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(1.34,.14,.58),woodDark);base.position.y=.07;base.castShadow=base.receiveShadow=true;target.add(base);
+    for(const side of [-1,1]){const leg=new THREE.Mesh(new THREE.BoxGeometry(.13,1.30,.13),wood);leg.position.set(side*.44,.66,.12);leg.rotation.z=-side*.13;leg.rotation.x=.08;leg.castShadow=true;target.add(leg);const rear=new THREE.Mesh(new THREE.BoxGeometry(.11,.92,.11),woodDark);rear.position.set(side*.38,.44,-.34);rear.rotation.x=-.54;rear.castShadow=true;target.add(rear);}
+    const cross=new THREE.Mesh(new THREE.BoxGeometry(1.05,.12,.16),wood);cross.position.set(0,1.13,.04);cross.castShadow=true;target.add(cross);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.72,.72,.20,40),[straw,face,back]);disc.rotation.x=Math.PI/2;disc.position.set(0,1.48,-.02);disc.castShadow=true;disc.receiveShadow=true;target.add(disc);
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(.73,.035,10,40),iron);rim.position.set(0,1.48,-.125);rim.castShadow=true;target.add(rim);
+    const brace=new THREE.Mesh(new THREE.BoxGeometry(.80,.075,.075),woodDark);brace.position.set(0,.52,.10);brace.rotation.z=.03;target.add(brace);
+    const barBack=new THREE.Mesh(new THREE.PlaneGeometry(1.12,.115),new THREE.MeshBasicMaterial({color:0x171918,transparent:true,opacity:.78,side:THREE.DoubleSide,depthTest:false}));barBack.rotation.x=-Math.PI/2;barBack.position.set(0,2.35,0);barBack.renderOrder=20;target.add(barBack);
+    const barFill=oldFill||new THREE.Mesh(new THREE.PlaneGeometry(1.06,.072),new THREE.MeshBasicMaterial({color:0x40b85b,transparent:true,opacity:.86,side:THREE.DoubleSide,depthTest:false}));barFill.geometry?.dispose?.();barFill.geometry=new THREE.PlaneGeometry(1.06,.072);barFill.material.transparent=true;barFill.material.opacity=.86;barFill.material.color.setHex(0x43b95d);barFill.rotation.x=-Math.PI/2;barFill.position.set(0,2.355,0);barFill.renderOrder=21;target.add(barFill);d.healthBar=barFill;
+    if(oldLabel){oldLabel.position.set(0,2.56,0);oldLabel.scale.setScalar(1.18);target.add(oldLabel);d.healthLabel=oldLabel;}
+    d.v119BaseScale=1;target.scale.setScalar(d.destroyed?.1:1);if(d.collider){d.collider.x1=target.position.x-.86;d.collider.x2=target.position.x+.86;d.collider.z1=target.position.z-.48;d.collider.z2=target.position.z+.48;d.collider.disabled=!!d.destroyed;}
+    v117Bar?.(target);
+  }
+  if(scene)scene.userData.v1261TargetAsset={name:'Target',author:'Kyzerole',license:'CC0',source:'OpenGameArt',url:'https://opengameart.org/content/target'};
+}
+const v1261WorldBase=v119BuildWorld;v119BuildWorld=function(){v1261WorldBase();v1261UpgradeTargets();};
+
+// Sauvegarde additive du cooldown sans casser les sauvegardes schéma 3.
+const v1261CaptureSaveBase=v124CaptureSave;v124CaptureSave=function(){const save=v1261CaptureSaveBase();save.world=save.world||{};save.world.prayerCooldown=v1261PrayerCooldown;return save;};
+const v1261ApplySaveBase=v124ApplySave;v124ApplySave=function(save){const ok=v1261ApplySaveBase(save);if(ok)v1261PrayerCooldown=v124ClampNumber(save?.world?.prayerCooldown,0,30,0);return ok;};
+const v1261BeforeStartBase=v124BeforeStart;v124BeforeStart=function(){v1261BeforeStartBase();if(v124RequestedMode==='new'||(!v124PendingRestore&&v124RequestedMode!=='continue'))v1261PrayerCooldown=0;};
+
+const v1261UpdateBase=update;update=function(){
+  v1261UpdateBase();const now=performance.now(),dt=Math.min(.1,(now-v1261PrayerTickStamp)/1000||.016);v1261PrayerTickStamp=now;
+  if(started&&v1261PrayerCooldown>0)v1261PrayerCooldown=Math.max(0,v1261PrayerCooldown-dt);
+  v1261PauseBtn?.classList.toggle('visible',!!started);if(v1261PauseOpen){joy.x=joy.y=0;joy.active=false;}
+  if(v119PrayBtn){const active=v1261PrayerCooldown>0;v119PrayBtn.classList.toggle('cooldown',active);v119PrayBtn.textContent=active?`Prier ${Math.ceil(v1261PrayerCooldown)}s`:'Prier';}
+};
+
+if(typeof window!=='undefined'){window.ODYSSEE_BUILD_V1261=V1261_BUILD;window.ODYSSEE_PAUSE={open:()=>v1261SetPause(true),save:()=>v124WriteSave('MANUEL'),quit:v1261ReturnToTitle};}
+/* =================== FIN ODYSSÉE v1.26.1 =================== */
+
+
 v124RefreshTitleMenu();
 if(typeof window!=='undefined'){
   window.ODYSSEE_BUILD_V124=V124_BUILD;
@@ -6128,4 +6233,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.26.0-20260806-0601-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.26.1-20260806-0621-NC -->
