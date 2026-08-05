@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.28.5 | 2026-08-06T09:44+11:00 | Xiphos affiné et bras stabilisés -->
-<meta name="build-id" content="odyssee-v1.28.5-thin-xiphos-stable-arms-20260806-0944-nc">
+<!-- VERIFIED BUILD: Odyssée v1.28.6 | 2026-08-06T10:18+11:00 | Prototype squelettique de Gregorius -->
+<meta name="build-id" content="odyssee-v1.28.6-gregorius-skeletal-prototype-20260806-1018-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.28.5 — Xiphos affiné et bras stabilisés</title>
+<title>Odyssée — v1.28.6 — Prototype squelettique de Gregorius</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -319,7 +319,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.2 — COLLISION ET BRAS ARTICULÉ</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.6 — PROTOTYPE SQUELETTIQUE DE GREGORIUS</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -7008,7 +7008,243 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.28.5 =================== */
 
+
+/* ===================== ODYSSÉE v1.28.6 — PROTOTYPE SQUELETTIQUE DE GREGORIUS ===================== */
+const V1286_BUILD='v1.28.6 — prototype-squelettique-gregorius-20260806-1018-NC';
+const V1286_GREGORIUS_MODEL_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb';
+const V1286_GREGORIUS_FALLBACK_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Barbarian.glb';
+const V1286_SWORD_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Assets/gltf/sword_1handed.gltf';
+const V1286_ASSET_REFERENCE={
+  creator:'Kay Lousberg / KayKit',
+  pack:'KayKit Character Pack: Adventurers',
+  license:'CC0 1.0 Universal',
+  clips:['Idle','Walking_A','Running_A','Blocking','1H_Melee_Attack_Stab']
+};
+const v1286GregoriusRig={
+  loading:false,ready:false,failed:false,root:null,mixer:null,actions:new Map(),current:null,currentName:'',
+  loader:null,lastFrame:performance.now(),weapon:null,weaponSocket:null,clips:[],source:'',attackLatch:false
+};
+
+async function v1286LoadGLTFLoader(){
+  if(v1286GregoriusRig.loader)return v1286GregoriusRig.loader;
+  const sources=[
+    'https://cdn.jsdelivr.net/npm/three@0.167.1/examples/jsm/loaders/GLTFLoader.js/+esm',
+    'https://esm.sh/three@0.167.1/examples/jsm/loaders/GLTFLoader.js?bundle&target=es2022'
+  ];
+  const failures=[];
+  for(const url of sources){
+    try{
+      const mod=await import(url);
+      if(mod?.GLTFLoader){
+        v1286GregoriusRig.loader=new mod.GLTFLoader();
+        return v1286GregoriusRig.loader;
+      }
+    }catch(error){failures.push(`${url}: ${error?.message||error}`);}
+  }
+  throw new Error(`GLTFLoader indisponible. ${failures.join(' | ')}`);
+}
+function v1286ClipByName(clips,...names){
+  const list=Array.isArray(clips)?clips:[];
+  for(const wanted of names){
+    const exact=list.find(clip=>(clip?.name||'').toLowerCase()===wanted.toLowerCase());
+    if(exact)return exact;
+  }
+  for(const wanted of names){
+    const token=wanted.toLowerCase();
+    const partial=list.find(clip=>(clip?.name||'').toLowerCase().includes(token));
+    if(partial)return partial;
+  }
+  return null;
+}
+function v1286FindSocket(root,side='right'){
+  const right=side==='right';
+  const candidates=[];
+  root?.traverse?.(object=>{
+    const raw=String(object.name||'');
+    const name=raw.toLowerCase().replace(/[^a-z0-9]/g,'');
+    if(!name)return;
+    let score=0;
+    const correctSide=right?(name.includes('right')||name.includes('handr')||name.includes('weaponr')||name.startsWith('rhand')||name.startsWith('rweapon')):(name.includes('left')||name.includes('handl')||name.includes('weaponl')||name.startsWith('lhand')||name.startsWith('lweapon'));
+    const wrongSide=right?(name.includes('left')||name.includes('handl')||name.includes('weaponl')):(name.includes('right')||name.includes('handr')||name.includes('weaponr'));
+    if(wrongSide)return;
+    if(name.includes('weapon')&&correctSide)score+=160;
+    if(name.includes('socket')&&correctSide)score+=140;
+    if(name.includes('hand')&&correctSide)score+=110;
+    if(name.includes('palm')&&correctSide)score+=90;
+    if(object.isBone)score+=25;
+    if(score)candidates.push({object,score,name:raw});
+  });
+  candidates.sort((a,b)=>b.score-a.score);
+  return candidates[0]?.object||null;
+}
+function v1286PrepareModel(model){
+  model.name='Gregorius_Skeletal_Prototype';
+  model.traverse(object=>{
+    if(object.isMesh||object.isSkinnedMesh){
+      object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false;
+      if(object.material){
+        const mats=Array.isArray(object.material)?object.material:[object.material];
+        for(const material of mats){if(material){material.side=THREE.FrontSide;material.needsUpdate=true;}}
+      }
+    }
+  });
+  model.rotation.set(0,Math.PI,0);
+  model.scale.setScalar(1);
+  model.updateMatrixWorld(true);
+  let box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());
+  const targetHeight=1.58;
+  const scale=targetHeight/Math.max(.1,size.y);
+  model.scale.setScalar(scale);
+  model.updateMatrixWorld(true);
+  box=new THREE.Box3().setFromObject(model);
+  model.position.y=-box.min.y+.015;
+  model.position.z=.025;
+  model.updateMatrixWorld(true);
+}
+function v1286RegisterActions(gltf){
+  const rig=v1286GregoriusRig;
+  rig.mixer=new THREE.AnimationMixer(rig.root);
+  rig.clips=gltf.animations||[];
+  const definitions={
+    idle:['Idle','Unarmed_Idle'],
+    walk:['Walking_A','Walking_B','Walking_C'],
+    run:['Running_A','Running_B'],
+    block:['Blocking','Block'],
+    attack:['1H_Melee_Attack_Stab','1H_Melee_Attack_Chop','1H_Melee_Attack_Slice_Diagonal']
+  };
+  for(const [state,names] of Object.entries(definitions)){
+    const clip=v1286ClipByName(rig.clips,...names);
+    if(!clip)continue;
+    const action=rig.mixer.clipAction(clip);
+    action.enabled=true;
+    action.setEffectiveWeight(1);
+    action.setEffectiveTimeScale(1);
+    if(state==='attack'){
+      action.setLoop(THREE.LoopOnce,1);
+      action.clampWhenFinished=true;
+    }else action.setLoop(THREE.LoopRepeat,Infinity);
+    rig.actions.set(state,{action,clip});
+  }
+}
+function v1286SetAction(name,fade=.14,force=false){
+  const rig=v1286GregoriusRig;
+  const next=rig.actions.get(name);
+  if(!next)return false;
+  if(!force&&rig.currentName===name)return true;
+  const previous=rig.current;
+  const action=next.action;
+  action.enabled=true;
+  action.reset();
+  action.setEffectiveWeight(1);
+  if(name==='attack'){
+    const realAttackDuration=Math.max(.25,attackDuration/Math.max(.1,attackSpeed));
+    action.setEffectiveTimeScale(next.clip.duration/realAttackDuration);
+  }else action.setEffectiveTimeScale(name==='walk'?.92:name==='run'?1.02:1);
+  action.play();
+  if(previous&&previous!==action){
+    previous.enabled=true;
+    previous.crossFadeTo(action,fade,false);
+  }else action.fadeIn(Math.min(.10,fade));
+  rig.current=action;rig.currentName=name;
+  return true;
+}
+async function v1286AttachKayKitSword(loader){
+  const rig=v1286GregoriusRig;
+  const socket=v1286FindSocket(rig.root,'right');
+  if(!socket)return false;
+  rig.weaponSocket=socket;
+  try{
+    const weaponGltf=await loader.loadAsync(V1286_SWORD_URL);
+    const weapon=weaponGltf.scene;
+    weapon.name='Gregorius_KayKit_Xiphos_Test';
+    weapon.traverse(object=>{if(object.isMesh){object.castShadow=true;object.receiveShadow=true;}});
+    weapon.position.set(0,0,0);
+    weapon.rotation.set(0,0,0);
+    weapon.scale.setScalar(1);
+    socket.add(weapon);
+    rig.weapon=weapon;
+    return true;
+  }catch(error){console.warn('[Odyssée v1.28.6] Épée KayKit non chargée :',error);return false;}
+}
+async function v1286LoadGregoriusSkeleton(){
+  const rig=v1286GregoriusRig;
+  if(rig.loading||rig.ready||rig.failed||!character)return;
+  rig.loading=true;
+  try{
+    const loader=await v1286LoadGLTFLoader();
+    let gltf=null,lastError=null;
+    for(const url of [V1286_GREGORIUS_MODEL_URL,V1286_GREGORIUS_FALLBACK_URL]){
+      try{gltf=await loader.loadAsync(url);rig.source=url;break;}catch(error){lastError=error;}
+    }
+    if(!gltf?.scene)throw lastError||new Error('Personnage glTF absent');
+    rig.root=gltf.scene;
+    v1286PrepareModel(rig.root);
+    v1286RegisterActions(gltf);
+    character.add(rig.root);
+    await v1286AttachKayKitSword(loader);
+    if(greekGear)greekGear.visible=false;
+    rig.ready=true;rig.loading=false;rig.failed=false;rig.lastFrame=performance.now();
+    v1286SetAction('idle',.01,true);
+    document.body.dataset.gregoriusRig='kaykit-skeletal';
+    v117Toast?.('GREGORIUS — ANIMATIONS SQUELETTIQUES ACTIVES');
+    console.info('[Odyssée v1.28.6] Clips de Gregorius :',rig.clips.map(clip=>clip.name));
+  }catch(error){
+    rig.loading=false;rig.failed=true;rig.ready=false;
+    if(greekGear)greekGear.visible=true;
+    document.body.dataset.gregoriusRig='procedural-fallback';
+    console.warn('[Odyssée v1.28.6] Repli vers Gregorius procédural :',error);
+    v117Toast?.('RIG EXTERNE INDISPONIBLE — MODÈLE CLASSIQUE CONSERVÉ');
+  }
+}
+function v1286UpdateGregoriusSkeleton(){
+  const rig=v1286GregoriusRig;
+  const now=performance.now();
+  const dt=THREE.MathUtils.clamp((now-rig.lastFrame)/1000,0,.05);
+  rig.lastFrame=now;
+  if(!rig.ready||!rig.mixer)return;
+  const speed=velocity?.length?.()||0;
+  const attacking=attackTimer>0;
+  const blockingNow=!attacking&&(blocking||keys.has('KeyB')||blockBlend>.2);
+  if(attacking){
+    if(!rig.attackLatch){v1286SetAction('attack',.08,true);rig.attackLatch=true;}
+  }else{
+    rig.attackLatch=false;
+    if(blockingNow)v1286SetAction('block',.12);
+    else if(speed>2.10)v1286SetAction('run',.14);
+    else if(speed>.18)v1286SetAction('walk',.16);
+    else v1286SetAction('idle',.18);
+  }
+  if(rig.currentName==='walk'&&rig.current)rig.current.setEffectiveTimeScale(THREE.MathUtils.clamp(.72+speed*.20,.78,1.22));
+  if(rig.currentName==='run'&&rig.current)rig.current.setEffectiveTimeScale(THREE.MathUtils.clamp(.80+speed*.16,.95,1.34));
+  if(rig.weapon)rig.weapon.visible=!equipmentStowed;
+  rig.mixer.update(dt);
+}
+
+const v1286LoadCharacterBase=loadCharacter;
+loadCharacter=function(){
+  v1286LoadCharacterBase();
+  const tryLoad=()=>{if(character)v1286LoadGregoriusSkeleton();else setTimeout(tryLoad,80);};
+  setTimeout(tryLoad,150);
+};
+const v1286UpdateBase=update;
+update=function(...args){
+  v1286UpdateGregoriusSkeleton();
+  return v1286UpdateBase(...args);
+};
+const v1286CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1286CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1286_BUILD,gregoriusRig:v1286GregoriusRig.ready?'kaykit-skeletal':'procedural-fallback'};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1286=V1286_BUILD;
+  window.ODYSSEE_GREGORIUS_SKELETAL_RIG=v1286GregoriusRig;
+  window.ODYSSEE_RELOAD_GREGORIUS_SKELETON=()=>{v1286GregoriusRig.failed=false;return v1286LoadGregoriusSkeleton();};
+}
+/* =================== FIN ODYSSÉE v1.28.6 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.28.5-20260806-0944-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.28.6-20260806-1018-NC -->
