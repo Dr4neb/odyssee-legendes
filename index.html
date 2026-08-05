@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.28.7 | 2026-08-06T10:18+11:00 | Gregorius hoplite squelettique -->
-<meta name="build-id" content="odyssee-v1.28.7-gregorius-skeletal-hoplite-20260806-1018-nc">
+<!-- VERIFIED BUILD: Odyssée v1.28.8 | 2026-08-06T11:42+11:00 | Gregorius hoplite authentique -->
+<meta name="build-id" content="odyssee-v1.28.8-gregorius-authentic-hoplite-20260806-1142-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.28.7 — Gregorius hoplite squelettique</title>
+<title>Odyssée — v1.28.8 — Gregorius hoplite authentique</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -319,7 +319,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.7 — GREGORIUS HOPLITE SQUELETTIQUE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.8 — GREGORIUS HOPLITE AUTHENTIQUE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -7011,8 +7011,8 @@ if(typeof window!=='undefined'){
 
 /* ===================== ODYSSÉE v1.28.6 — PROTOTYPE SQUELETTIQUE DE GREGORIUS ===================== */
 const V1286_BUILD='v1.28.6 — prototype-squelettique-gregorius-20260806-1018-NC';
-const V1286_GREGORIUS_MODEL_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Knight.glb';
-const V1286_GREGORIUS_FALLBACK_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Barbarian.glb';
+const V1286_GREGORIUS_MODEL_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Barbarian.glb';
+const V1286_GREGORIUS_FALLBACK_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Characters/gltf/Rogue.glb';
 const V1286_SWORD_URL='https://cdn.jsdelivr.net/gh/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0/addons/kaykit_character_pack_adventures/Assets/gltf/sword_1handed.gltf';
 const V1286_ASSET_REFERENCE={
   creator:'Kay Lousberg / KayKit',
@@ -7153,18 +7153,34 @@ async function v1286AttachKayKitSword(loader){
   const socket=v1286FindSocket(rig.root,'right');
   if(!socket)return false;
   rig.weaponSocket=socket;
-  try{
-    const weaponGltf=await loader.loadAsync(V1286_SWORD_URL);
-    const weapon=weaponGltf.scene;
-    weapon.name='Gregorius_KayKit_Xiphos_Test';
-    weapon.traverse(object=>{if(object.isMesh){object.castShadow=true;object.receiveShadow=true;}});
-    weapon.position.set(0,0,0);
-    weapon.rotation.set(0,0,0);
-    weapon.scale.setScalar(1);
-    socket.add(weapon);
-    rig.weapon=weapon;
-    return true;
-  }catch(error){console.warn('[Odyssée v1.28.6] Épée KayKit non chargée :',error);return false;}
+  // Une seule arme est créée. On ne charge plus le modèle médiéval externe qui pouvait se dupliquer.
+  const weapon=new THREE.Group();
+  weapon.name='Gregorius_Hoplite_Xiphos_Single';
+  const steel=new THREE.MeshStandardMaterial({color:0xc9ced1,roughness:.28,metalness:.82});
+  const bronze=new THREE.MeshStandardMaterial({color:0xb57a2b,roughness:.34,metalness:.74});
+  const bronzeEdge=new THREE.MeshStandardMaterial({color:0xe0aa52,roughness:.25,metalness:.82});
+  const leather=new THREE.MeshStandardMaterial({color:0x352116,roughness:.92,metalness:.01});
+
+  const bladeShape=new THREE.Shape();
+  bladeShape.moveTo(-.040,.145);
+  bladeShape.bezierCurveTo(-.060,.32,-.072,.55,-.058,.78);
+  bladeShape.bezierCurveTo(-.048,.96,-.026,1.10,0,1.22);
+  bladeShape.bezierCurveTo(.026,1.10,.048,.96,.058,.78);
+  bladeShape.bezierCurveTo(.072,.55,.060,.32,.040,.145);
+  bladeShape.closePath();
+  const bladeGeom=new THREE.ExtrudeGeometry(bladeShape,{depth:.018,bevelEnabled:true,bevelSize:.004,bevelThickness:.003,bevelSegments:1,steps:1});
+  bladeGeom.translate(0,0,-.009);
+  const blade=new THREE.Mesh(bladeGeom,steel);blade.name='Xiphos_Blade';blade.castShadow=true;weapon.add(blade);
+  const ridge=new THREE.Mesh(new THREE.BoxGeometry(.012,.86,.024),bronzeEdge);ridge.name='Xiphos_Central_Ridge';ridge.position.set(0,.62,0);ridge.castShadow=true;weapon.add(ridge);
+  const guard=new THREE.Mesh(new THREE.BoxGeometry(.31,.055,.075),bronze);guard.name='Xiphos_Guard';guard.position.set(0,.115,0);guard.castShadow=true;weapon.add(guard);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.035,.039,.30,12),leather);grip.name='Xiphos_Grip';grip.position.set(0,-.055,0);grip.castShadow=true;weapon.add(grip);
+  const pommel=new THREE.Mesh(new THREE.SphereGeometry(.058,12,9),bronzeEdge);pommel.name='Xiphos_Pommel';pommel.scale.set(1,.82,.72);pommel.position.set(0,-.235,0);pommel.castShadow=true;weapon.add(pommel);
+  weapon.position.set(0,0,0);
+  weapon.rotation.set(0,0,0);
+  weapon.scale.setScalar(.92);
+  socket.add(weapon);
+  rig.weapon=weapon;
+  return true;
 }
 async function v1286LoadGregoriusSkeleton(){
   const rig=v1286GregoriusRig;
@@ -7179,10 +7195,12 @@ async function v1286LoadGregoriusSkeleton(){
     if(!gltf?.scene)throw lastError||new Error('Personnage glTF absent');
     rig.root=gltf.scene;
     v1286PrepareModel(rig.root);
+    v1288SanitizeImportedRig(rig.root);
     v1286RegisterActions(gltf);
     character.add(rig.root);
     await v1286AttachKayKitSword(loader);
-    try{v1287ApplyHopliteAppearance(rig.root);}catch(error){console.warn('[Odyssée v1.28.7] Équipement hoplite partiel :',error);}
+    try{v1287ApplyHopliteAppearance(rig.root);}catch(error){console.warn('[Odyssée v1.28.8] Équipement hoplite partiel :',error);}
+    v1288EnforceSingleWeapon();
     if(greekGear)greekGear.visible=false;
     rig.ready=true;rig.loading=false;rig.failed=false;rig.lastFrame=performance.now();
     v1286SetAction('idle',.01,true);
@@ -7219,6 +7237,7 @@ function v1286UpdateGregoriusSkeleton(){
   if(rig.currentName==='run'&&rig.current)rig.current.setEffectiveTimeScale(THREE.MathUtils.clamp(.80+speed*.16,.95,1.34));
   if(rig.weapon)rig.weapon.visible=!equipmentStowed;
   rig.mixer.update(dt);
+  v1288EnforceSingleWeapon();
   v1287UpdateHopliteGear(dt);
 }
 
@@ -7248,7 +7267,7 @@ if(typeof window!=='undefined'){
 
 /* ===================== ODYSSÉE v1.28.7 — APPARENCE HOPLITE DE GREGORIUS ===================== */
 const V1287_BUILD='v1.28.7 — gregorius-hoplite-squelettique-20260806-1018-NC';
-const v1287HopliteGear={ready:false,root:null,head:null,chest:null,hips:null,leftHand:null,rightHand:null,leftShin:null,rightShin:null,helmet:null,crest:null,cape:null,shield:null,xiphos:null,materials:null,lastTime:performance.now()};
+const v1287HopliteGear={ready:false,root:null,head:null,chest:null,hips:null,leftHand:null,rightHand:null,leftForearm:null,leftShin:null,rightShin:null,helmet:null,crest:null,cape:null,shield:null,xiphos:null,materials:null,lastTime:performance.now()};
 
 function v1287NormalizedName(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
 function v1287FindRigNode(root,groups,{preferBone=true}={}){
@@ -7292,23 +7311,21 @@ function v1287CreateMaterials(){
   };
 }
 function v1287HideMedievalAccessories(root){
+  const weaponTokens=['weapon','sword','axe','dagger','bow','crossbow','quiver','mace','hammer','staff','wand','shield','spear'];
+  const medievalTokens=['helmet','helm','pauldron','shoulderarmor','hood','crown','knightcape','platearmor'];
   root?.traverse?.(object=>{
     if(!(object.isMesh||object.isSkinnedMesh))return;
     const tag=v1287NormalizedName(`${object.name} ${Array.isArray(object.material)?object.material.map(m=>m?.name).join(' '):object.material?.name||''}`);
-    if(tag.includes('helmet')||tag.includes('helm')||tag.includes('pauldron')||tag.includes('shoulderarmor')||tag.includes('hood'))object.visible=false;
+    if(weaponTokens.some(token=>tag.includes(token))||medievalTokens.some(token=>tag.includes(token))){object.visible=false;return;}
+    // La base Barbarian ne sert plus que de corps animé sous l'équipement grec.
     const mats=Array.isArray(object.material)?object.material:[object.material];
     object.material=mats.map(material=>{
       if(!material)return material;
       const clone=material.clone();
-      const mtag=v1287NormalizedName(`${tag} ${material.name||''}`);
-      if(mtag.includes('metal')||mtag.includes('armor')||mtag.includes('plate')){
-        clone.color?.set?.(0x8b5a25);clone.metalness=Math.max(.58,clone.metalness||0);clone.roughness=.42;
-      }else if(mtag.includes('cloth')||mtag.includes('tunic')||mtag.includes('shirt')||mtag.includes('cape')){
-        clone.color?.set?.(0x651916);clone.metalness=0;clone.roughness=.84;
-      }else if(mtag.includes('leather')||mtag.includes('boot')||mtag.includes('belt')){
-        clone.color?.set?.(0x392417);clone.metalness=0;clone.roughness=.90;
-      }
-      clone.needsUpdate=true;return clone;
+      clone.roughness=Math.max(.62,clone.roughness||0);
+      clone.metalness=Math.min(.12,clone.metalness||0);
+      clone.needsUpdate=true;
+      return clone;
     });
     if(object.material.length===1)object.material=object.material[0];
   });
@@ -7337,24 +7354,34 @@ function v1287BuildHelmet(head,mat){
   return {group,crest};
 }
 function v1287BuildCuirass(chest,hips,mat){
-  const armor=new THREE.Group();armor.name='Gregorius_Bronze_Cuirass';chest.add(armor);armor.position.set(0,-.035,.005);
-  const plateShape=new THREE.Shape();
-  plateShape.moveTo(-.215,.245);plateShape.lineTo(.215,.245);plateShape.lineTo(.185,-.235);plateShape.quadraticCurveTo(0,-.285,-.185,-.235);plateShape.closePath();
-  const plateGeom=new THREE.ExtrudeGeometry(plateShape,{depth:.105,bevelEnabled:true,bevelSize:.012,bevelThickness:.010,bevelSegments:1,steps:1});plateGeom.center();
-  const plate=v1287Mesh(plateGeom,mat.bronze,'Hoplite_Breastplate');plate.position.z=.035;armor.add(plate);
-  const chestRidge=v1287Mesh(new THREE.BoxGeometry(.030,.360,.018),mat.bronzeEdge,'Breastplate_Ridge');chestRidge.position.set(0,.015,.100);armor.add(chestRidge);
-  const belt=v1287Mesh(new THREE.CylinderGeometry(.205,.195,.075,18),mat.leather,'Hoplite_Belt');belt.position.y=-.255;armor.add(belt);
-  const beltBand=v1287Mesh(new THREE.TorusGeometry(.198,.014,7,24),mat.bronzeEdge,'Hoplite_Belt_Band');beltBand.rotation.x=Math.PI/2;beltBand.position.y=-.255;armor.add(beltBand);
-  const shoulderGeom=new THREE.SphereGeometry(.105,14,9,0,Math.PI*2,0,Math.PI*.55);
-  const shoulderL=v1287Mesh(shoulderGeom,mat.bronze,'Hoplite_Shoulder_L');shoulderL.scale.set(1.25,.55,1);shoulderL.position.set(-.245,.185,.010);shoulderL.rotation.z=.34;armor.add(shoulderL);
-  const shoulderR=shoulderL.clone();shoulderR.name='Hoplite_Shoulder_R';shoulderR.position.x=.245;shoulderR.rotation.z=-.34;armor.add(shoulderR);
-  const skirt=new THREE.Group();skirt.name='Hoplite_Pteruges';hips.add(skirt);skirt.position.set(0,-.085,.005);
-  for(let i=-3;i<=3;i++){
-    const strip=v1287Mesh(new THREE.BoxGeometry(.052,.245,.035),i%2?mat.redDark:mat.red,`Pteruge_${i+3}`);
-    strip.position.set(i*.055,-.125,.025+Math.abs(i)*-.004);strip.rotation.z=i*.025;skirt.add(strip);
-    const tip=v1287Mesh(new THREE.ConeGeometry(.028,.065,4),mat.leather,`Pteruge_Tip_${i+3}`);tip.position.set(i*.055,-.278,.025);tip.rotation.z=Math.PI/4+i*.025;skirt.add(tip);
+  const armor=new THREE.Group();armor.name='Gregorius_Greek_Bell_Cuirass';chest.add(armor);armor.position.set(0,-.015,.000);
+  // Cuirasse cloche arrondie : aucune épaulière médiévale.
+  const shell=v1287Mesh(new THREE.CapsuleGeometry(.205,.265,8,18),mat.bronze,'Hoplite_Bell_Cuirass');
+  shell.scale.set(1.06,1.02,.62);shell.position.set(0,-.015,.005);armor.add(shell);
+  const neck=v1287Mesh(new THREE.TorusGeometry(.118,.017,7,24),mat.bronzeEdge,'Cuirass_Neck_Rim');
+  neck.rotation.x=Math.PI/2;neck.position.set(0,.255,.015);armor.add(neck);
+  const central=v1287Mesh(new THREE.BoxGeometry(.022,.380,.018),mat.bronzeEdge,'Cuirass_Central_Ridge');
+  central.position.set(0,.015,.145);armor.add(central);
+  const pectoralL=v1287Mesh(new THREE.TorusGeometry(.082,.012,6,18,Math.PI*.9),mat.bronzeDark,'Cuirass_Pectoral_L');
+  pectoralL.rotation.set(Math.PI/2,0,.10);pectoralL.position.set(-.085,.095,.140);armor.add(pectoralL);
+  const pectoralR=pectoralL.clone();pectoralR.name='Cuirass_Pectoral_R';pectoralR.position.x=.085;pectoralR.rotation.z=-.10;armor.add(pectoralR);
+  for(let i=0;i<3;i++){
+    const band=v1287Mesh(new THREE.TorusGeometry(.145-i*.010,.010,6,24,Math.PI*.86),mat.bronzeDark,`Cuirass_Abdominal_Band_${i}`);
+    band.rotation.set(Math.PI/2,0,Math.PI*.07);band.position.set(0,-.035-i*.065,.140);armor.add(band);
   }
-  const tunic=v1287Mesh(new THREE.CylinderGeometry(.185,.235,.36,18,1,true),mat.red,'Hoplite_Red_Tunic');tunic.position.y=-.095;skirt.add(tunic);
+  const strapL=v1287Mesh(new THREE.CapsuleGeometry(.021,.235,4,8),mat.leather,'Hoplite_Shoulder_Strap_L');
+  strapL.position.set(-.165,.205,.015);strapL.rotation.z=-.30;armor.add(strapL);
+  const strapR=strapL.clone();strapR.name='Hoplite_Shoulder_Strap_R';strapR.position.x=.165;strapR.rotation.z=.30;armor.add(strapR);
+  const belt=v1287Mesh(new THREE.CylinderGeometry(.205,.198,.078,18),mat.leather,'Hoplite_Belt');belt.position.y=-.255;armor.add(belt);
+  const beltBand=v1287Mesh(new THREE.TorusGeometry(.200,.014,7,24),mat.bronzeEdge,'Hoplite_Belt_Band');beltBand.rotation.x=Math.PI/2;beltBand.position.y=-.255;armor.add(beltBand);
+
+  const skirt=new THREE.Group();skirt.name='Hoplite_Pteruges';hips.add(skirt);skirt.position.set(0,-.080,.005);
+  const tunic=v1287Mesh(new THREE.CylinderGeometry(.180,.225,.34,18,1,true),mat.red,'Hoplite_Red_Tunic');tunic.position.y=-.090;skirt.add(tunic);
+  for(let i=-4;i<=4;i++){
+    const strip=v1287Mesh(new THREE.BoxGeometry(.043,.245,.026),i%2?mat.redDark:mat.leather,`Pteruge_${i+4}`);
+    strip.position.set(i*.047,-.150,.028-Math.abs(i)*.002);strip.rotation.z=i*.018;skirt.add(strip);
+    const rivet=v1287Mesh(new THREE.SphereGeometry(.010,7,5),mat.bronzeEdge,`Pteruge_Rivet_${i+4}`);rivet.position.set(i*.047,-.035,.046);skirt.add(rivet);
+  }
   return {armor,skirt};
 }
 function v1287BuildCape(chest,mat){
@@ -7366,15 +7393,25 @@ function v1287BuildCape(chest,mat){
   return cape;
 }
 function v1287BuildShield(leftHand,mat){
-  const shield=new THREE.Group();shield.name='Gregorius_Aspis';leftHand.add(shield);
-  shield.position.set(.020,.015,.075);shield.rotation.set(0,0,0);
-  const body=v1287Mesh(new THREE.CylinderGeometry(.325,.325,.055,32),mat.bronze,'Aspis_Body');body.rotation.x=Math.PI/2;shield.add(body);
-  const rim=v1287Mesh(new THREE.TorusGeometry(.305,.025,8,32),mat.bronzeEdge,'Aspis_Rim');rim.position.z=.032;shield.add(rim);
-  const inner=v1287Mesh(new THREE.CircleGeometry(.278,32),mat.redDark,'Aspis_Face');inner.position.z=.034;shield.add(inner);
-  const boss=v1287Mesh(new THREE.SphereGeometry(.090,16,10),mat.bronzeEdge,'Aspis_Boss');boss.scale.z=.38;boss.position.z=.065;shield.add(boss);
-  const lambdaL=v1287Mesh(new THREE.BoxGeometry(.034,.235,.014),mat.bronzeEdge,'Aspis_Lambda_L');lambdaL.position.set(-.045,.005,.079);lambdaL.rotation.z=-.35;shield.add(lambdaL);
-  const lambdaR=lambdaL.clone();lambdaR.name='Aspis_Lambda_R';lambdaR.position.x=.045;lambdaR.rotation.z=.35;shield.add(lambdaR);
-  shield.scale.setScalar(.96);
+  const shield=new THREE.Group();shield.name='Gregorius_Authentic_Aspis';leftHand.add(shield);
+  shield.position.set(.018,.018,.070);shield.rotation.set(0,0,0);
+  // Aspis profond : calotte convexe, large bordure, âme en bois et double prise intérieure.
+  const bronzeFront=mat.bronze.clone();bronzeFront.side=THREE.DoubleSide;
+  const leatherInside=mat.leather.clone();leatherInside.side=THREE.BackSide;
+  const capGeom=new THREE.SphereGeometry(.342,32,14,0,Math.PI*2,0,Math.PI*.50);
+  const front=v1287Mesh(capGeom,bronzeFront,'Aspis_Convex_Bronze_Face');front.scale.set(1,.29,1);front.rotation.x=Math.PI/2;shield.add(front);
+  const inner=v1287Mesh(capGeom,leatherInside,'Aspis_Leather_Interior');inner.scale.set(.94,.255,.94);inner.rotation.x=Math.PI/2;inner.position.z=-.010;shield.add(inner);
+  const rim=v1287Mesh(new THREE.TorusGeometry(.340,.030,10,36),mat.bronzeEdge,'Aspis_Broad_Rim');rim.position.z=.002;shield.add(rim);
+  const woodRing=v1287Mesh(new THREE.TorusGeometry(.300,.020,8,32),mat.leather,'Aspis_Wood_Core');woodRing.position.z=-.018;shield.add(woodRing);
+  const faceDisc=v1287Mesh(new THREE.CircleGeometry(.255,32),mat.redDark,'Aspis_Painted_Center');faceDisc.position.z=.101;shield.add(faceDisc);
+  const lambdaL=v1287Mesh(new THREE.BoxGeometry(.034,.245,.016),mat.bronzeEdge,'Aspis_Lambda_L');lambdaL.position.set(-.048,.000,.112);lambdaL.rotation.z=-.36;shield.add(lambdaL);
+  const lambdaR=lambdaL.clone();lambdaR.name='Aspis_Lambda_R';lambdaR.position.x=.048;lambdaR.rotation.z=.36;shield.add(lambdaR);
+  // Porpax central pour l'avant-bras et antilabè près du bord.
+  const porpax=v1287Mesh(new THREE.TorusGeometry(.092,.018,8,22,Math.PI*1.30),mat.bronzeDark,'Aspis_Porpax');porpax.rotation.z=Math.PI*.35;porpax.position.set(-.035,.005,-.052);shield.add(porpax);
+  const antilabe=v1287Mesh(new THREE.CapsuleGeometry(.018,.150,5,9),mat.leather,'Aspis_Antilabe');antilabe.rotation.z=Math.PI/2;antilabe.position.set(.205,-.015,-.050);shield.add(antilabe);
+  const gripRivetA=v1287Mesh(new THREE.SphereGeometry(.018,8,6),mat.bronzeEdge,'Aspis_Grip_Rivet_A');gripRivetA.position.set(.125,-.015,-.050);shield.add(gripRivetA);
+  const gripRivetB=gripRivetA.clone();gripRivetB.name='Aspis_Grip_Rivet_B';gripRivetB.position.x=.285;shield.add(gripRivetB);
+  shield.scale.setScalar(.94);
   return shield;
 }
 function v1287BuildGreave(node,side,mat){
@@ -7388,14 +7425,14 @@ function v1287BuildGreave(node,side,mat){
 }
 function v1287TuneKayKitWeapon(rig,mat){
   if(!rig?.weapon)return null;
-  rig.weapon.name='Gregorius_Hoplite_Xiphos';
+  rig.weapon.name='Gregorius_Hoplite_Xiphos_Single';
   rig.weapon.traverse(object=>{
     if(!object.isMesh)return;
-    const tag=v1287NormalizedName(`${object.name} ${Array.isArray(object.material)?object.material.map(m=>m?.name).join(' '):object.material?.name||''}`);
-    if(tag.includes('handle')||tag.includes('grip')||tag.includes('leather'))object.material=mat.leather;
-    else if(tag.includes('guard')||tag.includes('pommel'))object.material=mat.bronzeEdge;
+    const tag=v1287NormalizedName(object.name);
+    if(tag.includes('grip'))object.material=mat.leather;
+    else if(tag.includes('guard')||tag.includes('pommel')||tag.includes('ridge'))object.material=mat.bronzeEdge;
     else object.material=mat.steel;
-    object.castShadow=true;
+    object.castShadow=true;object.receiveShadow=true;
   });
   return rig.weapon;
 }
@@ -7409,13 +7446,14 @@ function v1287ApplyHopliteAppearance(root){
   gear.hips=v1287FindRigNode(root,[['hips'],['pelvis'],['root']]);
   gear.leftHand=v1287FindRigNode(root,[['lefthand'],['handl'],['lhand'],['weaponl']]);
   gear.rightHand=v1287FindRigNode(root,[['righthand'],['handr'],['rhand'],['weaponr']]);
+  gear.leftForearm=v1287FindRigNode(root,[['leftforearm'],['leftlowerarm'],['forearml'],['lowerarml']]);
   gear.leftShin=v1287FindRigNode(root,[['leftlowerleg'],['leftshin'],['calfl'],['legl']]);
   gear.rightShin=v1287FindRigNode(root,[['rightlowerleg'],['rightshin'],['calfr'],['legr']]);
   if(!gear.head||!gear.chest||!gear.hips)throw new Error('Os essentiels du rig KayKit non détectés.');
   const helmet=v1287BuildHelmet(gear.head,mat);gear.helmet=helmet.group;gear.crest=helmet.crest;
   const cuirass=v1287BuildCuirass(gear.chest,gear.hips,mat);gear.cuirass=cuirass.armor;gear.skirt=cuirass.skirt;
   gear.cape=v1287BuildCape(gear.chest,mat);
-  if(gear.leftHand)gear.shield=v1287BuildShield(gear.leftHand,mat);
+  if(gear.leftForearm||gear.leftHand)gear.shield=v1287BuildShield(gear.leftForearm||gear.leftHand,mat);
   gear.leftGreave=v1287BuildGreave(gear.leftShin,'L',mat);
   gear.rightGreave=v1287BuildGreave(gear.rightShin,'R',mat);
   gear.xiphos=v1287TuneKayKitWeapon(v1286GregoriusRig,mat);
@@ -7452,8 +7490,57 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.28.7 =================== */
 
+/* ===================== ODYSSÉE v1.28.8 — HOPLITE AUTHENTIQUE ET ARMES UNIQUES ===================== */
+const V1288_BUILD='v1.28.8 — gregorius-hoplite-authentique-20260806-1142-NC';
+const V1288_GREEK_ASSET_RESEARCH={
+  aspis:{source:'OpenGameArt — Aspis hoplite shield',author:'ninelionar',license:'CC0',formats:['FBX','OBJ','BLEND'],archiveMB:130.9},
+  warrior:{source:'OpenGameArt — Achilles Spartan Greek Warrior',author:'gamekorp',license:'CC0',rigged:false},
+  decision:'KayKit Barbarian conserve le squelette animé ; équipement grec mobile reconstruit et optimisé dans Three.js.'
+};
+function v1288SanitizeImportedRig(root){
+  if(!root)return;
+  const weaponTokens=['weapon','sword','axe','dagger','bow','crossbow','quiver','mace','hammer','staff','wand','shield','spear'];
+  const medievalTokens=['helmet','helm','pauldron','shoulderarmor','hood','crown','platearmor'];
+  root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh))return;
+    const tag=v1287NormalizedName(`${object.name} ${Array.isArray(object.material)?object.material.map(m=>m?.name).join(' '):object.material?.name||''}`);
+    if(weaponTokens.some(token=>tag.includes(token))||medievalTokens.some(token=>tag.includes(token)))object.visible=false;
+  });
+}
+function v1288IsDescendantOf(object,parent){
+  let current=object;
+  while(current){if(current===parent)return true;current=current.parent;}
+  return false;
+}
+function v1288EnforceSingleWeapon(){
+  const rig=v1286GregoriusRig;
+  if(!rig?.root)return;
+  if(greekGear)greekGear.visible=false;
+  const keep=rig.weapon;
+  const weaponTokens=['weapon','sword','xiphos','axe','dagger','bow','crossbow','quiver','mace','hammer','staff','wand','spear'];
+  rig.root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh))return;
+    if(keep&&v1288IsDescendantOf(object,keep)){object.visible=!equipmentStowed;return;}
+    const tag=v1287NormalizedName(`${object.name} ${Array.isArray(object.material)?object.material.map(m=>m?.name).join(' '):object.material?.name||''}`);
+    if(weaponTokens.some(token=>tag.includes(token)))object.visible=false;
+  });
+  if(keep)keep.visible=!equipmentStowed;
+}
+const v1288CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1288CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1288_BUILD,gregoriusAppearance:v1287HopliteGear.ready?'authentic-hoplite':'skeletal-fallback'};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1288=V1288_BUILD;
+  window.ODYSSEE_GREEK_ASSET_RESEARCH=V1288_GREEK_ASSET_RESEARCH;
+  window.ODYSSEE_ENFORCE_SINGLE_WEAPON=v1288EnforceSingleWeapon;
+}
+/* =================== FIN ODYSSÉE v1.28.8 =================== */
+
 
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.28.7-20260806-1018-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.28.8-20260806-1142-NC -->
