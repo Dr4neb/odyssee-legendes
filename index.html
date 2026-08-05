@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.28.4 | 2026-08-06T09:33+11:00 | Xiphos vertical orienté vers l’avant -->
-<meta name="build-id" content="odyssee-v1.28.4-xiphos-vertical-forward-20260806-0933-nc">
+<!-- VERIFIED BUILD: Odyssée v1.28.5 | 2026-08-06T09:44+11:00 | Xiphos affiné et bras stabilisés -->
+<meta name="build-id" content="odyssee-v1.28.5-thin-xiphos-stable-arms-20260806-0944-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.28.4 — Xiphos vertical orienté vers l’avant</title>
+<title>Odyssée — v1.28.5 — Xiphos affiné et bras stabilisés</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -6782,7 +6782,233 @@ if(typeof window!=='undefined'){
   window.ODYSSEE_XIPHOS_COLLISION=()=>greekGear?.userData?.v1282SwordCollision||null;
 }
 /* =================== FIN ODYSSÉE v1.28.4 =================== */
+
+
+/* ===================== ODYSSÉE v1.28.5 — XIPHOS AFFINÉ ET BRAS STABILISÉS ===================== */
+const V1285_BUILD='v1.28.5 — thin-xiphos-stable-arms-20260806-0944-NC';
+const V1285_ANIMATION_REFERENCE={
+  name:'KayKit Character Animations 1.2',
+  author:'Kay Lousberg',
+  license:'CC0',
+  formats:['FBX','glTF'],
+  source:'https://opengameart.org/content/kaykit-character-animations',
+  clipsUsedAsReference:['Attack (1h)','Heavy Attack','Block','Interact'],
+  integration:'Courbes de poses adaptées au rig procédural de Gregorius; aucun squelette externe chargé au runtime.'
+};
+
+const V1285_BLADE_LENGTH=.845;
+const V1285_BLADE_COLLISION_RADIUS=.016;
+const V1285_FORWARD_DIR=new THREE.Vector3(0,0,-1);
+const V1285_HAND_IDLE=new THREE.Vector3(.370,-.078,.030);
+const V1285_HAND_RAISED=new THREE.Vector3(.355,.115,.015);
+const V1285_HAND_STRIKE=new THREE.Vector3(.350,.045,-.365);
+
+function v1285DisposeObject(object){
+  object?.traverse?.(node=>{
+    if(node.geometry)node.geometry.dispose?.();
+    if(node.material){
+      const materials=Array.isArray(node.material)?node.material:[node.material];
+      materials.forEach(material=>material?.dispose?.());
+    }
+  });
+}
+
+// Reconstruction fine : l'épaisseur réelle de la lame passe à environ 6 mm dans l'échelle du rig.
+function v1285RebuildThinXiphos(){
+  if(!greekGear)return false;
+  const pivot=greekGear.userData?.swordPivot;
+  if(!pivot)return false;
+  if(pivot.userData.v1285ThinXiphos)return true;
+
+  while(pivot.children.length){
+    const child=pivot.children[pivot.children.length-1];
+    pivot.remove(child);
+    v1285DisposeObject(child);
+  }
+
+  const bronze=new THREE.MeshStandardMaterial({color:0x9a7445,roughness:.42,metalness:.72});
+  const bronzeDark=new THREE.MeshStandardMaterial({color:0x5f4428,roughness:.58,metalness:.55});
+  const leather=new THREE.MeshStandardMaterial({color:0x35251d,roughness:.94});
+  const steel=new THREE.MeshStandardMaterial({color:0xc8cdd2,roughness:.22,metalness:.94});
+  const ridgeMat=new THREE.MeshStandardMaterial({color:0xe5e8ea,roughness:.17,metalness:.97});
+  const root=new THREE.Group();
+  root.name='V1285ThinXiphos';
+  pivot.add(root);
+
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.024,.028,.202,14),leather);
+  grip.position.y=-.105;grip.castShadow=true;root.add(grip);
+  for(const y of [-.173,-.105,-.037]){
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.028,.0037,7,14),bronzeDark);
+    ring.rotation.x=Math.PI/2;ring.position.y=y;root.add(ring);
+  }
+  const pommel=new THREE.Mesh(new THREE.SphereGeometry(.039,14,10),bronze);
+  pommel.scale.set(1.12,.76,.68);pommel.position.y=-.220;pommel.castShadow=true;root.add(pommel);
+
+  const guardCore=new THREE.Mesh(new THREE.BoxGeometry(.188,.031,.027),bronze);
+  guardCore.position.y=.014;guardCore.castShadow=true;root.add(guardCore);
+  for(const side of [-1,1]){
+    const quillon=new THREE.Mesh(new THREE.CapsuleGeometry(.010,.064,5,9),bronze);
+    quillon.position.set(side*.088,.023,0);quillon.rotation.z=side*.63;quillon.castShadow=true;root.add(quillon);
+  }
+  const shoulder=new THREE.Mesh(new THREE.CylinderGeometry(.043,.051,.043,14),bronzeDark);
+  shoulder.position.y=.059;shoulder.castShadow=true;root.add(shoulder);
+
+  const shape=new THREE.Shape();
+  shape.moveTo(-.021,0);
+  shape.bezierCurveTo(-.037,.075,-.050,.185,-.046,.298);
+  shape.bezierCurveTo(-.041,.416,-.023,.548,0,.655);
+  shape.bezierCurveTo(.023,.548,.041,.416,.046,.298);
+  shape.bezierCurveTo(.050,.185,.037,.075,.021,0);
+  shape.closePath();
+  const bladeGeom=new THREE.ExtrudeGeometry(shape,{
+    depth:.006,
+    bevelEnabled:true,
+    bevelSegments:1,
+    bevelSize:.0011,
+    bevelThickness:.0009,
+    steps:1
+  });
+  bladeGeom.translate(0,.074,-.003);
+  const blade=new THREE.Mesh(bladeGeom,steel);
+  blade.name='V1234XiphosBlade';
+  blade.userData={collisionRadius:V1285_BLADE_COLLISION_RADIUS,bladeLength:V1285_BLADE_LENGTH};
+  blade.castShadow=true;root.add(blade);
+
+  const ridge=new THREE.Mesh(new THREE.BoxGeometry(.006,.515,.0075),ridgeMat);
+  ridge.position.set(0,.354,.0003);ridge.castShadow=true;root.add(ridge);
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(.0085,.080,10),steel);
+  tip.position.y=.769;tip.castShadow=true;root.add(tip);
+
+  root.scale.setScalar(1.025);
+  pivot.userData.v1234Clean=true;
+  pivot.userData.v1285ThinXiphos=true;
+  return true;
+}
+
+// On remplace la reconstruction précédente afin que toute recréation future conserve la lame fine.
+v1234RebuildXiphos=v1285RebuildThinXiphos;
+
+function v1285SmoothStep(t){
+  t=THREE.MathUtils.clamp(t,0,1);
+  return t*t*(3-2*t);
+}
+function v1285TargetPose(){
+  if(attackTimer<=0)return {hand:V1285_HAND_IDLE.clone(),bend:.70,active:false,phase:'idle',t:0};
+  const p=THREE.MathUtils.clamp(1-attackTimer/attackDuration,0,1);
+  if(p<.28){
+    const t=v1285SmoothStep(p/.28);
+    return {hand:V1285_HAND_IDLE.clone().lerp(V1285_HAND_RAISED,t),bend:THREE.MathUtils.lerp(.70,1.02,t),active:true,phase:'raise',t};
+  }
+  if(p<.68){
+    const t=v1285SmoothStep((p-.28)/.40);
+    return {hand:V1285_HAND_RAISED.clone().lerp(V1285_HAND_STRIKE,t),bend:THREE.MathUtils.lerp(1.02,.30,t),active:true,phase:'strike',t};
+  }
+  const t=v1285SmoothStep((p-.68)/.32);
+  return {hand:V1285_HAND_STRIKE.clone().lerp(V1285_HAND_IDLE,t),bend:THREE.MathUtils.lerp(.30,.70,t),active:true,phase:'recover',t};
+}
+
+function v1285ResolveSelfCollision(hand,direction){
+  const safeHand=hand.clone(),dir=direction.clone().normalize();
+  let collided=false,collider='';
+  for(let pass=0;pass<4;pass++){
+    const a=safeHand.clone().addScaledVector(dir,.095);
+    const b=safeHand.clone().addScaledVector(dir,V1285_BLADE_LENGTH+.095);
+    let correction=0;
+    for(const body of V1282_PLAYER_BODY_SPHERES){
+      const distance=v1282SegmentDistance(body.center,a,b);
+      const clearance=body.radius+V1285_BLADE_COLLISION_RADIUS;
+      if(distance<clearance){correction=Math.max(correction,clearance-distance+.012);collided=true;collider=body.name;}
+    }
+    if(correction<=0)break;
+    safeHand.x+=correction;
+  }
+  return {hand:safeHand,direction:dir,collided,collider};
+}
+
+// Pose filtrée : les anciens oscillateurs de marche ne pilotent plus le bras armé.
+v1282ApplyArticulatedSwordPose=function(){
+  if(!greekGear||!v1285RebuildThinXiphos())return;
+  const g=greekGear.userData,arm=v1282CreateSwordArm(),pivot=g.swordPivot;
+  if(!arm||!pivot)return;
+  if(g.rightArm?.shoulder)g.rightArm.shoulder.visible=false;
+  arm.sleeve.visible=arm.upper.visible=arm.elbowJoint.visible=arm.fore.visible=arm.bracer.visible=arm.hand.visible=true;
+
+  const target=v1285TargetPose();
+  const now=performance.now();
+  let filter=g.v1285ArmFilter;
+  if(!filter){
+    filter=g.v1285ArmFilter={hand:target.hand.clone(),bend:target.bend,lastFrame:now,lastIntegratedFrame:-1};
+  }
+  const frame=Math.floor(now/4);
+  if(filter.lastIntegratedFrame!==frame){
+    const dt=THREE.MathUtils.clamp((now-filter.lastFrame)/1000,1/240,.05);
+    filter.lastFrame=now;filter.lastIntegratedFrame=frame;
+    const response=target.active?28:20;
+    const alpha=1-Math.exp(-response*dt);
+    filter.hand.lerp(target.hand,alpha);
+    filter.bend=THREE.MathUtils.lerp(filter.bend,target.bend,alpha);
+  }
+
+  const direction=V1285_FORWARD_DIR.clone();
+  const resolved=v1285ResolveSelfCollision(filter.hand,direction);
+  const hand=resolved.hand;
+  solveFarmerArm(arm,hand,filter.bend);
+  const elbow=arm.elbowJoint.position.clone();
+  orientSegment(arm.bracer,elbow.clone().lerp(hand,.48),elbow.clone().lerp(hand,.82));
+
+  // Le poignet et la lame ne reçoivent aucune oscillation autonome.
+  arm.hand.rotation.set(0,0,0);
+  pivot.visible=!equipmentStowed;
+  if(pivot.visible){
+    pivot.quaternion.copy(v1282SwordQuaternion(direction));
+    pivot.position.copy(direction).multiplyScalar(.095);
+  }
+
+  const bladeRootLocal=hand.clone().addScaledVector(direction,.125);
+  const bladeTipLocal=hand.clone().addScaledVector(direction,V1285_BLADE_LENGTH+.095);
+  g.torsoPivot.updateMatrixWorld(true);
+  g.v1282SwordCollision={
+    localRoot:bladeRootLocal.clone(),localTip:bladeTipLocal.clone(),
+    worldRoot:bladeRootLocal.clone().applyMatrix4(g.torsoPivot.matrixWorld),
+    worldTip:bladeTipLocal.clone().applyMatrix4(g.torsoPivot.matrixWorld),
+    radius:V1285_BLADE_COLLISION_RADIUS,selfCollision:resolved.collided,selfCollider:resolved.collider
+  };
+
+  // Stabilisation du haut du corps : accompagnement minimal pendant la poussée, aucun roulis parasite.
+  if(g.torsoPivot){
+    g.torsoPivot.rotation.y=0;
+    g.torsoPivot.rotation.z*=.08;
+    if(target.phase==='strike')g.torsoPivot.rotation.x+=Math.sin(Math.PI*target.t)*.022;
+  }
+};
+
+// Force une reconstruction immédiate dès que Gregorius existe, puis réessaie après le chargement différé.
+function v1285EnsureUpgrade(){
+  if(!greekGear)return false;
+  const pivot=greekGear.userData?.swordPivot;
+  if(!pivot)return false;
+  if(pivot.userData.v1285ThinXiphos)return true;
+  pivot.userData.v1234Clean=false;
+  return v1285RebuildThinXiphos();
+}
+setTimeout(v1285EnsureUpgrade,180);
+setTimeout(v1285EnsureUpgrade,900);
+
+const v1285CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1285CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1285_BUILD,animationReference:V1285_ANIMATION_REFERENCE.name};
+  return save;
+};
+
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1285=V1285_BUILD;
+  window.ODYSSEE_ANIMATION_REFERENCE_V1285=V1285_ANIMATION_REFERENCE;
+  window.ODYSSEE_REBUILD_THIN_XIPHOS=v1285EnsureUpgrade;
+}
+/* =================== FIN ODYSSÉE v1.28.5 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.28.4-20260806-0933-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.28.5-20260806-0944-NC -->
