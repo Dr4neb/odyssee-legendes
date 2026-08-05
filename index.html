@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.26.1 | 2026-08-06T06:21+11:00 | Menu pause, récoltes ralenties et cibles réalistes -->
-<meta name="build-id" content="odyssee-v1.26.1-pause-crops-targets-20260806-0621-nc">
+<!-- VERIFIED BUILD: Odyssée v1.27.0 | 2026-08-06T06:42+11:00 | Métiers et progression des PNJ -->
+<meta name="build-id" content="odyssee-v1.27.0-professions-progression-20260806-0642-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.26.1 — Menu pause, Déméter et cibles réalistes</title>
+<title>Odyssée — v1.27.0 — Métiers et progression des PNJ</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -176,6 +176,21 @@ html:fullscreen body,html:-webkit-full-screen body{width:100vw!important;height:
 /* ===================== ODYSSÉE v1.21.0 — BÉNÉDICTION ===================== */
 body.v121-demeter-blessing #vitals{box-shadow:0 0 0 1px rgba(226,205,128,.32),0 0 22px rgba(205,180,92,.18)}
 body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
+
+/* ===================== ODYSSÉE v1.27.0 — MÉTIERS ===================== */
+#professionBtn{position:fixed;z-index:5752;right:calc(140px + env(safe-area-inset-right));top:calc(18px + env(safe-area-inset-top));display:none;place-items:center;width:62px;height:45px;border:1px solid rgba(215,189,134,.46);border-left:4px solid #6b5130;border-radius:8px;background:linear-gradient(145deg,rgba(24,31,32,.96),rgba(8,12,13,.94));color:#ead8b2;box-shadow:0 9px 26px rgba(0,0,0,.42);font:900 8px/1 system-ui;letter-spacing:.07em;text-transform:uppercase;touch-action:manipulation}
+#professionBtn.visible{display:grid}#professionBtn:active{transform:scale(.96)}#professionBtn .professionIcon{display:block;margin-bottom:2px;font-size:18px;line-height:1}
+#professionPanel{position:fixed;inset:0;z-index:6820;display:none;align-items:center;justify-content:center;padding:calc(18px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));background:rgba(3,6,7,.84);backdrop-filter:blur(10px)}
+#professionPanel.open{display:flex;animation:v127ProfessionIn .2s ease-out}@keyframes v127ProfessionIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+.professionPanelCard{position:relative;width:min(94vw,720px);max-height:88vh;overflow:hidden;border:1px solid rgba(215,189,134,.42);border-left:6px solid #806039;background:linear-gradient(145deg,#151c1e,#090d0f 78%);box-shadow:0 30px 80px rgba(0,0,0,.72)}
+.professionPanelHead{padding:18px 56px 13px 18px;border-bottom:1px solid rgba(215,189,134,.15)}.professionPanelKicker{color:#a88d59;font:900 8px/1 system-ui;letter-spacing:.18em;text-transform:uppercase}.professionPanelTitle{margin-top:5px;color:#f0dfbd;font:950 21px/1 system-ui;letter-spacing:.05em}.professionPanelSub{margin-top:7px;color:#889391;font:700 9px/1.45 system-ui}
+#professionClose{position:absolute;right:12px;top:12px;width:34px;height:34px;border:1px solid rgba(215,189,134,.33);border-radius:50%;background:#0b1112;color:#e8d6af;font:300 26px/1 system-ui}
+#professionList{max-height:calc(88vh - 100px);overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;-webkit-overflow-scrolling:touch}
+.professionCard{padding:13px;border:1px solid rgba(215,189,134,.16);border-radius:8px;background:linear-gradient(145deg,rgba(25,33,34,.92),rgba(12,18,19,.90));box-shadow:0 8px 22px rgba(0,0,0,.22)}.professionCardTop{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.professionIdentity{display:flex;gap:9px;align-items:center}.professionAvatar{display:grid;place-items:center;width:36px;height:36px;border:1px solid rgba(215,189,134,.25);border-radius:50%;background:#101718;color:#d6bd89;font-size:18px}.professionNpc{color:#eadabb;font:950 14px/1.1 system-ui}.professionRole{margin-top:3px;color:#9c8c69;font:900 7px/1 system-ui;letter-spacing:.1em;text-transform:uppercase}.professionLevel{flex:none;padding:6px 8px;border:1px solid rgba(215,189,134,.22);border-radius:6px;background:rgba(0,0,0,.22);color:#f1dfb8;font:950 10px/1 system-ui}.professionBuilding{margin-top:10px;color:#8f9a96;font:750 8px/1.35 system-ui}.professionStatus{margin-top:5px;color:#c2cbc7;font:800 8px/1.35 system-ui}.professionXp{margin-top:10px;display:flex;justify-content:space-between;color:#a9956d;font:850 8px/1 system-ui}.professionBar{height:5px;margin-top:5px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}.professionBar>i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#72552f,#c19b5e);transition:width .28s}.professionBonus{margin-top:10px;padding-top:9px;border-top:1px solid rgba(215,189,134,.11);color:#b8c1bd;font:750 8px/1.4 system-ui}.professionBonus strong{color:#d7c08f}
+#professionToast{position:fixed;z-index:6920;left:50%;top:calc(68px + env(safe-area-inset-top));transform:translate(-50%,-10px);opacity:0;pointer-events:none;min-width:min(82vw,360px);padding:10px 14px;border:1px solid rgba(215,189,134,.42);border-left:5px solid #806039;border-radius:6px;background:rgba(9,14,15,.96);color:#e8d8b7;box-shadow:0 12px 32px rgba(0,0,0,.5);font:850 9px/1.35 system-ui;text-align:center;transition:.22s}#professionToast.visible{opacity:1;transform:translate(-50%,0)}
+@media(max-width:620px){#professionList{grid-template-columns:1fr}.professionPanelTitle{font-size:18px}}
+@media(max-height:520px){#professionBtn{top:calc(8px + env(safe-area-inset-top));right:calc(128px + env(safe-area-inset-right));width:56px;height:39px}#professionList{max-height:calc(88vh - 84px)}.professionPanelHead{padding-top:12px}.professionCard{padding:10px}}
+
 </style>
 <meta name="runtime-fix" content="v1192-native-fullscreen-ios-safari">
 <style>
@@ -256,7 +271,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.26.1 — STABILISATION DES SYSTÈMES</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.27.0 — MÉTIERS ET PROGRESSION</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -286,6 +301,17 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 </div>
 
 <button id="questJournalBtn" type="button" aria-label="Ouvrir le journal de quêtes" aria-expanded="false"><span><span class="questIcon">▤</span>Journal</span></button>
+
+<button id="professionBtn" type="button" aria-label="Ouvrir les métiers d’Astérion" aria-expanded="false"><span><span class="professionIcon">⚒</span>Métiers</span></button>
+<div id="professionPanel" aria-hidden="true">
+  <div class="professionPanelCard" role="dialog" aria-modal="true" aria-label="Métiers d’Astérion">
+    <button id="professionClose" type="button" aria-label="Fermer les métiers">×</button>
+    <div class="professionPanelHead"><div class="professionPanelKicker">Organisation de la cité</div><div class="professionPanelTitle">MÉTIERS D’ASTÉRION</div><div class="professionPanelSub">Chaque activité réelle fait progresser son responsable et améliore progressivement la ville.</div></div>
+    <div id="professionList"></div>
+  </div>
+</div>
+<div id="professionToast" aria-live="polite"></div>
+
 <div id="questTracker" aria-live="polite"><div class="questTrackerKicker">Objectif suivi</div><div id="questTrackerTitle" class="questTrackerTitle">Le Premier Départ</div><div id="questTrackerObjective" class="questTrackerObjective">Consulter les habitants d’Astérion.</div><div class="questTrackerProgress"><i id="questTrackerFill" style="width:0%"></i></div></div>
 <div id="controls">
   <div id="stick"><div id="knob"></div></div>
@@ -346,7 +372,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <button id="bellActionBtn" type="button" aria-label="Faire sonner la cloche et rassembler les troupes"><span><span class="bellIcon">◕</span>Sonner<br>la cloche</span></button>
 <div id="storyOverlay" aria-hidden="true"><div id="storyCard" role="dialog" aria-modal="true" aria-label="Histoire de la cité"><button id="storyClose" type="button" aria-label="Fermer">×</button><div id="storyKicker">Bienvenue à Astérion</div><h2>La cité de Gregorius</h2><p>Fondée en <strong>1186 av. J.-C.</strong> par des marins revenus des guerres de l’Égée, Astérion s’est élevée autour de son port, de sa forge et de ses terres nourricières.</p><p>La cité est dirigée par <strong>Gregorius</strong>, chef militaire et protecteur de ses habitants. Sous son autorité, les remparts s’élèvent, les patrouilles veillent et les ateliers préparent les prochaines expéditions.</p><p>Les habitants honorent principalement <strong>Déméter</strong>, déesse des moissons, de la terre cultivée et du retour des saisons. Les marins d’Astérion invoquent également <strong>Poséidon</strong>, maître des mers et des tempêtes. Son futur sanctuaire doit encore être élevé près du port.</p><div id="storyFacts"><div class="storyFact"><b>Fondation</b><span>1186 av. J.-C.</span></div><div class="storyFact"><b>Chef</b><span>Gregorius</span></div><div class="storyFact"><b>Divinités</b><span>Déméter · Poséidon</span></div><div class="storyFact"><b>Terre</b><span>Île d’Astérion</span></div></div></div></div>
 <div id="npcBubble"><strong>Démos — fermier</strong><span id="npcBubbleText">Que les dieux protègent ta route, guerrier.</span></div>
-<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.26.1</div>
+<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.27.0</div>
 
 <div id="forgeMenu" aria-hidden="true">
   <div class="forgeKicker">Atelier de forge</div>
@@ -5822,9 +5848,9 @@ if(typeof window!=='undefined'){
 
 
 /* ===================== ODYSSÉE v1.24.0 — FONDATION DE SAUVEGARDE ===================== */
-const V124_BUILD='v1.26.1 — pause-crops-targets-20260806-0621-NC';
+const V124_BUILD='v1.27.0 — professions-progression-20260806-0642-NC';
 const V124_SAVE_KEY='odyssee.asterion.save';
-const V124_SAVE_SCHEMA=3;
+const V124_SAVE_SCHEMA=4;
 const V124_AUTOSAVE_SECONDS=15;
 const v124NewGameBtn=document.getElementById('newGameBtn');
 const v124ResetSaveBtn=document.getElementById('resetSaveBtn');
@@ -5841,8 +5867,8 @@ function v124SanitizeVector(raw,fallback={x:0,y:0,z:0}){return {x:v124ClampNumbe
 function v124MigrateSave(raw){
   if(!raw||typeof raw!=='object')return null;
   if(raw.schema===V124_SAVE_SCHEMA)return raw;
-  if(raw.schema===1||raw.schema===2){
-    return {...raw,schema:V124_SAVE_SCHEMA,meta:{...(raw.meta||{}),migratedFrom:raw.schema},quests:raw.quests||null,resources:raw.resources||null};
+  if(raw.schema===1||raw.schema===2||raw.schema===3){
+    return {...raw,schema:V124_SAVE_SCHEMA,meta:{...(raw.meta||{}),migratedFrom:raw.schema},quests:raw.quests||null,resources:raw.resources||null,professions:raw.professions||null};
   }
   return null;
 }
@@ -5990,7 +6016,7 @@ addEventListener('beforeunload',()=>v124WriteSave('SORTIE'));
 
 
 /* ===================== ODYSSÉE v1.25.0 — JOURNAL DE QUÊTES ===================== */
-const V125_BUILD='v1.26.1 — pause-crops-targets-20260806-0621-NC';
+const V125_BUILD='v1.27.0 — professions-progression-20260806-0642-NC';
 const V125_QUEST_DEFS=[
   {id:'first_departure',type:'main',title:'Le Premier Départ',giver:'Conseil d’Astérion',description:'Avant de prendre la mer, Gregorius doit réunir les responsables de la cité et confirmer que les hommes répondront à l’appel.',reward:'10 nourriture • 8 bois • 8 pierre • 4 bronze • 30 drachmes.',objectives:[
     {id:'meet_myron',label:'Consulter Myron à la forge',target:1},
@@ -6149,7 +6175,7 @@ if(typeof window!=='undefined'){
 
 
 /* ===================== ODYSSÉE v1.26.1 — STABILISATION ===================== */
-const V1261_BUILD='v1.26.1 — pause-crops-targets-20260806-0621-NC';
+const V1261_BUILD='v1.27.0 — professions-progression-20260806-0642-NC';
 const V1261_XIPHOS_QUAT=(()=>{const o=new THREE.Object3D();o.rotateY(THREE.MathUtils.degToRad(75));o.rotateX(THREE.MathUtils.degToRad(90));return o.quaternion.clone();})();
 const V1261_TARGET_TEXTURE='data:image/png;base64,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';
 const v1261PauseBtn=document.getElementById('pauseMenuBtn'),v1261PauseOverlay=document.getElementById('pauseMenuOverlay'),v1261PauseClose=document.getElementById('pauseMenuClose'),v1261SaveBtn=document.getElementById('pauseSaveBtn'),v1261QuitBtn=document.getElementById('pauseQuitBtn');
@@ -6222,6 +6248,66 @@ if(typeof window!=='undefined'){window.ODYSSEE_BUILD_V1261=V1261_BUILD;window.OD
 /* =================== FIN ODYSSÉE v1.26.1 =================== */
 
 
+
+/* ===================== ODYSSÉE v1.27.0 — MÉTIERS ET PROGRESSION ===================== */
+const V127_BUILD='v1.27.0 — professions-progression-20260806-0642-NC';
+const V127_LEVEL_THRESHOLDS=[0,50,140,270,440];
+const V127_MAX_LEVEL=5;
+const V127_PROFESSION_DEFS={
+  myron:{npc:'Myron',role:'Forgeron',building:'Forge de Myron',icon:'⚒',bonus:l=>`Dégâts du xiphos : +${Math.max(0,l-1)}. Les futurs travaux de forge coûteront moins de bronze.`,reward:{bronze:2}},
+  demos:{npc:'Démos',role:'Cultivateur',building:'Grenier et champs de Démos',icon:'♨',bonus:l=>`Croissance des cultures : +${(l-1)*5} %. Rendement : +${Math.floor((l-1)/2)} nourriture par récolte.`,reward:{food:4}},
+  nikon:{npc:'Níkon',role:'Maître d’armes',building:'Camp d’entraînement',icon:'⚔',bonus:l=>`Réparation des cibles : ${(Math.max(3.6,5-(l-1)*.35)).toFixed(1)} s. Les futurs entraînements seront plus efficaces.`,reward:{drachmes:10}},
+  theron:{npc:'Théron',role:'Maître d’œuvre',building:'Atelier des bâtisseurs',icon:'▰',bonus:l=>`Vitesse de construction de Théron : +${(l-1)*7} %.`,reward:{wood:4,stone:6}},
+  guards:{npc:'Garnison',role:'Patrouilleurs',building:'Tours de garde',icon:'◈',bonus:l=>`Vitesse de patrouille et de rassemblement : +${(l-1)*4} %.`,reward:{drachmes:5}}
+};
+const v127ProfessionBtn=document.getElementById('professionBtn'),v127ProfessionPanel=document.getElementById('professionPanel'),v127ProfessionClose=document.getElementById('professionClose'),v127ProfessionList=document.getElementById('professionList'),v127ProfessionToast=document.getElementById('professionToast');
+let v127ProfessionState=null,v127PanelOpen=false,v127ToastTimer=0,v127MyronWorkClock=0,v127GuardWorkClock=0,v127ForgeXpCooldown=0,v127FrameStamp=performance.now();
+function v127DefaultProfessions(){return {version:1,entries:Object.fromEntries(Object.keys(V127_PROFESSION_DEFS).map(id=>[id,{xp:0,level:1,totalActions:0}])),totalXp:0};}
+function v127LevelFromXp(xp){let level=1;for(let i=1;i<V127_LEVEL_THRESHOLDS.length;i++)if(xp>=V127_LEVEL_THRESHOLDS[i])level=i+1;return Math.min(V127_MAX_LEVEL,level);}
+function v127NormalizeProfessions(raw){const out=v127DefaultProfessions();if(!raw||typeof raw!=='object')return out;out.totalXp=Math.max(0,Math.floor(Number(raw.totalXp)||0));for(const id of Object.keys(V127_PROFESSION_DEFS)){const r=raw.entries?.[id]||raw[id]||{};const xp=Math.max(0,Math.floor(Number(r.xp)||0));out.entries[id]={xp,level:v127LevelFromXp(xp),totalActions:Math.max(0,Math.floor(Number(r.totalActions)||0))};}return out;}
+function v127EnsureProfessions(){if(!v127ProfessionState)v127ProfessionState=v127DefaultProfessions();return v127ProfessionState;}
+function v127CaptureProfessions(){return JSON.parse(JSON.stringify(v127EnsureProfessions()));}
+function v127ApplyProfessions(raw){v127ProfessionState=v127NormalizeProfessions(raw);v127RenderProfessions();}
+function v127ResetProfessions(silent=false){v127ProfessionState=v127DefaultProfessions();v127MyronWorkClock=0;v127GuardWorkClock=0;v127ForgeXpCooldown=0;v127RenderProfessions();if(!silent)v127ShowProfessionToast('Les métiers d’Astérion repartent du niveau 1.');}
+function v127ProfessionEntry(id){return v127EnsureProfessions().entries[id];}
+function v127ProfessionLevel(id){return v127ProfessionEntry(id)?.level||1;}
+function v127ShowProfessionToast(text){if(!v127ProfessionToast)return;clearTimeout(v127ToastTimer);v127ProfessionToast.textContent=text;v127ProfessionToast.classList.add('visible');v127ToastTimer=setTimeout(()=>v127ProfessionToast.classList.remove('visible'),2400);}
+function v127RewardLevel(id,levels=1){const reward=V127_PROFESSION_DEFS[id]?.reward;if(!reward)return;const scaled={};for(const [key,value] of Object.entries(reward))scaled[key]=value*levels;v126AddResources?.(scaled,`PROGRESSION — ${V127_PROFESSION_DEFS[id].npc}`);}
+function v127AddProfessionXp(id,amount,reason='Activité',silent=false){const def=V127_PROFESSION_DEFS[id],state=v127EnsureProfessions(),entry=state.entries[id];if(!def||!entry)return false;amount=Math.max(0,Math.floor(Number(amount)||0));if(!amount)return false;const oldLevel=entry.level;entry.xp=Math.min(99999,entry.xp+amount);entry.level=v127LevelFromXp(entry.xp);entry.totalActions++;state.totalXp+=amount;v124MarkDirty?.();if(entry.level>oldLevel){v127RewardLevel(id,entry.level-oldLevel);v127ShowProfessionToast(`${def.npc} atteint le niveau ${entry.level} — ${def.role}`);setTimeout(()=>v124WriteSave?.('ÉVÉNEMENT'),180);}else if(!silent)v127ShowProfessionToast(`${def.npc} +${amount} XP — ${reason}`);v127RenderProfessions();return true;}
+function v127ProfessionStatus(id){if(id==='myron')return 'À la forge, préparation et entretien du xiphos.';if(id==='demos')return farmerNPC&&Math.hypot(farmerNPC.position.x-8.45,farmerNPC.position.z-5.65)<5?'Travaille dans le domaine agricole.':'Se déplace vers les cultures.';if(id==='nikon')return trainingNPC&&Math.hypot(trainingNPC.position.x-8.45,trainingNPC.position.z+5.65)<5?'Supervise le camp d’entraînement.':'Attend à l’extérieur du camp.';if(id==='theron')return builderNPC?.userData?.v121BuilderState==='build'?'Construit une section de rempart.':'Inspecte les chantiers de l’enceinte.';if(id==='guards')return patrolFormation?.mode==='rally'?'Rassemblement à la porte principale.':patrolFormation?.mode==='follow'?'Escortent Gregorius.':'Patrouillent dans Astérion.';return 'En activité.';}
+function v127ProgressData(entry){const level=entry.level;if(level>=V127_MAX_LEVEL)return {current:entry.xp,next:entry.xp,pct:100,label:'Niveau maximal'};const start=V127_LEVEL_THRESHOLDS[level-1],next=V127_LEVEL_THRESHOLDS[level];return {current:entry.xp-start,next:next-start,pct:THREE.MathUtils.clamp((entry.xp-start)/(next-start)*100,0,100),label:`${entry.xp-start} / ${next-start} XP`};}
+function v127RenderProfessions(){if(!v127ProfessionList)return;const state=v127EnsureProfessions();v127ProfessionList.innerHTML=Object.entries(V127_PROFESSION_DEFS).map(([id,def])=>{const entry=state.entries[id],p=v127ProgressData(entry);return `<article class="professionCard"><div class="professionCardTop"><div class="professionIdentity"><div class="professionAvatar">${def.icon}</div><div><div class="professionNpc">${def.npc}</div><div class="professionRole">${def.role}</div></div></div><div class="professionLevel">Niv. ${entry.level}</div></div><div class="professionBuilding">Bâtiment : ${def.building}</div><div class="professionStatus">${v127ProfessionStatus(id)}</div><div class="professionXp"><span>Expérience</span><span>${p.label}</span></div><div class="professionBar"><i style="width:${p.pct}%"></i></div><div class="professionBonus"><strong>Avantage actuel :</strong> ${def.bonus(entry.level)}</div></article>`;}).join('');}
+function v127SetProfessionPanel(open){v127PanelOpen=!!open;v127ProfessionPanel?.classList.toggle('open',v127PanelOpen);v127ProfessionPanel?.setAttribute('aria-hidden',String(!v127PanelOpen));v127ProfessionBtn?.setAttribute('aria-expanded',String(v127PanelOpen));if(v127PanelOpen){joy.x=joy.y=0;joy.active=false;keys.clear();setBuildHeld(false);blocking=false;setPocketMenu?.(false);v125CloseJournal?.();v1261SetPause?.(false);v127RenderProfessions();}}
+v127ProfessionBtn?.addEventListener('pointerdown',e=>{e.preventDefault();v127SetProfessionPanel(!v127PanelOpen);},{passive:false});
+v127ProfessionClose?.addEventListener('pointerdown',e=>{e.preventDefault();v127SetProfessionPanel(false);},{passive:false});
+v127ProfessionPanel?.addEventListener('pointerdown',e=>{if(e.target===v127ProfessionPanel)v127SetProfessionPanel(false);},{passive:true});
+
+// Bonus de Myron : le xiphos gagne un point de dégâts par niveau au-delà du premier.
+const v127DamageBase=v117Damage;v117Damage=function(target,damage=15,kind='sword'){if(kind==='sword')damage+=Math.max(0,v127ProfessionLevel('myron')-1);return v127DamageBase(target,damage,kind);};
+// Níkon progresse lorsqu'une cible est détruite et réduit son temps de réparation.
+const v127DestroyBase=v117Destroy;v117Destroy=function(target){const wasDestroyed=!!target?.userData?.destroyed;v127DestroyBase(target);if(!wasDestroyed&&target?.userData?.destroyed){target.userData.respawnTimer=Math.max(3.6,5-(v127ProfessionLevel('nikon')-1)*.35);v127AddProfessionXp('nikon',18,'Cible détruite');}};
+// Démos progresse lors des récoltes, avec croissance et rendement améliorés.
+const v127CropBase=v119UpdateCrops;v119UpdateCrops=function(dt){const before=v126EnsureResources().lifetimeEarned.food||0,growth=1+(v127ProfessionLevel('demos')-1)*.05;v127CropBase(dt*growth);const gained=Math.max(0,(v126EnsureResources().lifetimeEarned.food||0)-before);if(gained>0){const harvests=Math.max(1,Math.round(gained/2)),extra=harvests*Math.floor((v127ProfessionLevel('demos')-1)/2);if(extra)v126AddResources({food:extra},'RENDEMENT DE DÉMOS',{silent:true});v127AddProfessionXp('demos',harvests*14,'Récolte achevée');}};
+// Théron progresse à chaque section qu'il termine et travaille plus vite à haut niveau.
+const v127BuilderCompleteBase=v121BuilderComplete;v121BuilderComplete=function(section){const wasComplete=!!section?.complete;v127BuilderCompleteBase(section);if(!wasComplete&&section?.complete)v127AddProfessionXp('theron',24,'Rempart terminé');};
+const v127BuilderUpdateBase=updateBuilderNPC;updateBuilderNPC=function(dt){return v127BuilderUpdateBase(dt*(1+(v127ProfessionLevel('theron')-1)*.07));};
+// Les gardes progressent lors des rassemblements et accélèrent leurs déplacements.
+const v127BellBase=v120RingNearestBell;v120RingNearestBell=function(){const before=v120BellCooldown;v127BellBase();if(before<=0&&v120BellCooldown>0)v127AddProfessionXp('guards',10,'Rassemblement réussi');};
+const v127PatrolUpdateBase=updatePatrolGuards;updatePatrolGuards=function(dt){return v127PatrolUpdateBase(dt*(1+(v127ProfessionLevel('guards')-1)*.04));};
+// Myron gagne une petite expérience de métier lorsqu'il travaille et lorsque sa forge est consultée, sans permettre le spam.
+const v127ForgeBase=openForgeMenu;openForgeMenu=function(){v127ForgeBase();if(v127ForgeXpCooldown<=0){v127ForgeXpCooldown=45;v127AddProfessionXp('myron',6,'Conseil à la forge');}};
+
+// Sauvegarde schéma 4 : progression des métiers, compatible avec les anciennes sauvegardes.
+const v127CaptureSaveBase=v124CaptureSave;v124CaptureSave=function(){const save=v127CaptureSaveBase();save.professions=v127CaptureProfessions();return save;};
+const v127ApplySaveBase=v124ApplySave;v124ApplySave=function(save){const ok=v127ApplySaveBase(save);if(ok)v127ApplyProfessions(save?.professions);return ok;};
+const v127BeforeStartBase=v124BeforeStart;v124BeforeStart=function(){v127BeforeStartBase();if(!v124PendingRestore)v127ResetProfessions(true);};
+
+const v127UpdateBase=update;update=function(){v127UpdateBase();const now=performance.now(),dt=Math.min(.1,(now-v127FrameStamp)/1000||.016);v127FrameStamp=now;v127ProfessionBtn?.classList.toggle('visible',!!started);if(!started)return;if(v127ForgeXpCooldown>0)v127ForgeXpCooldown=Math.max(0,v127ForgeXpCooldown-dt);v127MyronWorkClock+=dt;v127GuardWorkClock+=dt;if(v127MyronWorkClock>=75){v127MyronWorkClock=0;v127AddProfessionXp('myron',3,'Travail à la forge',true);}if(v127GuardWorkClock>=90&&patrolFormation?.mode==='patrol'){v127GuardWorkClock=0;v127AddProfessionXp('guards',3,'Patrouille accomplie',true);}if(v127PanelOpen)v127RenderProfessions();};
+
+v127ApplyProfessions(null);
+if(typeof window!=='undefined'){window.ODYSSEE_BUILD_V127=V127_BUILD;window.ODYSSEE_PROFESSIONS={definitions:V127_PROFESSION_DEFS,get:v127CaptureProfessions,addXp:v127AddProfessionXp,level:v127ProfessionLevel,open:()=>v127SetProfessionPanel(true)};}
+/* =================== FIN ODYSSÉE v1.27.0 =================== */
+
 v124RefreshTitleMenu();
 if(typeof window!=='undefined'){
   window.ODYSSEE_BUILD_V124=V124_BUILD;
@@ -6233,4 +6319,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.26.1-20260806-0621-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.27.0-20260806-0642-NC -->
