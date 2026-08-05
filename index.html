@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.12.7 — Île asymétrique, toits et patrouille</title>
+<title>Odyssée — v1.13.0 — Biomes, remparts et patrouille adaptative</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -63,7 +63,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.12.7 — ÎLE ASYMÉTRIQUE & VILLE POLIE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier devant le hoplite. Démos parcourt ses quatre cultures, Níkon organise ses exercices selon les cibles et deux gardes patrouillent ensemble autour d’Ithaque. A près de Myron ouvre la forge.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.13.0 — BIOMES, REMPARTS & PATROUILLE ADAPTATIVE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="menuNote">Bouton A : attaquer. Près d’un PNJ, A devient Interagir. Maintiens B pour lever le bouclier noir. Démos cultive les champs, Níkon dirige l’entraînement, Myron tient la forge et Théron construit les premiers remparts. Les deux gardes contournent désormais les obstacles de manière adaptative.</div></div></div>
 </div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
 <div id="controls">
@@ -103,10 +103,16 @@ const FOOTSTEP_URLS=[
   'https://raw.githubusercontent.com/Faisal18Ansari/StarLight-Dash/main/Audio/footstep02.ogg',
   'https://raw.githubusercontent.com/Faisal18Ansari/StarLight-Dash/main/Audio/footstep03.ogg'
 ];
+// Pas lourds embarqués pour les patrouilleurs : aucun réseau requis une fois le fichier ouvert.
+const PATROL_FOOTSTEP_URLS=[
+  'data:audio/wav;base64,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AwASAAkADQAOABAAFwAdABwAEQAbAAoAEwAgACQAJAAiABcACgAGABMAIAATABAABgAZABYAHwAmAC0AGgAOAA0ADQAXAB8AFgAVAB0AFAAeABIAFwASABQADAAMAA4ABwADABcAGQANABYAFgAWABEAHAAQABAADQAGAAkAGAAcABgAHQAPABIAEQAZACMAHAAOABYAEwALAAoAFgAWAAsACAALAA0ADAASABYAGAAbABQAGgARABgACgAFABAACgADAAQAAgAMABEADQAQABMABwD//wIACQALAA8ADAD///r//P8AAAQA//////T//v/1//z/+v/1//j/+//+//b/8v/v/+7/8v/p//P/8P/n/+P/5P/m/+r/6P/k//D/6P/j/+P/7f/v//P/+f/w/+n/7f/z/+7/8v/x//f/7//p/+b/5v/q/+P/5f/t/+n/5f/r/+3/8v/2//H/8v/z//H/8//3/+7/6//s//X/9f/0/+//8//1/+7/8//4//T/+f/4//b/8P/2//b//v/6//f//P/+/wIAAwAAAAEA///7//3//f/8/wAAAgAHAAYACQADAAQA//8DAAEACAABAAQAAQADAAQABgAHAAkABAABAAcACAAEAAcACwALAAgADAAHAAYABgADAAkADAAJAAsADgAOAAwADAANAA4ADgAIAA4ADwAPABMADwAKAAcACQALAAwADQAOAAoABwAGAAwACgAOAAwADgAIAAcAAwACAAUAAwAGAAYACwAGAAIAAwAHAAoABgAFAAIACAAJAAcABwADAAUABwAGAAoACAAHAAgACgAGAAcABAABAP/////9//v//f/+/wAAAAD+///////9//7/AQACAAQAAAD+//3//f///wEA/v////z/+//6//n//f///wAA/v/7//3/+f/7//7////8//7//v8AAP7//P/8//n/9//3//X/9v/5//r/9//4//j/+f/3//f/+f/3//f/+//9//7/AAAAAP3//v/+//3///8AAP///P/6//3//v/+//3/+v/7//v//v/+//z//P/7//r/+f/5//z//v/+/wAA/f/8//z//f/9//v//f/8//z/+//8//7//f/+/wAAAAD+//3//P/+////AAAAAP7////+//z//v////7///8AAP7/AAD//wAA/v8AAAAA////////AAAAAAEAAgADAAEAAAAAAAEAAwADAAAAAgABAAEAAgACAAMAAwACAAIAAQACAAMAAwAEAAUABQADAAMABAADAAMAAgABAAIAAwAEAAQABQADAAMAAwACAAEAAQACAAIAAQABAAEAAQACAAMAAwABAAEAAgACAAMAAwACAAIAAQABAAIAAQACAAEAAQAAAAEAAgACAAEAAgACAAEAAgABAAIAAgABAAEAAgABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEAAQABAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//AAAAAAAAAAD/////////////AAAAAAAAAAAAAAAAAAD//wAAAAAAAP////8AAAAAAAAAAP//AAD///////8AAP///////////////////////wAAAAAAAAAA//////////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  'data:audio/wav;base64,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6f/4////AAAIAAsA/f////v/BgAOAA0AEAD//wcABAANAAkADQAGAAUAAQD+//X/9f/1/wQADgADAA0AFQAMABUADAAHAAMA+f/7//X/+v/1//n/CwAYABwAEQAYABkAIgAaABoAEAAcACQAFwAWACIAKwAwACQAIQArACoAMAAmABwAEAAeACAAGAAWABQAFAAbABYAFgAQAA8AHQAVAA8AHQARABwAEwASABcADwAXAAwAFQAQABgAHAAdABUAEwAOABoAEwAPABcAEAAUABAAEQAVABgAFQAVABUADgACAA4ACAANAAsAEwAMABAACgAKAAUAAQAIAA4ADwANAAIA+v/0//H/+P/1//j/8//y/+7/8//+//7/AwAAAPv/AAADAAQA+v/w/+n/6v/u/+v/9P/x//X/9f/6//L/7P/s/+r/9P/w/+7/7P/v/+//8P/q//L/7//w//X/+P/6//T/+f/5//T/8v/2//j//f/z//H/+P/w//T/7f/p//L/+P/5//L/9v/2//v//v/1//v////2//D/+P/x/+//7//1//f/9//4//n/+v8AAPv/+//2//3///8AAP////8CAAEA/v8BAAQABQAIAAMAAwD+/wAAAwACAAAA/P8CAP3/BAAFAAAAAgABAAYAAQABAAEABAAAAAAAAQACAAEABgAHAAoADgAMAAkACAAJAA0ACwAFAAsABgAEAAUAAwAFAAIABQADAAAAAwAFAAgACQAFAAoADQAMAAgABAAGAAwAEAAMAAkACAAKAA0ACwAKAAcABQAEAAQAAwAHAAYABQAIAAkABAAHAAYAAwADAAcACgAGAAIAAgAHAAQABwAIAAgABQAGAAQABQACAAAAAAAAAAAAAQAAAP7////9//7//f/7////AAD+/wAA/////wEA/v8AAP//AAABAP3//v/+//z/AAD8//3//f/6//v/+v/4//b/+f/3//n//f/8//z/+f/7//r/+P/3//b/9//3//f/+//4//b/+P/7//n//f///wAA///8//v//P/+/////P/8//r/+f/4//j/+//6//z/+//9//7//f/8//z//v/8//z//P/9//z//f/9//v//P/7//3/+//9//z//P///wAA/v8AAAAAAQD//////v/9//7//v/+//7//v/9/wAA/v/+//7//v/+/wAAAAAAAP//////////AAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAABAAMAAQABAAIAAwADAAIAAQACAAMABAAEAAMAAgACAAEAAAAAAAEAAgADAAIAAgABAAIAAgADAAIAAgACAAIAAgACAAIAAwABAAIAAwAEAAMAAQABAAEAAAABAAEAAAABAAEAAQACAAEAAQAAAAEAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAIAAQAAAAAAAAABAAAAAAAAAAEAAQAAAAAAAAAAAAAAAAAAAP////////7//v///wAA//8AAAAAAAAAAAAAAAD////////+//////////////////////8AAAAAAAD///////8AAAAA/////wAAAAAAAAAAAAD/////AAAAAAAAAAD/////AAAAAAAA//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
+  'data:audio/wav;base64,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5//o//L/7f/f/+z/5v/m//H/+f/z//j/5P/e/9//2v/Z/9v/0//T/9j/1P/V/+P/5P/Y/9f/3v/c/+3/8P/i/+T/7P/5//D/5v/v/+b/9P/4/wIABwD8//j/7//0/+3/8P8AAAQABQAOAAMADAAWABEABwANAAsACAAFAPv/8//1//X/8f8CAAoADwAWABsADQAaAA8AGgAXAB0AIAAZABwAGQAQABAAHQAPAAkAFAAQAAwABQAVABcAEwAPABEAHQAUAB4AFgAOABMAEgAaABgAEAALABUAHwASABAAEQAIAAIAEAAXAB4AHQAaAA4ABQAOABIAFAASAA4ACgAJAAcAAwAMAAMAAgABAAMA//8FAA4ADQAGAAcACwAQABAAFAAGAP7//f8AAAgACAAAAAMAAAD4/wAA+v/2//v/+f/2//v//P/z//H/8f/x//f//v/4//v//f/+/wAA/v/2/+7/6f/l/+X/4f/l/+7/6P/l/+3/8//1/+//9v/w//D/9v/4//b/8f/4//j/8f/3/+//7P/p//L/9//2//P/9P/w/+z/7//y/+//6//z//T/9f/1/+//8v/w//D/7//w//L/9f/7//v/+v/1//f/8//4//v/AAACAAIAAgAEAAMABAD//wEAAQD+////AwAAAPz//f/9/wEAAQD///z//f/+//3/AQAAAAEABgACAAEAAAAFAAMABwAJAA4ACgALAAYACwAMAAkADAAIAAsACwAFAAIACAAJAA4ACQAKAAwADgAJAA4ADQAIAAwACQAKAAoABQALAAgABgADAAMABwAKAAwADAAKAAwADwAJAAsACAAGAAkABwAJAAgAAwAFAAcABgAIAAcACgAJAAsADAANAAoACAAJAAkACgAHAAMAAwAAAAMAAAD9/wAA/f8AAAIAAAD9//z//v8AAP3/AAD+//7////9//7//P/6//v/+//6//z////8//n/+//9//3/+//6//z///////3//f/6//j/9//2//f/+P/2//f/+P/5//r/+//7//n//P/6//z/+v/4//n/9//3//b/9v/2//j/+//5//n/+f/7//v//f/9//3/+//9///////9//z/+//8//z/+//5//r//f/9//7///////////8AAP7//v//////AAAAAP///v8AAAAAAQACAAEAAAABAAAA//8AAAAAAQABAAAAAQACAAMAAQAAAAAAAQAAAAAAAQADAAMAAgACAAMABAADAAMAAgADAAQABAAFAAIAAwADAAIAAgACAAIAAgACAAEAAgACAAMAAQACAAEAAQAAAAEAAgABAAAAAgABAAAAAQABAAEAAQABAAAAAQACAAEAAgABAAEAAQACAAEAAAAAAAAAAQABAAEAAgACAAIAAAABAAEAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////AAD//wAAAAD//////////wAAAAAAAAAAAAAAAP//////////////////AAAAAP//AAD//wAA//////////8AAAAA////////AAAAAAAAAAAAAP///////wAA//////////8AAP//AAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+];
 const els={game:document.getElementById('game'),fatal:document.getElementById('fatal'),loading:document.getElementById('loading3d'),loaderText:document.getElementById('loaderText'),title:document.getElementById('titleScreen'),start:document.getElementById('startBtn'),sound:document.getElementById('soundBtn'),hud:document.getElementById('hud'),controls:document.getElementById('controls'),credits:document.getElementById('credits'),stick:document.getElementById('stick'),knob:document.getElementById('knob'),audio:document.getElementById('menuTheme'),npcBubble:document.getElementById('npcBubble'),npcBubbleText:document.getElementById('npcBubbleText'),actionA:document.getElementById('actionA'),actionALabel:document.querySelector('#actionA .label'),actionB:document.getElementById('actionB'),forgeMenu:document.getElementById('forgeMenu'),forgeMenuText:document.getElementById('forgeMenuText'),forgeClose:document.getElementById('forgeClose')};
 window.addEventListener('error',e=>{els.fatal.style.display='block';els.fatal.textContent='Le prototype 3D a rencontré une erreur :\n\n'+(e.error?.stack||e.message||e)});
 
-let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,blacksmithNPC=null,trainingNPC=null,patrolGuards=[],activeBubbleNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0,forgeMenuOpen=false,startingGame=false,threeReady=false,joystickReady=false;
+let renderer,scene,camera,clock,character,mixer,walkAction,greekGear,farmerNPC=null,blacksmithNPC=null,trainingNPC=null,builderNPC=null,patrolGuards=[],activeBubbleNPC=null,modelBaseY=0,started=false,loaded=false,walkCycle=0,idleCycle=0,stepTimer=0,blocking=false,blockBlend=0,attackTimer=0,forgeMenuOpen=false,startingGame=false,threeReady=false,joystickReady=false;
 const attackDuration=1.55;
 const attackSpeed=1.85;
 let joy={x:0,y:0,active:false,id:null}, velocity=new THREE.Vector2(), player=new THREE.Vector3(0,0,7.2), turnVelocity=0, stepParity=0;
@@ -118,9 +124,11 @@ const farmerFieldSoundPos=new THREE.Vector3(8.45,0,5.65);
 const trainingCampCenter=new THREE.Vector3(8.45,0,-5.65);
 const templeCenterPos=new THREE.Vector3(0,0,-1.10);
 const farmHutCenterPos=new THREE.Vector3(8.45,0,2.33);
+const emptyHouseCenterPos=new THREE.Vector3(-8.10,0,9.20);
+const constructionSiteCenter=new THREE.Vector3(0,0,8.62);
 const ISLAND_BOUNDARY=[
   [-12.90,-4.55],[-12.15,-6.15],[-10.55,-7.62],[-8.30,-8.92],[-5.95,-9.38],[-3.55,-10.18],[-1.05,-10.46],[1.05,-10.02],[3.65,-10.20],[6.35,-9.15],[8.45,-8.36],[10.48,-6.92],[11.86,-5.18],[12.62,-3.42],[12.20,-1.72],[13.02,.08],[12.18,2.12],[12.74,4.08],[11.56,6.38],[9.62,7.78],[7.48,8.96],[5.18,9.18],[3.10,9.72],[1.42,10.78],[-.52,10.58],[-2.42,9.96],[-4.62,10.18],[-6.82,9.34],[-9.10,8.22],[-10.82,6.52],[-12.25,4.72],[-12.02,2.82],[-13.12,1.12],[-12.48,-.86],[-13.06,-2.78]
-].map(([x,z])=>new THREE.Vector2(x,z));
+].map(([x,z])=>new THREE.Vector2(x*1.18,z*1.16));
 const farmPlotCenters=[
   {name:'blé',pos:new THREE.Vector3(6.50,0,4.53)},
   {name:'orge',pos:new THREE.Vector3(10.40,0,4.53)},
@@ -203,6 +211,9 @@ function ensureAudio(){
   footstepBus=audioCtx.createGain();
   footstepBus.gain.value=.82;
   footstepBus.connect(audioCtx.destination);
+  patrolFootstepBus=audioCtx.createGain();
+  patrolFootstepBus.gain.value=.72;
+  patrolFootstepBus.connect(audioCtx.destination);
   anvilBus=audioCtx.createGain();
   anvilBus.gain.value=0;
   anvilBus.connect(audioCtx.destination);
@@ -371,6 +382,41 @@ function playFootstep(strength=.8){
   source.connect(filter);
   filter.connect(gain);
   gain.connect(footstepBus);
+  source.start();
+}
+
+async function loadPatrolFootstepAssets(){
+  if(patrolFootstepBuffers.length||patrolFootstepLoading||!audioCtx)return;
+  patrolFootstepLoading=true;
+  try{
+    const decoded=[];
+    for(const url of PATROL_FOOTSTEP_URLS){
+      const response=await fetch(url);
+      const data=await response.arrayBuffer();
+      decoded.push(await audioCtx.decodeAudioData(data.slice(0)));
+    }
+    patrolFootstepBuffers.push(...decoded);
+  }catch(err){
+    console.warn('Pas des patrouilleurs indisponibles, secours procédural.',err);
+  }finally{patrolFootstepLoading=false;}
+}
+function playPatrolFootstep(strength=.8){
+  if(!audioCtx||!patrolFootstepBus||!patrolFormation)return;
+  const dist=Math.hypot(player.x-patrolFormation.position.x,player.z-patrolFormation.position.z);
+  const audible=zoneGain(dist,1.2,13.5,.78)*strength;
+  if(audible<.012)return;
+  if(!patrolFootstepBuffers.length){playSyntheticFootstep(audible*.62);return;}
+  const source=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();
+  source.buffer=patrolFootstepBuffers[patrolStepParity++%patrolFootstepBuffers.length];
+  source.playbackRate.value=.88+Math.random()*.10;
+  filter.type='lowpass';filter.frequency.value=820+Math.random()*260;
+  gain.gain.value=audible;
+  source.connect(filter);filter.connect(gain);
+  if(audioCtx.createStereoPanner){
+    const pan=audioCtx.createStereoPanner();
+    pan.pan.value=THREE.MathUtils.clamp((patrolFormation.position.x-player.x)/7,-.75,.75);
+    gain.connect(pan);pan.connect(patrolFootstepBus);
+  }else gain.connect(patrolFootstepBus);
   source.start();
 }
 
@@ -582,8 +628,14 @@ const templeRoofParts=[];
 const templeWallParts=[];
 const farmHutRoofParts=[];
 const farmHutWallParts=[];
-let forgeReveal=0,templeReveal=0,farmHutReveal=0;
+const emptyHouseRoofParts=[];
+const emptyHouseWallParts=[];
+const dockWaterEffects=[];
+const animatedWaterSurfaces=[];
+const constructionStations=[];
+let forgeReveal=0,templeReveal=0,farmHutReveal=0,emptyHouseReveal=0,waterAnimClock=0;
 let audioCtx=null, footstepBus=null, footstepBuffers=[], footstepLoading=false;
+let patrolFootstepBus=null,patrolFootstepBuffers=[],patrolFootstepLoading=false,patrolStepParity=0;
 let ambientBus=null, ambientNoiseSource=null, ambientNoiseGain=null, ambientLfo=null, ambientBirdTimer=null, ambientStarted=false;
 let anvilBus=null, anvilLastTime=0, anvilSfxBuffer=null, anvilSfxLoading=false, cameraShake=0, cameraShakeX=0, cameraShakeZ=0;
 let fieldBus=null, fieldAmbienceStarted=false, fieldNoiseSource=null, fieldCricketSource=null, fieldNoiseGain=null, fieldCricketGain=null, fieldNoiseLfo=null, fieldCricketLfo=null;
@@ -596,9 +648,9 @@ function setupThree(){
   camera=new THREE.OrthographicCamera(-7,7,4,-4,.1,70);camera.position.set(0,18,.001);camera.up.set(0,0,-1);camera.lookAt(0,0,0);camera.zoom=1.08;camera.updateProjectionMatrix();
   clock=new THREE.Clock();
   scene.add(new THREE.HemisphereLight(0xf3dfbd,0x2d211c,1.75));
-  const sun=new THREE.DirectionalLight(0xffd39a,5.6);sun.position.set(-8,15,-6);sun.castShadow=true;sun.shadow.bias=-0.00018;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-13;sun.shadow.camera.right=13;sun.shadow.camera.top=13;sun.shadow.camera.bottom=-13;scene.add(sun);
+  const sun=new THREE.DirectionalLight(0xffd39a,5.6);sun.position.set(-8,15,-6);sun.castShadow=true;sun.shadow.bias=-0.00018;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-17;sun.shadow.camera.right=17;sun.shadow.camera.top=17;sun.shadow.camera.bottom=-17;scene.add(sun);
   const rim=new THREE.DirectionalLight(0x7894a0,1.05);rim.position.set(8,8,8);scene.add(rim);
-  buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();createPatrolGuards();loadCharacter();onResize();addEventListener('resize',onResize,{passive:true,once:false});renderer.setAnimationLoop(update);
+  buildArena();createFarmerNPC();createBlacksmithNPC();createTrainingNPC();createPatrolGuards();createBuilderNPC();loadCharacter();onResize();addEventListener('resize',onResize,{passive:true,once:false});renderer.setAnimationLoop(update);
 }
 function buildArena(){
   const makeBoundaryShape=(scale=1)=>{
@@ -611,21 +663,31 @@ function buildArena(){
   deepSea.rotation.x=-Math.PI/2;deepSea.position.y=-.58;deepSea.receiveShadow=true;scene.add(deepSea);
   const outerWater=new THREE.Mesh(new THREE.ShapeGeometry(makeBoundaryShape(1.28)),new THREE.MeshStandardMaterial({color:0x237d91,roughness:.30,metalness:.04,transparent:true,opacity:.92,side:THREE.DoubleSide}));
   outerWater.rotation.x=-Math.PI/2;outerWater.position.y=-.47;outerWater.receiveShadow=true;scene.add(outerWater);
+  animatedWaterSurfaces.push({mesh:outerWater,baseY:-.47,baseOpacity:.92,phase:.2,amplitude:.010});
   const shallowWater=new THREE.Mesh(new THREE.ShapeGeometry(makeBoundaryShape(1.12)),new THREE.MeshStandardMaterial({color:0x49a6aa,roughness:.34,metalness:.02,transparent:true,opacity:.88,side:THREE.DoubleSide}));
   shallowWater.rotation.x=-Math.PI/2;shallowWater.position.y=-.36;shallowWater.receiveShadow=true;scene.add(shallowWater);
+  animatedWaterSurfaces.push({mesh:shallowWater,baseY:-.36,baseOpacity:.88,phase:1.7,amplitude:.014});
   const rockBase=new THREE.Mesh(new THREE.ShapeGeometry(makeBoundaryShape(1.035)),new THREE.MeshStandardMaterial({color:0x62594d,roughness:1,side:THREE.DoubleSide}));
   rockBase.rotation.x=-Math.PI/2;rockBase.position.y=-.16;rockBase.receiveShadow=true;scene.add(rockBase);
   const foamGeo=new THREE.BufferGeometry().setFromPoints(ISLAND_BOUNDARY.map(p=>new THREE.Vector3(p.x,-.285,p.y)));
   const foam=new THREE.LineLoop(foamGeo,new THREE.LineBasicMaterial({color:0xb9e5df,transparent:true,opacity:.55}));scene.add(foam);
   const texLoader=new THREE.TextureLoader();
   texLoader.setCrossOrigin('anonymous');
-  texLoader.load(FLOOR_URL,tex=>{
-    tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(13,10);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
-    const mat=new THREE.MeshStandardMaterial({map:tex,color:0xb6a27c,roughness:.96,metalness:0,side:THREE.DoubleSide});
-    const floor=new THREE.Mesh(new THREE.ShapeGeometry(makeBoundaryShape(1)),mat);floor.rotation.x=-Math.PI/2;floor.position.y=-.02;floor.receiveShadow=true;scene.add(floor);
-  },undefined,()=>{
-    const floor=new THREE.Mesh(new THREE.ShapeGeometry(makeBoundaryShape(1)),new THREE.MeshStandardMaterial({color:0x9b835e,roughness:1,side:THREE.DoubleSide}));floor.rotation.x=-Math.PI/2;floor.position.y=-.02;floor.receiveShadow=true;scene.add(floor);
-  });
+  const buildBiomeGround=(tex=null)=>{
+    if(tex){tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(16,13);tex.anisotropy=renderer.capabilities.getMaxAnisotropy();}
+    const sandMat=new THREE.MeshStandardMaterial({map:tex||null,color:tex?0xd4bd8b:0xc7aa73,roughness:.98,metalness:0,side:THREE.DoubleSide});
+    const sand=new THREE.Mesh(new THREE.ShapeGeometry(makeBoundaryShape(1)),sandMat);sand.rotation.x=-Math.PI/2;sand.position.y=-.02;sand.receiveShadow=true;scene.add(sand);
+    // Couronnes irrégulières semi-transparentes : sable côtier -> terre sèche -> cœur rocheux.
+    const layers=[
+      [.91,-.012,0xad9168,.26],[.87,-.008,0x9d805c,.34],[.83,-.004,0x8e704f,.50],[.78,0,0x826446,.72],
+      [.68,.004,0x78634f,.26],[.63,.008,0x716354,.36],[.58,.012,0x686159,.48],[.52,.016,0x615d58,.66]
+    ];
+    for(const [scale,y,color,opacity] of layers){
+      const mat=new THREE.MeshStandardMaterial({color,roughness:.99,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide});
+      const layer=new THREE.Mesh(new THREE.ShapeGeometry(makeBoundaryShape(scale)),mat);layer.rotation.x=-Math.PI/2;layer.position.y=y;layer.receiveShadow=true;scene.add(layer);
+    }
+  };
+  texLoader.load(FLOOR_URL,tex=>buildBiomeGround(tex),undefined,()=>buildBiomeGround());
 
   const wallMat=new THREE.MeshStandardMaterial({color:0xd0c0a2,roughness:.92});
   const capMat=new THREE.MeshStandardMaterial({color:0x594639,roughness:.96});
@@ -649,6 +711,7 @@ function buildArena(){
   const addCleanRoof=(parent,{w,d,h,y=0,x=0,z=0,material,parts=null,lift=.10}={})=>{
     const roof=new THREE.Mesh(createGableRoofGeometry(w,d,h),material);roof.position.set(x,y,z);roof.castShadow=true;roof.receiveShadow=true;roof.userData.baseY=y;roof.userData.fadeLift=lift;parent.add(roof);if(parts)parts.push(roof);return roof;
   };
+  const markAnimatedWall=(mesh,side,delay=0)=>{mesh.userData.wallSide=side;mesh.userData.fadeDelay=delay;mesh.userData.baseY=mesh.position.y;return mesh;};
 
   const addStonePatch=(x,z,w,d,y=.018,rot=0,color=0xb49d77)=>{
     const patch=new THREE.Mesh(new THREE.BoxGeometry(w,.035,d),new THREE.MeshStandardMaterial({color,roughness:.97}));
@@ -704,8 +767,24 @@ function buildArena(){
     }
     const landing=new THREE.Mesh(new THREE.BoxGeometry(width+1.0,.14,.82),new THREE.MeshStandardMaterial({color:0xb4a080,roughness:.97}));
     landing.position.set(0,.07,-length*.5-.22);landing.castShadow=landing.receiveShadow=true;dock.add(landing);
+    const rippleMat=()=>new THREE.MeshBasicMaterial({color:0xbce8df,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide});
+    const rippleDefs=[[-.82,-1.18,.34],[.82,-1.05,1.12],[-.82,-.18,2.05],[.82,.10,2.72],[-.82,1.04,3.35],[.82,1.20,4.18],[0,1.72,5.05]];
+    for(const [rx,rz,phase] of rippleDefs){
+      const ripple=new THREE.Mesh(new THREE.RingGeometry(.14,.19,28),rippleMat());ripple.rotation.x=-Math.PI/2;ripple.position.set(rx,-.285,rz);dock.add(ripple);
+      dockWaterEffects.push({mesh:ripple,phase,speed:.72+Math.random()*.26,baseOpacity:.22+Math.random()*.12,baseScale:.72+Math.random()*.28});
+    }
+    for(const side of [-1,1]){
+      const wash=new THREE.Mesh(new THREE.PlaneGeometry(.22,length*.84),new THREE.MeshBasicMaterial({color:0x8fd5d1,transparent:true,opacity:.10,depthWrite:false,side:THREE.DoubleSide}));
+      wash.rotation.x=-Math.PI/2;wash.position.set(side*(width*.62),-.30,.04);dock.add(wash);
+      dockWaterEffects.push({mesh:wash,phase:side<0?.8:2.6,speed:.44,baseOpacity:.10,baseScale:1,wash:true});
+    }
   };
   const addRoad=(x,z,w,d,rot=0,color=0xbea782)=> addStonePatch(x,z,w,d,.018,rot,color);
+  const addPathSegment=(x1,z1,x2,z2,width=.78,color=0xb59b73)=>{
+    const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz);
+    if(len<.05)return null;
+    return addStonePatch((x1+x2)*.5,(z1+z2)*.5,width,len,.020,Math.atan2(dx,dz),color);
+  };
   const addStepStairs=(x,z,steps=7,w=3.4,d=.54,stepH=.055,dir='south')=>{
     for(let i=0;i<steps;i++){
       const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,stepH,d), new THREE.MeshStandardMaterial({color:0xcdbb98-(i*0x060606),roughness:.97}));
@@ -839,9 +918,9 @@ function buildArena(){
     const makeRoof=()=>new THREE.MeshStandardMaterial({color:0x754538,roughness:.86,transparent:true,opacity:1,depthWrite:true});
     const floor=new THREE.Mesh(new THREE.BoxGeometry(4.25*s,.10,3.55*s), new THREE.MeshStandardMaterial({color:0x75654f,roughness:.98}));
     floor.position.set(0,.05,0); floor.castShadow=floor.receiveShadow=true; forge.add(floor);
-    const back=new THREE.Mesh(new THREE.BoxGeometry(3.82*s,1.48*s,.18*s), makeStone()); back.position.set(0,.79,-1.31*s); back.castShadow=back.receiveShadow=true; forge.add(back);
-    const sideL=new THREE.Mesh(new THREE.BoxGeometry(.18*s,1.32*s,2.70*s), makeStone()); sideL.position.set(-1.82*s,.72,-.06*s); sideL.castShadow=sideL.receiveShadow=true; forge.add(sideL);
-    const sideR=new THREE.Mesh(sideL.geometry,makeStone()); sideR.position.set(1.82*s,.72,-.06*s); sideR.castShadow=sideR.receiveShadow=true; forge.add(sideR);
+    const back=new THREE.Mesh(new THREE.BoxGeometry(3.82*s,1.48*s,.18*s), makeStone()); back.position.set(0,.79,-1.31*s); back.castShadow=back.receiveShadow=true; forge.add(back);markAnimatedWall(back,'south',.04);
+    const sideL=new THREE.Mesh(new THREE.BoxGeometry(.18*s,1.32*s,2.70*s), makeStone()); sideL.position.set(-1.82*s,.72,-.06*s); sideL.castShadow=sideL.receiveShadow=true; forge.add(sideL);markAnimatedWall(sideL,'west',.16);
+    const sideR=new THREE.Mesh(sideL.geometry,makeStone()); sideR.position.set(1.82*s,.72,-.06*s); sideR.castShadow=sideR.receiveShadow=true; forge.add(sideR);markAnimatedWall(sideR,'east',.28);
     forgeWallParts.push(back,sideL,sideR);
     for(const px of [-1.45,-.48,.48,1.45]){ const post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.08,1.72*s,10), beam); post.position.set(px,.86,1.23*s); post.castShadow=true; forge.add(post); }
     const forgeRoof=addCleanRoof(forge,{w:4.55*s,d:3.28*s,h:.78*s,y:1.67,z:-.08*s,material:makeRoof(),parts:forgeRoofParts,lift:.15});
@@ -850,6 +929,29 @@ function buildArena(){
     const chimneyTop=new THREE.Mesh(new THREE.BoxGeometry(.52*s,.12,.52*s), chimneyTopMat); chimneyTop.position.set(-1.23*s,2.34,-1.13*s); chimneyTop.castShadow=true;chimneyTop.userData.baseY=chimneyTop.position.y;chimneyTop.userData.fadeLift=.12; forge.add(chimneyTop);forgeRoofParts.push(chimneyTop);
     const signPole=new THREE.Mesh(new THREE.BoxGeometry(.08,1.00,.08),beam);signPole.position.set(1.70,.52,1.45);signPole.castShadow=true;forge.add(signPole);
     const sign=new THREE.Mesh(new THREE.BoxGeometry(.72,.34,.08),beam);sign.position.set(1.42,.90,1.45);sign.castShadow=true;forge.add(sign);
+    addBoxCollider(x,z-1.31*s,3.92*s,.22*s,.06);
+    addBoxCollider(x-1.82*s,z-.06*s,.22*s,2.72*s,.06);
+    addBoxCollider(x+1.82*s,z-.06*s,.22*s,2.72*s,.06);
+  };
+  const addEmptyHouse=(x,z,s=1)=>{
+    const house=new THREE.Group();house.position.set(x,0,z);scene.add(house);
+    const makeWall=()=>new THREE.MeshStandardMaterial({color:0xc7b69a,roughness:.96,transparent:true,opacity:1,depthWrite:true});
+    const makeRoof=()=>new THREE.MeshStandardMaterial({color:0x844a39,roughness:.86,transparent:true,opacity:1,depthWrite:true});
+    const darkWood=new THREE.MeshStandardMaterial({color:0x563a28,roughness:.95});
+    const floor=new THREE.Mesh(new THREE.BoxGeometry(3.30*s,.09,2.65*s),new THREE.MeshStandardMaterial({color:0x756650,roughness:.99}));floor.position.y=.045;floor.receiveShadow=true;house.add(floor);
+    const back=new THREE.Mesh(new THREE.BoxGeometry(3.18*s,1.22*s,.15*s),makeWall());back.position.set(0,.65,1.18*s);back.castShadow=back.receiveShadow=true;house.add(back);markAnimatedWall(back,'north',.04);
+    const sideL=new THREE.Mesh(new THREE.BoxGeometry(.15*s,1.22*s,2.30*s),makeWall());sideL.position.set(-1.52*s,.65,0);sideL.castShadow=sideL.receiveShadow=true;house.add(sideL);markAnimatedWall(sideL,'west',.17);
+    const sideR=new THREE.Mesh(sideL.geometry,makeWall());sideR.position.set(1.52*s,.65,0);sideR.castShadow=sideR.receiveShadow=true;house.add(sideR);markAnimatedWall(sideR,'east',.29);
+    const frontL=new THREE.Mesh(new THREE.BoxGeometry(.88*s,1.22*s,.15*s),makeWall());frontL.position.set(-1.12*s,.65,-1.18*s);frontL.castShadow=frontL.receiveShadow=true;house.add(frontL);markAnimatedWall(frontL,'south',.10);
+    const frontR=new THREE.Mesh(frontL.geometry,makeWall());frontR.position.set(1.12*s,.65,-1.18*s);frontR.castShadow=frontR.receiveShadow=true;house.add(frontR);markAnimatedWall(frontR,'south',.22);
+    emptyHouseWallParts.push(back,sideL,sideR,frontL,frontR);
+    const threshold=new THREE.Mesh(new THREE.BoxGeometry(.92*s,.07,.34*s),darkWood);threshold.position.set(0,.08,-1.20*s);threshold.castShadow=true;house.add(threshold);
+    addCleanRoof(house,{w:3.58*s,d:2.92*s,h:.70*s,y:1.25,z:0,material:makeRoof(),parts:emptyHouseRoofParts,lift:.17});
+    addBoxCollider(x,z+1.18*s,3.22*s,.18*s,.05);
+    addBoxCollider(x-1.52*s,z,.18*s,2.34*s,.05);
+    addBoxCollider(x+1.52*s,z,.18*s,2.34*s,.05);
+    addBoxCollider(x-1.12*s,z-1.18*s,.92*s,.18*s,.04);
+    addBoxCollider(x+1.12*s,z-1.18*s,.92*s,.18*s,.04);
   };
   const addFieldComplex=(x,z)=>{
     const patch=new THREE.Group(); patch.position.set(x,0,z); scene.add(patch);
@@ -1048,6 +1150,35 @@ function buildArena(){
     const door=new THREE.Mesh(new THREE.BoxGeometry(.42*s,.72*s,.08*s),capMat);door.position.set(0,.38*s,.86*s);door.castShadow=true;g.add(door);
     addBoxCollider(x,z,2.2*s,1.7*s,.06);
   };
+  const addConstructionRamparts=()=>{
+    const stone=new THREE.MeshStandardMaterial({color:0x8f806b,roughness:.98});
+    const stoneLight=new THREE.MeshStandardMaterial({color:0xb1a188,roughness:.98});
+    const timber=new THREE.MeshStandardMaterial({color:0x68472f,roughness:.96});
+    const rope=new THREE.MeshStandardMaterial({color:0xb69a67,roughness:1});
+    const addBrace=(group,a,b,r=.026,mat=timber)=>{const brace=new THREE.Mesh(new THREE.CylinderGeometry(r,r,1,8),mat);orientSegment(brace,a,b);brace.castShadow=true;group.add(brace);};
+    const addSection=(x,z,rot,height,progress=1)=>{
+      const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;scene.add(g);
+      const base=new THREE.Mesh(new THREE.BoxGeometry(1.58,.26,.54),stone);base.position.y=.13;base.castShadow=base.receiveShadow=true;g.add(base);
+      const wall=new THREE.Mesh(new THREE.BoxGeometry(1.48,height,.44),progress<1?stoneLight:stone);wall.position.y=.26+height*.5;wall.castShadow=wall.receiveShadow=true;g.add(wall);
+      if(progress<1){
+        for(const lx of [-.72,.72])for(const lz of [-.42,.42]){const post=new THREE.Mesh(new THREE.CylinderGeometry(.035,.045,1.65,8),timber);post.position.set(lx,.82,lz);post.castShadow=true;g.add(post);}
+        for(const yy of [.38,.92,1.42]){const railA=new THREE.Mesh(new THREE.BoxGeometry(1.65,.055,.055),timber);railA.position.set(0,yy,-.42);railA.castShadow=true;g.add(railA);const railB=railA.clone();railB.position.z=.42;g.add(railB);}
+        addBrace(g,new THREE.Vector3(-.72,.15,-.45),new THREE.Vector3(.72,1.46,-.45));
+        addBrace(g,new THREE.Vector3(.72,.15,.45),new THREE.Vector3(-.72,1.46,.45));
+        const ropeLine=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,1.50,7),rope);ropeLine.rotation.z=Math.PI/2;ropeLine.position.set(0,1.50,-.46);g.add(ropeLine);
+      }
+      addBoxCollider(x,z,1.66,.64,.08);
+      return g;
+    };
+    const sections=[[-1.72,8.48,-.08,.72,1],[-3.16,8.66,-.12,.58,.72],[-4.54,8.93,-.18,.42,.42],[1.72,8.48,.08,.72,1],[3.16,8.66,.12,.58,.72],[4.54,8.93,.18,.42,.42]];
+    sections.forEach(s=>addSection(...s));
+    for(const side of [-1,1]){
+      const pileX=side*5.25,pileZ=8.45;
+      for(let i=0;i<8;i++){const block=new THREE.Mesh(new THREE.BoxGeometry(.28+Math.random()*.18,.16+Math.random()*.10,.24+Math.random()*.16),stoneLight);block.position.set(pileX+(Math.random()-.5)*.95,.10+(i%2)*.14,pileZ+(Math.random()-.5)*.75);block.rotation.y=Math.random()*.45;block.castShadow=block.receiveShadow=true;scene.add(block);}
+      for(let i=0;i<4;i++){const log=new THREE.Mesh(new THREE.CylinderGeometry(.055,.065,1.25,9),timber);log.rotation.z=Math.PI/2;log.position.set(pileX+(i-1.5)*.12,.10+i*.045,pileZ+.72);log.castShadow=true;scene.add(log);}
+    }
+    constructionStations.push(new THREE.Vector3(3.45,0,8.05),new THREE.Vector3(4.45,0,8.35),new THREE.Vector3(-3.45,0,8.05),new THREE.Vector3(-4.45,0,8.35),new THREE.Vector3(5.15,0,8.05));
+  };
   const addCoastRocks=()=>{
     for(let i=0;i<ISLAND_BOUNDARY.length;i++){
       const a=ISLAND_BOUNDARY[i],b=ISLAND_BOUNDARY[(i+1)%ISLAND_BOUNDARY.length];
@@ -1090,17 +1221,39 @@ function buildArena(){
   addMarket(-8.15,.35,1.12);
   addFieldComplex(8.45,5.65);
   addForgeHouse(forgeCenterPos.x,forgeCenterPos.z,1.08);
+  addEmptyHouse(emptyHouseCenterPos.x,emptyHouseCenterPos.z,1.02);
   addTrainingCamp(trainingCampCenter.x,trainingCampCenter.z);
   addPontoon(0,10.05,3.35,1.30);
+  addConstructionRamparts();
   addMarketSquare();
   addFarmDetails();
   addForgeYard();
   addTrainingDetails(trainingCampCenter.x,trainingCampCenter.z);
 
+  // Réseau continu : chaque quartier et chaque habitation rejoint une voie principale.
+  const pathColor=0xb49a73;
+  addPathSegment(0,8.20,0,5.75,1.02,pathColor);
+  addPathSegment(0,5.75,-4.15,5.10,.82,pathColor);
+  addPathSegment(-4.15,5.10,forgeCenterPos.x,5.25,.78,pathColor);
+  addPathSegment(forgeCenterPos.x,7.55,emptyHouseCenterPos.x,8.02,.72,pathColor);
+  addPathSegment(0,5.75,5.10,4.15,.82,pathColor);
+  addPathSegment(5.10,4.15,farmHutCenterPos.x,farmHutCenterPos.z,.76,pathColor);
+  addPathSegment(farmHutCenterPos.x,3.15,farmerFieldSoundPos.x,4.00,.72,pathColor);
+  addPathSegment(0,4.95,templeCenterPos.x,1.75,.90,pathColor);
+  addPathSegment(-2.85,1.55,-6.15,.65,.76,pathColor);
+  addPathSegment(-6.15,.65,-8.15,.35,.72,pathColor);
+  addPathSegment(2.85,-3.75,6.05,-4.90,.76,pathColor);
+  addPathSegment(6.05,-4.90,trainingCampCenter.x,trainingCampCenter.z,.72,pathColor);
+  addPathSegment(-2.55,-5.70,-4.75,-7.00,.68,pathColor);
+  addPathSegment(-4.75,-7.00,-8.65,-5.85,.68,pathColor);
+  addPathSegment(-6.20,-4.65,-9.75,-2.70,.66,pathColor);
+  addPathSegment(2.65,-5.75,4.15,-7.55,.66,pathColor);
+
   // Maisons grecques, oliveraies et emplacements futurs.
   addGreekHouse(-8.65,-5.85,.08,1.03);addGreekHouse(-4.75,-7.35,-.06,.95);addGreekHouse(-10.1,-2.55,.15,.90);
   addFuturePad(-1.8,7.65,2.2,1.7);addFuturePad(2.0,7.6,2.1,1.6);addFuturePad(4.15,-7.55,2.0,1.55);
   for(const [x,z] of [[-11.1,-7.7],[-11.2,7.7],[11.0,-7.5],[11.3,7.5],[-10.7,2.0],[10.9,1.8],[-3.0,8.2],[3.1,8.15],[-2.8,-8.6],[8.0,8.45]]) addOlive(x,z,1.0+Math.random()*.12);
+  for(const [x,z,s] of [[-5.8,2.3,.92],[-4.8,-3.7,1.02],[-2.9,-5.1,.88],[3.2,-4.9,.92],[5.0,-2.7,1.05],[5.7,1.6,.94],[-6.3,4.1,.86],[6.0,6.9,.90],[-2.7,4.3,.84],[2.8,3.9,.88]])addOlive(x,z,s);
   for(const args of [[-6.0,7.1,1.7,.9,.04],[-4.6,7.5,1.4,.8,-.06],[-9.8,1.9,1.5,.9,.08],[9.7,7.6,1.7,.9,.04],[0,6.0,1.5,1.0,0],[0,-4.9,1.9,1.15,0]]) addStonePatch(args[0],args[1],args[2],args[3],.022,args[4],0xbea887);
   addBrokenStones(-8.9,-3.9,8,1.8,1.1);addBrokenStones(9.0,.9,7,1.7,1.2);addBrokenStones(0,8.4,7,2.2,.9);
   addCoastRocks();
@@ -1147,6 +1300,22 @@ function updateTrainingGate(dt){
   }
 }
 
+function updateAnimatedWalls(parts,smooth,center,minOpacity=.18){
+  for(const mesh of parts){
+    if(mesh.userData.baseY===undefined)mesh.userData.baseY=mesh.position.y;
+    const side=mesh.userData.wallSide||'center',delay=mesh.userData.fadeDelay||0;
+    let directional=1;
+    if(side==='west')directional=player.x<center.x?1:.72;
+    else if(side==='east')directional=player.x>center.x?1:.72;
+    else if(side==='north')directional=player.z>center.z?1:.72;
+    else if(side==='south')directional=player.z<center.z?1:.72;
+    const t=THREE.MathUtils.clamp((smooth*directional-delay)/(1-delay||1),0,1);
+    const eased=t*t*(3-2*t);
+    mesh.material.opacity=THREE.MathUtils.lerp(1,minOpacity,eased);
+    mesh.material.depthWrite=eased<.16;
+    mesh.position.y=mesh.userData.baseY-eased*.035;
+  }
+}
 function updateForgeVisibility(dt){
   const dx=Math.abs(player.x-forgeCenterPos.x),dz=Math.abs(player.z-forgeCenterPos.z);
   const dist=Math.hypot(dx,dz);
@@ -1161,7 +1330,41 @@ function updateForgeVisibility(dt){
     if(mesh.userData.baseY!==undefined)mesh.position.y=mesh.userData.baseY+smooth*.14;
     mesh.visible=mesh.material.opacity>.018;
   }
-  for(const mesh of forgeWallParts){mesh.material.opacity=THREE.MathUtils.lerp(1,.26,smooth);mesh.material.depthWrite=smooth<.16;}
+  updateAnimatedWalls(forgeWallParts,smooth,forgeCenterPos,.24);
+}
+function updateEmptyHouseVisibility(dt){
+  const dx=Math.abs(player.x-emptyHouseCenterPos.x),dz=Math.abs(player.z-emptyHouseCenterPos.z),dist=Math.hypot(dx,dz);
+  const inside=dx<1.72&&dz<1.45;
+  const proximity=THREE.MathUtils.clamp((3.75-dist)/1.55,0,1);
+  const target=inside?1:proximity*.72;
+  emptyHouseReveal=THREE.MathUtils.lerp(emptyHouseReveal,target,1-Math.exp(-3.9*dt));
+  const smooth=emptyHouseReveal*emptyHouseReveal*(3-2*emptyHouseReveal);
+  for(const mesh of emptyHouseRoofParts){
+    mesh.material.opacity=THREE.MathUtils.lerp(1,.035,smooth);mesh.material.depthWrite=smooth<.12;
+    if(mesh.userData.baseY!==undefined)mesh.position.y=mesh.userData.baseY+smooth*(mesh.userData.fadeLift||.16);
+    mesh.visible=mesh.material.opacity>.014;
+  }
+  updateAnimatedWalls(emptyHouseWallParts,smooth,emptyHouseCenterPos,.16);
+}
+function updateWaterAnimation(dt){
+  waterAnimClock+=dt;
+  for(const surface of animatedWaterSurfaces){
+    surface.mesh.position.y=surface.baseY+Math.sin(waterAnimClock*1.15+surface.phase)*surface.amplitude;
+    surface.mesh.material.opacity=surface.baseOpacity+Math.sin(waterAnimClock*.72+surface.phase)*.025;
+  }
+  for(const effect of dockWaterEffects){
+    const wave=(waterAnimClock*effect.speed+effect.phase)%1;
+    if(effect.wash){
+      effect.mesh.material.opacity=effect.baseOpacity*(.66+.34*Math.sin(waterAnimClock*2.2+effect.phase));
+      effect.mesh.position.y=-.30+Math.sin(waterAnimClock*2.0+effect.phase)*.012;
+      effect.mesh.scale.x=1+Math.sin(waterAnimClock*1.6+effect.phase)*.18;
+    }else{
+      const scale=effect.baseScale*(.72+wave*1.55);
+      effect.mesh.scale.setScalar(scale);
+      effect.mesh.material.opacity=effect.baseOpacity*Math.pow(1-wave,1.35);
+      effect.mesh.position.y=-.285+Math.sin(waterAnimClock*2.1+effect.phase)*.010;
+    }
+  }
 }
 function updateFarmHutVisibility(dt){
   const dx=Math.abs(player.x-farmHutCenterPos.x),dz=Math.abs(player.z-farmHutCenterPos.z);
@@ -1307,6 +1510,10 @@ function createArmoredSoldier({
     const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,1.42,9),woodMat);shaft.rotation.x=Math.PI/2;shaft.position.z=-.14;shaft.castShadow=true;weaponPivot.add(shaft);
     const tip=new THREE.Mesh(new THREE.ConeGeometry(.045,.18,8),bronzeMat);tip.rotation.x=-Math.PI/2;tip.position.z=-.94;tip.castShadow=true;weaponPivot.add(tip);
     const butt=new THREE.Mesh(new THREE.ConeGeometry(.032,.12,8),bronzeMat);butt.rotation.x=Math.PI/2;butt.position.z=.64;butt.castShadow=true;weaponPivot.add(butt);
+  }else if(weapon==='hammer'){
+    const handle=new THREE.Mesh(new THREE.CylinderGeometry(.020,.024,.54,10),woodMat);handle.rotation.x=Math.PI/2;handle.position.z=-.18;handle.castShadow=true;weaponPivot.add(handle);
+    const head=new THREE.Mesh(new THREE.BoxGeometry(.28,.12,.13),bronzeMat);head.position.z=-.48;head.castShadow=true;weaponPivot.add(head);
+    const peen=new THREE.Mesh(new THREE.ConeGeometry(.055,.16,10),bronzeMat);peen.rotation.z=-Math.PI/2;peen.position.set(.20,0,-.48);peen.castShadow=true;weaponPivot.add(peen);
   }else{
     const grip=new THREE.Mesh(new THREE.CylinderGeometry(.021,.024,.15,8),leather);grip.rotation.x=Math.PI/2;grip.position.z=.03;grip.castShadow=true;weaponPivot.add(grip);
     const guard=new THREE.Mesh(new THREE.BoxGeometry(.18,.035,.045),bronzeMat);guard.position.z=-.06;guard.castShadow=true;weaponPivot.add(guard);
@@ -1362,6 +1569,14 @@ function applySoldierPose(root,dt,{moving=false,talking=false,alert=0,actionType
       const t=(phase-.32)/.30;rightTarget.set(.28+.12*t,.45-.25*t,-.18-.38*t);leftTarget.set(-.28,.18,-.06);weaponPitch=-1.10+1.45*t;weaponYaw=.28-.42*t;weaponRoll=-.12-.10*t;r.torsoPivot.rotation.z=-.10+.22*t;
     }else{
       const t=(phase-.62)/.38;rightTarget.set(.40-.10*t,.20,-.56+.51*t);leftTarget.set(-.28,.17,-.03);weaponPitch=.35-.35*t;weaponYaw=-.14+.19*t;weaponRoll=-.22+.16*t;
+    }
+  }else if(actionType==='hammer'){
+    if(phase<.34){
+      const t=phase/.34;rightTarget.set(.24,.28+.28*t,-.06+.04*t);leftTarget.set(-.23,.18,-.03);weaponPitch=-.30-1.05*t;weaponYaw=.10;weaponRoll=-.08;r.torsoPivot.rotation.z=-.08*t;
+    }else if(phase<.61){
+      const t=(phase-.34)/.27;rightTarget.set(.24+.08*t,.56-.38*t,-.02-.42*t);leftTarget.set(-.25,.17,-.05);weaponPitch=-1.35+1.62*t;weaponYaw=.10-.10*t;weaponRoll=-.10;r.torsoPivot.rotation.x=.13*t;
+    }else{
+      const t=(phase-.61)/.39;rightTarget.set(.32-.08*t,.18+.08*t,-.44+.39*t);leftTarget.set(-.24,.18,-.03);weaponPitch=.27-.27*t;weaponYaw=.02+.06*t;weaponRoll=-.08;r.torsoPivot.rotation.x=.13*(1-t);
     }
   }else if(actionType==='thrust'){
     if(phase<.30){
@@ -1480,22 +1695,38 @@ function createPatrolGuards(){
   // Circuit sur les voies libres : chaque point force la formation à contourner les bâtiments.
   const route=[
     new THREE.Vector3(0,0,7.05),
-    new THREE.Vector3(-3.85,0,7.00),
-    new THREE.Vector3(-5.00,0,5.15),
-    new THREE.Vector3(-5.15,0,2.55),
-    new THREE.Vector3(-5.20,0,-1.95),
-    new THREE.Vector3(-4.05,0,-4.75),
-    new THREE.Vector3(-2.35,0,-6.18),
+    new THREE.Vector3(-2.20,0,7.12),
+    new THREE.Vector3(-4.25,0,7.48),
+    new THREE.Vector3(-6.55,0,7.72),
+    new THREE.Vector3(-8.05,0,7.35),
+    new THREE.Vector3(-7.20,0,5.05),
+    new THREE.Vector3(-5.25,0,3.35),
+    new THREE.Vector3(-5.12,0,.20),
+    new THREE.Vector3(-5.20,0,-2.30),
+    new THREE.Vector3(-4.00,0,-4.85),
+    new THREE.Vector3(-2.30,0,-6.25),
     new THREE.Vector3(0,0,-6.88),
     new THREE.Vector3(2.65,0,-6.12),
-    new THREE.Vector3(4.55,0,-4.52),
-    new THREE.Vector3(5.18,0,-1.88),
-    new THREE.Vector3(5.10,0,2.55),
-    new THREE.Vector3(4.15,0,5.82),
-    new THREE.Vector3(2.45,0,6.92)
+    new THREE.Vector3(4.75,0,-4.65),
+    new THREE.Vector3(5.22,0,-1.88),
+    new THREE.Vector3(5.10,0,2.45),
+    new THREE.Vector3(6.30,0,4.25),
+    new THREE.Vector3(4.20,0,6.15),
+    new THREE.Vector3(2.30,0,7.05)
   ];
-  patrolFormation={position:start.clone(),route,targetIndex:1,pause:0,spacing:.32,speed:.54,heading:Math.PI,lastHeading:Math.PI,blockedTime:0,detourSign:1};
+  patrolFormation={position:start.clone(),route,targetIndex:1,pause:0,spacing:.32,speed:.56,heading:Math.PI,lastHeading:Math.PI,blockedTime:0,detourSign:1,recoveryTarget:null,recoveryAge:0,stepTimer:0,lastPosition:start.clone()};
   patrolGuards.forEach((g,i)=>Object.assign(g.userData,{guardIndex:i,formationSide:i===0?-1:1}));
+}
+
+function createBuilderNPC(){
+  const start=(constructionStations[0]||new THREE.Vector3(3.45,0,8.05)).clone();
+  builderNPC=createArmoredSoldier({position:start,name:'Théron',role:'constructeur',weapon:'hammer',armored:false,hasCape:false,hasShield:false,helmeted:false,tunicColor:0x84684a});
+  Object.assign(builderNPC.userData,{state:'move',stateTime:0,targetIndex:1,actionElapsed:0,actionDuration:1.65,dialogIndex:0,bubbleUntil:0,playerNear:false,dialogues:[
+    'Le rempart commencera ici : assez large pour défendre le ponton, jamais pour étouffer le port.',
+    'La pierre tient le choc. Le bois, lui, nous permet de la convaincre de monter.',
+    'Je laisse le passage central libre. Une fortification qui bloque ses propres hommes est une tombe coûteuse.',
+    'Chaque assise doit être sèche avant la suivante. Même les héros attendent que le mortier prenne.'
+  ]});
 }
 
 function createFarmerNPC(){
@@ -1788,7 +2019,7 @@ function solveShieldArm(arm,targetLocal,shieldCenter,shieldNormal,bend=1,clearan
 }
 
 function getTalkNPCs(){
-  return [farmerNPC,blacksmithNPC,trainingNPC].filter(Boolean);
+  return [farmerNPC,blacksmithNPC,trainingNPC,builderNPC].filter(Boolean);
 }
 function getNearbyNPC(maxDist=1.58){
   if(!started)return null;
@@ -1840,9 +2071,10 @@ function updateActionButtons(){
   els.actionA?.setAttribute('aria-disabled','false');
   const isForge=nearNPC===blacksmithNPC;
   const isTrainer=nearNPC===trainingNPC;
-  const label=nearNPC?(isForge?`Ouvrir la forge de ${nearNPC.userData?.name||'Myron'}`:isTrainer?`Parler à ${nearNPC.userData?.name||"l'instructeur"}`:`Interagir avec ${nearNPC.userData?.name||'le PNJ'}`):'Attaquer au xiphos';
+  const isBuilder=nearNPC===builderNPC;
+  const label=nearNPC?(isForge?`Ouvrir la forge de ${nearNPC.userData?.name||'Myron'}`:isTrainer?`Parler à ${nearNPC.userData?.name||"l'instructeur"}`:isBuilder?`Parler au constructeur ${nearNPC.userData?.name||'Théron'}`:`Interagir avec ${nearNPC.userData?.name||'le PNJ'}`):'Attaquer au xiphos';
   els.actionA?.setAttribute('aria-label',label);
-  if(els.actionALabel)els.actionALabel.textContent=nearNPC?(isForge?'FORGE':isTrainer?'ENTRAÎNER':'INTERAGIR'):'ATTAQUER';
+  if(els.actionALabel)els.actionALabel.textContent=nearNPC?(isForge?'FORGE':isTrainer?'ENTRAÎNER':isBuilder?'CHANTIER':'INTERAGIR'):'ATTAQUER';
 }
 function startSwordAttack(){
   if(!started||!greekGear||attackTimer>0)return;
@@ -1998,65 +2230,130 @@ function updateTrainingNPC(dt){
   applySoldierPose(trainingNPC,dt,{moving,talking,actionType,actionPhase,alert:actionType?1:0});
 }
 
+function updateBuilderNPC(dt){
+  if(!builderNPC||!constructionStations.length)return;
+  const d=builderNPC.userData;d.stateTime=(d.stateTime||0)-dt;
+  let moving=false,actionType='',actionPhase=0;
+  if(d.state==='talk'){
+    const dx=player.x-builderNPC.position.x,dz=player.z-builderNPC.position.z,targetRot=Math.atan2(dx,dz)+Math.PI;
+    builderNPC.rotation.y=normalizeAngle(builderNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-builderNPC.rotation.y),-dt*4.5,dt*4.5));
+    if(d.stateTime<=0)d.state='work';
+  }else if(d.state==='work'){
+    d.actionElapsed=(d.actionElapsed||0)+dt;actionType='hammer';actionPhase=(d.actionElapsed%d.actionDuration)/d.actionDuration;
+    const station=constructionStations[d.targetIndex%constructionStations.length];
+    const look=station.clone().add(new THREE.Vector3(station.x>0?.75:-.75,0,.45)).sub(builderNPC.position);
+    const targetRot=Math.atan2(look.x,look.z)+Math.PI;builderNPC.rotation.y=normalizeAngle(builderNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-builderNPC.rotation.y),-dt*3.6,dt*3.6));
+    if(d.actionElapsed>d.actionDuration*(2.1+Math.random()*.15)){d.actionElapsed=0;d.targetIndex=(d.targetIndex+1)%constructionStations.length;d.state='move';}
+  }else{
+    const target=constructionStations[d.targetIndex%constructionStations.length],dir=target.clone().sub(builderNPC.position);dir.y=0;const dist=dir.length();
+    if(dist<.20){d.state='work';d.actionElapsed=0;}
+    else{
+      dir.normalize();const desired=builderNPC.position.clone().addScaledVector(dir,.48*dt);resolveCollisions(desired,.24);
+      if(Math.hypot(desired.x-player.x,desired.z-player.z)>.55)builderNPC.position.copy(desired);
+      moving=true;const targetRot=Math.atan2(dir.x,dir.z)+Math.PI;builderNPC.rotation.y=normalizeAngle(builderNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(targetRot-builderNPC.rotation.y),-dt*4.5,dt*4.5));
+    }
+  }
+  builderNPC.position.y=getTerrainHeight(builderNPC.position.x,builderNPC.position.z);
+  applySoldierPose(builderNPC,dt,{moving,talking:d.state==='talk',actionType,actionPhase,alert:actionType?.25:0});
+}
+
 function updatePatrolGuards(dt){
   if(!patrolFormation||patrolGuards.length!==2)return;
   const f=patrolFormation;
   let moving=false;
 
-  const formationClear=(center,moveDir)=>{
+  const formationClear=(center,moveDir,lookAhead=.36)=>{
     const heading=Math.atan2(moveDir.x,moveDir.z)+Math.PI;
     const forward=new THREE.Vector3(Math.sin(heading-Math.PI),0,Math.cos(heading-Math.PI)).normalize();
     const side=new THREE.Vector3(forward.z,0,-forward.x).normalize();
-    const desired=[center.clone().addScaledVector(side,-f.spacing),center.clone().addScaledVector(side,f.spacing)];
-    for(const pos of desired){
-      const checked=pos.clone();resolveCollisions(checked,.29);
-      if(checked.distanceTo(pos)>.075)return false;
-      if(Math.hypot(pos.x-player.x,pos.z-player.z)<.64)return false;
-      for(const npc of [farmerNPC,blacksmithNPC,trainingNPC]){
-        if(npc&&Math.hypot(pos.x-npc.position.x,pos.z-npc.position.z)<.62)return false;
+    const centers=[center,center.clone().addScaledVector(forward,lookAhead)];
+    for(const c of centers){
+      const desired=[c.clone().addScaledVector(side,-f.spacing),c.clone().addScaledVector(side,f.spacing)];
+      for(const pos of desired){
+        const checked=pos.clone();resolveCollisions(checked,.29);
+        if(checked.distanceTo(pos)>.065)return false;
+        if(Math.hypot(pos.x-player.x,pos.z-player.z)<.66)return false;
+        for(const npc of [farmerNPC,blacksmithNPC,trainingNPC,builderNPC])if(npc&&Math.hypot(pos.x-npc.position.x,pos.z-npc.position.z)<.64)return false;
       }
     }
     return true;
   };
+  const findRecoveryPoint=(routeTarget)=>{
+    let best=null,bestScore=Infinity;
+    const preferred=routeTarget.clone().sub(f.position).setY(0).normalize();
+    for(const radius of [1.05,1.55,2.10,2.65]){
+      for(let i=0;i<20;i++){
+        const angle=i/20*Math.PI*2+(f.detourSign<0?Math.PI/20:0);
+        const candidate=f.position.clone().add(new THREE.Vector3(Math.sin(angle)*radius,0,Math.cos(angle)*radius));
+        const checked=candidate.clone();resolveCollisions(checked,.34);
+        if(checked.distanceTo(candidate)>.08)continue;
+        const dir=candidate.clone().sub(f.position).setY(0);if(dir.lengthSq()<.01)continue;dir.normalize();
+        if(!formationClear(candidate,dir,.20))continue;
+        const toGoal=candidate.distanceTo(routeTarget);
+        const alignment=1-dir.dot(preferred);
+        const coastPenalty=pointInIsland(candidate.x,candidate.z)?0:20;
+        const score=toGoal+alignment*.72+coastPenalty;
+        if(score<bestScore){bestScore=score;best=candidate;}
+      }
+      if(best)break;
+    }
+    return best;
+  };
 
   if(f.pause>0)f.pause-=dt;
   else{
-    const target=f.route[f.targetIndex]||f.route[0];
-    const direct=target.clone().sub(f.position);direct.y=0;
+    const routeTarget=f.route[f.targetIndex]||f.route[0];
+    if(f.recoveryTarget){
+      f.recoveryAge+=dt;
+      if(f.position.distanceTo(f.recoveryTarget)<.22||f.recoveryAge>5.0){f.recoveryTarget=null;f.recoveryAge=0;}
+    }
+    const navTarget=f.recoveryTarget||routeTarget;
+    const direct=navTarget.clone().sub(f.position);direct.y=0;
     const dist=direct.length();
-    if(dist<.18){
+    if(!f.recoveryTarget&&dist<.20){
       f.targetIndex=(f.targetIndex+1)%f.route.length;
-      f.pause=(f.targetIndex===1||f.targetIndex===8)?.80:.22;
-      f.blockedTime=0;
-    }else{
+      f.pause=(f.targetIndex===1||f.targetIndex===8)?.68:.16;
+      f.blockedTime=0;f.recoveryTarget=null;
+    }else if(dist>.001){
       direct.normalize();
-      const side=new THREE.Vector3(direct.z,0,-direct.x).normalize();
-      const dirs=[direct.clone()];
-      const first=f.detourSign||1;
-      for(const amount of [.55,.95,1.35]){
-        dirs.push(direct.clone().addScaledVector(side,amount*first).normalize());
-        dirs.push(direct.clone().addScaledVector(side,-amount*first).normalize());
-      }
-      let chosen=null,candidate=null;
-      for(const dir of dirs){
-        const test=f.position.clone().addScaledVector(dir,f.speed*dt);
-        if(formationClear(test,dir)){chosen=dir;candidate=test;break;}
+      const angles=[0,18,-18,34,-34,52,-52,72,-72,96,-96,126,-126].map(v=>v*Math.PI/180);
+      let chosen=null,bestScore=-Infinity;
+      for(const angle of angles){
+        const dir=direct.clone();
+        const ca=Math.cos(angle),sa=Math.sin(angle),x=dir.x*ca-dir.z*sa,z=dir.x*sa+dir.z*ca;dir.set(x,0,z).normalize();
+        const step=f.speed*dt;
+        const candidate=f.position.clone().addScaledVector(dir,step);
+        if(!formationClear(candidate,dir,.42))continue;
+        const alignment=dir.dot(direct);
+        const turnCost=Math.abs(normalizeAngle((Math.atan2(dir.x,dir.z)+Math.PI)-f.heading));
+        const score=alignment*2.4-turnCost*.12+(angle===0?.18:0);
+        if(score>bestScore){bestScore=score;chosen={dir,candidate};}
       }
       if(chosen){
-        f.position.copy(candidate);moving=true;f.blockedTime=0;
-        f.lastHeading=f.heading;f.heading=Math.atan2(chosen.x,chosen.z)+Math.PI;
+        f.position.copy(chosen.candidate);moving=true;
+        f.lastHeading=f.heading;f.heading=Math.atan2(chosen.dir.x,chosen.dir.z)+Math.PI;
+        f.blockedTime=Math.max(0,f.blockedTime-dt*1.8);
       }else{
-        f.blockedTime+=dt;f.pause=.08;
-        if(f.blockedTime>.72){f.detourSign*=-1;f.blockedTime=0;}
+        f.blockedTime+=dt;
+        if(f.blockedTime>2.0){
+          const recovery=findRecoveryPoint(routeTarget);
+          if(recovery){f.recoveryTarget=recovery;f.recoveryAge=0;f.detourSign*=-1;}
+          else{f.targetIndex=(f.targetIndex+1)%f.route.length;f.recoveryTarget=null;f.pause=.20;}
+          f.blockedTime=0;
+        }
       }
     }
   }
 
+  if(moving){
+    f.stepTimer+=dt;
+    if(f.stepTimer>.38){playPatrolFootstep(.72+Math.random()*.16);f.stepTimer=0;}
+  }else f.stepTimer=Math.min(f.stepTimer,.22);
+
   const forward=new THREE.Vector3(Math.sin(f.heading-Math.PI),0,Math.cos(f.heading-Math.PI)).normalize();
   const side=new THREE.Vector3(forward.z,0,-forward.x).normalize();
   patrolGuards.forEach((guard,i)=>{
-    const sideSign=i===0?-1:1;
-    const desired=f.position.clone().addScaledVector(side,sideSign*f.spacing);
+    const desired=f.position.clone().addScaledVector(side,i===0?-f.spacing:f.spacing);
     desired.y=getTerrainHeight(desired.x,desired.z);
     guard.position.lerp(desired,1-Math.exp(-10*dt));
     guard.rotation.y=normalizeAngle(guard.rotation.y+THREE.MathUtils.clamp(normalizeAngle(f.heading-guard.rotation.y),-dt*5.0,dt*5.0));
@@ -2218,7 +2515,7 @@ function loadCharacter(){
     greekGear=addGreekGear(character);
     loaded=true;
     els.loading.classList.remove('visible');
-    els.loaderText.textContent='Décor grec, fermier et forgeron prêts.';
+    els.loaderText.textContent='Biomes, remparts, constructeur et patrouille adaptative prêts.';
   },120);
 }
 
@@ -2230,6 +2527,7 @@ function addGreekGear(root){
   const matBlack=new THREE.MeshStandardMaterial({color:0x14181d,roughness:.42,metalness:.56});
   const matBlackSoft=new THREE.MeshStandardMaterial({color:0x232830,roughness:.56,metalness:.28});
   const matSteel=new THREE.MeshStandardMaterial({color:0x7d848d,roughness:.28,metalness:.82});
+  const matBronze=new THREE.MeshStandardMaterial({color:0x8e6b3f,roughness:.54,metalness:.32});
   const matCape=new THREE.MeshStandardMaterial({color:0xa0211a,roughness:.84,side:THREE.DoubleSide});
   const matCapeDark=new THREE.MeshStandardMaterial({color:0x741915,roughness:.88,side:THREE.DoubleSide});
   const matLeather=new THREE.MeshStandardMaterial({color:0x4a3021,roughness:.96});
@@ -2319,14 +2617,14 @@ function addGreekGear(root){
   shieldPivot.quaternion.setFromUnitVectors(shieldLocalNormal,shieldRestNormal);
 
   // Forme convexe et très fine : la tranche conserve un léger arrondi au lieu d’un rectangle rigide.
-  const shield=new THREE.Mesh(new THREE.SphereGeometry(.285,28,16), matBlack);
+  const shield=new THREE.Mesh(new THREE.SphereGeometry(.285,24,14),matBlack);
   shield.scale.set(1,.105,1);
-  shield.castShadow=true; shield.receiveShadow=true; shieldPivot.add(shield);
-  const rim=new THREE.Mesh(new THREE.TorusGeometry(.274,.017,10,32), matSteel);
-  rim.position.y=.024; rim.rotation.x=Math.PI/2; shieldPivot.add(rim);
-  const backRim=rim.clone();backRim.position.y=-.024;shieldPivot.add(backRim);
-  const boss=new THREE.Mesh(new THREE.SphereGeometry(.070,14,10),matSteel);
-  boss.scale.set(1,.22,1);boss.position.y=.032;boss.castShadow=true;shieldPivot.add(boss);
+  shield.castShadow=true;shield.receiveShadow=true;shieldPivot.add(shield);
+  // Géométrie strictement identique aux boucliers de patrouille, avec face noire.
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.285,.024,8,26),matBronze);
+  rim.rotation.x=Math.PI/2;rim.castShadow=true;shieldPivot.add(rim);
+  const boss=new THREE.Mesh(new THREE.SphereGeometry(.075,12,10),matBronze);
+  boss.scale.set(1,.24,1);boss.position.y=.026;boss.castShadow=true;shieldPivot.add(boss);
   const grip=new THREE.Mesh(new THREE.BoxGeometry(.055,.045,.30), matLeather);
   grip.position.set(.00,-.030,.015); shieldPivot.add(grip);
   const handStrap=new THREE.Mesh(new THREE.BoxGeometry(.14,.038,.060), matLeather);
@@ -2683,11 +2981,14 @@ function update(){
   updateFarmerNPC(dt);
   updateBlacksmithNPC(dt);
   updateTrainingNPC(dt);
+  updateBuilderNPC(dt);
   updatePatrolGuards(dt);
   updateTrainingGate(dt);
   updateForgeVisibility(dt);
   updateTempleVisibility(dt);
   updateFarmHutVisibility(dt);
+  updateEmptyHouseVisibility(dt);
+  updateWaterAnimation(dt);
   updateAudioZones(dt);
   updateNPCBubble();
   updateActionButtons();
@@ -2752,6 +3053,7 @@ async function start(){
   try{await audioCtx?.resume?.()}catch{}
   // Les sons de pas se chargent en arrière-plan : le joueur entre immédiatement dans le jeu même si le réseau est lent.
   loadFootstepAssets().catch(err=>console.warn('Sons de pas différés.',err));
+  loadPatrolFootstepAssets().catch(err=>console.warn('Pas des patrouilleurs différés.',err));
   loadAnvilSfxAsset().catch(err=>console.warn('Son d’enclume différé.',err));
   try{els.audio.pause();els.audio.currentTime=0}catch{}
   stopAmbient();
