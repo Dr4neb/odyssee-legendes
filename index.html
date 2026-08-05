@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.28.0 | 2026-08-06T06:55+11:00 | Stabilisation avant la V2 -->
-<meta name="build-id" content="odyssee-v1.28.0-stabilisation-v2-20260806-0655-nc">
+<!-- VERIFIED BUILD: Odyssée v1.28.1 | 2026-08-06T07:10+11:00 | Interface allégée et attaque linéaire -->
+<meta name="build-id" content="odyssee-v1.28.1-interface-combat-20260806-0710-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.28.0 — Stabilisation avant la V2</title>
+<title>Odyssée — v1.28.1 — Interface allégée et attaque linéaire</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -281,6 +281,32 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 @media(max-height:520px){#pauseMenuBtn{top:calc(8px + env(safe-area-inset-top));right:calc(76px + env(safe-area-inset-right));width:44px;height:39px}#resourceHud{top:138px!important;width:142px!important;padding:6px!important}.resourceHudItem{padding:5px 6px!important}.resourceHudValue{font-size:10px!important}}
 </style>
 
+
+<style>
+/* ===================== ODYSSÉE v1.28.1 — INTERFACE ET COMBAT ===================== */
+/* Suppression définitive du petit bandeau informatif historique. */
+#hud{display:none!important;visibility:hidden!important;opacity:0!important}
+
+/* La mini-carte est ancrée immédiatement sous les barres de vie et d'endurance. */
+#miniMapWrap{top:calc(67px + env(safe-area-inset-top))!important}
+
+/* Panneau de ressources repliable pour libérer l'écran de jeu. */
+#resourceHud{top:calc(157px + env(safe-area-inset-top))!important;width:158px!important;padding:5px!important;pointer-events:auto!important;display:none!important}
+#resourceHud.visible{display:block!important}
+#resourceHudToggle{display:flex;width:100%;min-height:31px;align-items:center;justify-content:space-between;gap:8px;padding:7px 9px;border:0;border-radius:7px;background:linear-gradient(145deg,rgba(49,53,48,.92),rgba(20,25,24,.96));color:#e6d4ae;font:900 8px/1 system-ui;letter-spacing:.105em;text-transform:uppercase;touch-action:manipulation}
+#resourceHudToggle .v1281ResourceArrow{font-size:12px;line-height:1;transition:transform .16s ease}
+#resourceHud.open #resourceHudToggle .v1281ResourceArrow{transform:rotate(180deg)}
+#resourceHudGrid{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+#resourceHud.open #resourceHudGrid{display:grid}
+#resourceHudGrid .resourceHudItem:last-child{grid-column:1/-1}
+@media(max-height:520px){
+  #miniMapWrap{top:calc(52px + env(safe-area-inset-top))!important}
+  #resourceHud{top:calc(132px + env(safe-area-inset-top))!important;width:146px!important}
+  #resourceHudToggle{min-height:28px;padding:6px 8px}
+}
+/* =================== FIN ODYSSÉE v1.28.1 — CSS =================== */
+</style>
+
 </head>
 <body>
 <div id="game"></div>
@@ -290,7 +316,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.0 — STABILISATION AVANT LA V2</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.1 — INTERFACE ET COMBAT</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -317,7 +343,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
     <button id="pauseSaveBtn" class="pauseMenuAction primary" type="button">Sauvegarder</button>
     <button id="v128DiagnosticsBtn" class="pauseMenuAction v128Secondary" type="button">Diagnostic technique</button>
     <button id="v128RestoreBackupBtn" class="pauseMenuAction v128Secondary" type="button">Restaurer la sauvegarde de secours</button>
-    <div id="v128PauseBuild">v1.28.0 • moteur stabilisé</div>
+    <div id="v128PauseBuild">v1.28.1 • interface et combat</div>
     <button id="pauseQuitBtn" class="pauseMenuAction danger" type="button">Sauvegarder et quitter</button>
   </div>
 </div>
@@ -416,7 +442,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <button id="bellActionBtn" type="button" aria-label="Faire sonner la cloche et rassembler les troupes"><span><span class="bellIcon">◕</span>Sonner<br>la cloche</span></button>
 <div id="storyOverlay" aria-hidden="true"><div id="storyCard" role="dialog" aria-modal="true" aria-label="Histoire de la cité"><button id="storyClose" type="button" aria-label="Fermer">×</button><div id="storyKicker">Bienvenue à Astérion</div><h2>La cité de Gregorius</h2><p>Fondée en <strong>1186 av. J.-C.</strong> par des marins revenus des guerres de l’Égée, Astérion s’est élevée autour de son port, de sa forge et de ses terres nourricières.</p><p>La cité est dirigée par <strong>Gregorius</strong>, chef militaire et protecteur de ses habitants. Sous son autorité, les remparts s’élèvent, les patrouilles veillent et les ateliers préparent les prochaines expéditions.</p><p>Les habitants honorent principalement <strong>Déméter</strong>, déesse des moissons, de la terre cultivée et du retour des saisons. Les marins d’Astérion invoquent également <strong>Poséidon</strong>, maître des mers et des tempêtes. Son futur sanctuaire doit encore être élevé près du port.</p><div id="storyFacts"><div class="storyFact"><b>Fondation</b><span>1186 av. J.-C.</span></div><div class="storyFact"><b>Chef</b><span>Gregorius</span></div><div class="storyFact"><b>Divinités</b><span>Déméter · Poséidon</span></div><div class="storyFact"><b>Terre</b><span>Île d’Astérion</span></div></div></div></div>
 <div id="npcBubble"><strong>Démos — fermier</strong><span id="npcBubbleText">Que les dieux protègent ta route, guerrier.</span></div>
-<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.28.0</div>
+<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.28.1</div>
 
 <div id="forgeMenu" aria-hidden="true">
   <div class="forgeKicker">Atelier de forge</div>
@@ -5892,7 +5918,7 @@ if(typeof window!=='undefined'){
 
 
 /* ===================== ODYSSÉE v1.24.0 — FONDATION DE SAUVEGARDE ===================== */
-const V124_BUILD='v1.28.0 — stabilisation-v2-20260806-0655-NC';
+const V124_BUILD='v1.28.1 — interface-combat-20260806-0710-NC';
 const V124_SAVE_KEY='odyssee.asterion.save';
 const V124_SAVE_SCHEMA=4;
 const V124_AUTOSAVE_SECONDS=15;
@@ -6354,7 +6380,7 @@ if(typeof window!=='undefined'){window.ODYSSEE_BUILD_V127=V127_BUILD;window.ODYS
 
 
 /* ===================== ODYSSÉE v1.28.0 — STABILISATION AVANT LA V2 ===================== */
-const V128_BUILD='v1.28.0 — stabilisation-v2-20260806-0655-NC';
+const V128_BUILD='v1.28.1 — interface-combat-20260806-0710-NC';
 const V128_SAVE_SCHEMA=5;
 const V128_BACKUP_KEY='odyssee.asterion.save.backup';
 const V128_BACKUP_INTERVAL=90000;
@@ -6482,7 +6508,108 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.24.0 =================== */
 
 // Music is automatic in v1.19.0; no user toggle.
+
+
+/* ===================== ODYSSÉE v1.28.1 — INTERFACE ET COMBAT ===================== */
+const V1281_BUILD='v1.28.1 — interface-combat-20260806-0710-NC';
+
+// Le bandeau historique est conservé uniquement pour compatibilité avec les anciennes références DOM.
+if(els?.hud){els.hud.classList.remove('visible','fading');els.hud.setAttribute('aria-hidden','true');}
+
+// Transformation du panneau de ressources en volet repliable, fermé par défaut.
+const v1281ResourceHud=document.getElementById('resourceHud');
+let v1281ResourcesOpen=false;
+function v1281SetResourcesOpen(open){
+  v1281ResourcesOpen=!!open;
+  v1281ResourceHud?.classList.toggle('open',v1281ResourcesOpen);
+  const button=document.getElementById('resourceHudToggle');
+  button?.setAttribute('aria-expanded',String(v1281ResourcesOpen));
+  button?.setAttribute('aria-label',v1281ResourcesOpen?'Replier les ressources':'Déployer les ressources');
+}
+function v1281BuildResourceDrawer(){
+  if(!v1281ResourceHud||document.getElementById('resourceHudToggle'))return;
+  const items=[...v1281ResourceHud.querySelectorAll('.resourceHudItem')];
+  const button=document.createElement('button');
+  button.id='resourceHudToggle';button.type='button';button.setAttribute('aria-expanded','false');button.setAttribute('aria-label','Déployer les ressources');
+  button.innerHTML='<span>Ressources</span><span class="v1281ResourceArrow" aria-hidden="true">⌄</span>';
+  const grid=document.createElement('div');grid.id='resourceHudGrid';
+  for(const item of items)grid.appendChild(item);
+  v1281ResourceHud.append(button,grid);
+  button.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();v1281SetResourcesOpen(!v1281ResourcesOpen);},{passive:false});
+  v1281SetResourcesOpen(false);
+}
+v1281BuildResourceDrawer();
+
+// Pose du xiphos sur sa tranche : la rotation supplémentaire se fait autour de son axe longitudinal local.
+const V1281_XIPHOS_EDGE_QUAT=(()=>{
+  const edge=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.PI/2);
+  return V1261_XIPHOS_QUAT.clone().multiply(edge);
+})();
+const V1281_XIPHOS_GUARD_POS=new THREE.Vector3(.018,-.018,.018);
+const V1281_XIPHOS_READY_POS=new THREE.Vector3(.018,.018,.038);
+const V1281_XIPHOS_STRIKE_POS=new THREE.Vector3(.018,-.032,-.125);
+const V1281_XIPHOS_READY_QUAT=V1281_XIPHOS_EDGE_QUAT.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),THREE.MathUtils.degToRad(-18)));
+const V1281_XIPHOS_STRIKE_QUAT=V1281_XIPHOS_EDGE_QUAT.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),THREE.MathUtils.degToRad(58)));
+
+function v1281LinearAttackState(){
+  if(attackTimer<=0)return {active:false,phase:'idle',t:0};
+  const p=THREE.MathUtils.clamp(1-attackTimer/attackDuration,0,1);
+  if(p<.18)return {active:true,phase:'ready',t:p/.18};
+  if(p<.70)return {active:true,phase:'strike',t:(p-.18)/.52};
+  return {active:true,phase:'recover',t:(p-.70)/.30};
+}
+
+// Remplacement de l'ancienne trajectoire courbe par une translation rectiligne avant/arrière.
+v1234ApplyXiphosPose=function(){
+  if(!greekGear||!v1234RebuildXiphos())return;
+  const pivot=greekGear.userData.swordPivot;if(!pivot)return;
+  if(equipmentStowed){pivot.visible=false;return;}
+  pivot.visible=true;
+  const state=v1281LinearAttackState();
+  if(!state.active){pivot.position.copy(V1281_XIPHOS_GUARD_POS);pivot.quaternion.copy(V1281_XIPHOS_EDGE_QUAT);return;}
+  if(state.phase==='ready'){
+    pivot.position.lerpVectors(V1281_XIPHOS_GUARD_POS,V1281_XIPHOS_READY_POS,state.t);
+    pivot.quaternion.copy(V1281_XIPHOS_EDGE_QUAT).slerp(V1281_XIPHOS_READY_QUAT,state.t);
+  }else if(state.phase==='strike'){
+    pivot.position.lerpVectors(V1281_XIPHOS_READY_POS,V1281_XIPHOS_STRIKE_POS,state.t);
+    pivot.quaternion.copy(V1281_XIPHOS_READY_QUAT).slerp(V1281_XIPHOS_STRIKE_QUAT,state.t);
+  }else{
+    pivot.position.lerpVectors(V1281_XIPHOS_STRIKE_POS,V1281_XIPHOS_GUARD_POS,state.t);
+    pivot.quaternion.copy(V1281_XIPHOS_STRIKE_QUAT).slerp(V1281_XIPHOS_EDGE_QUAT,state.t);
+  }
+};
+
+// Le bras droit suit le même axe : aucune dérive latérale ni grand balayage circulaire.
+function v1281ApplyLinearSwordArm(){
+  if(!greekGear||equipmentStowed||attackTimer<=0)return;
+  const g=greekGear.userData,arm=g.rightArm;if(!arm?.shoulder||!arm?.elbow)return;
+  const state=v1281LinearAttackState();
+  const idleShoulder=-.02,idleElbow=.06;
+  const readyShoulder=.48,readyElbow=1.03;
+  const strikeShoulder=-.78,strikeElbow=.20;
+  let shoulder=idleShoulder,elbow=idleElbow;
+  if(state.phase==='ready'){shoulder=THREE.MathUtils.lerp(idleShoulder,readyShoulder,state.t);elbow=THREE.MathUtils.lerp(idleElbow,readyElbow,state.t);}
+  else if(state.phase==='strike'){shoulder=THREE.MathUtils.lerp(readyShoulder,strikeShoulder,state.t);elbow=THREE.MathUtils.lerp(readyElbow,strikeElbow,state.t);}
+  else{shoulder=THREE.MathUtils.lerp(strikeShoulder,idleShoulder,state.t);elbow=THREE.MathUtils.lerp(strikeElbow,idleElbow,state.t);}
+  arm.shoulder.rotation.x=shoulder;
+  arm.shoulder.rotation.z=-.035;
+  arm.elbow.rotation.x=elbow;
+  if(g.torsoPivot){g.torsoPivot.rotation.y=0;g.torsoPivot.rotation.z*=.18;}
+}
+
+const v1281UpdateBase=update;
+update=function(){v1281UpdateBase();v1281ApplyLinearSwordArm();};
+
+// Les nouvelles sauvegardes identifient précisément cette révision sans changer le schéma 5.
+const v1281CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){const save=v1281CaptureSaveBase();save.meta={...(save.meta||{}),build:V1281_BUILD};return save;};
+
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1281=V1281_BUILD;
+  window.ODYSSEE_UI_V1281={resources:{open:()=>v1281SetResourcesOpen(true),close:()=>v1281SetResourcesOpen(false)},xiphosEdgeQuaternion:V1281_XIPHOS_EDGE_QUAT};
+}
+/* =================== FIN ODYSSÉE v1.28.1 =================== */
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.28.0-20260806-0655-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.28.1-20260806-0710-NC -->
