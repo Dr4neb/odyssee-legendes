@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.23.3 | 2026-08-05T22:41+11:00 | Trajet Myron verrouillé et navigation sociale sécurisée -->
-<meta name="build-id" content="odyssee-v1.23.3-myron-route-lock-20260805-2241-nc">
+<!-- VERIFIED BUILD: Odyssée v1.23.4 | 2026-08-05T22:45+11:00 | Myron stable, arc désactivé et nouveau xiphos -->
+<meta name="build-id" content="odyssee-v1.23.4-myron-static-bow-disabled-clean-xiphos-20260805-2245-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.23.3 — Trajet Myron verrouillé</title>
+<title>Odyssée — v1.23.4 — Myron stable et nouveau xiphos</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -5622,8 +5622,101 @@ v1232GuardMyronPosition=function(){
 if(typeof window!=='undefined')window.ODYSSEE_BUILD_V1233=V1233_BUILD;
 /* =================== FIN ODYSSÉE v1.23.3 =================== */
 
+
+
+/* ===================== ODYSSÉE v1.23.4 — MYRON STABLE, ARC EN PAUSE ET NOUVEAU XIPHOS ===================== */
+const V1234_BUILD='v1.23.4 — myron-static-bow-disabled-clean-xiphos-20260805-2245-NC';
+
+// Myron devient un PNJ de poste fixe : il apparaît directement à sa forge et ne reçoit plus d'ordre de déplacement.
+const V1234_MYRON_HOME=new THREE.Vector3(-8.30,0,5.62);
+function v1234StabilizeMyron(){
+  if(!blacksmithNPC)return;
+  const d=blacksmithNPC.userData||{};
+  if(d.v121Deployment){d.v121Deployment.active=false;d.v121Deployment.delay=0;}
+  d.v121ArrivedAtWork=true;d.v123RouteIndex=999;d.v1232MyronIndex=999;d.v1233MyronIndex=999;
+  d.v1232MyronNodeClock=0;d.v1233NoProgress=0;d.v1233LastDistance=undefined;
+  delete d.v122Navigation;delete d.v123WorkRoute;
+  if(v119SocialEvent&&(v119SocialEvent.a===blacksmithNPC||v119SocialEvent.b===blacksmithNPC))v119SocialEvent=null;
+  blacksmithNPC.position.set(V1234_MYRON_HOME.x,getTerrainHeight(V1234_MYRON_HOME.x,V1234_MYRON_HOME.z),V1234_MYRON_HOME.z);
+}
+const v1234CreateBlacksmithBase=createBlacksmithNPC;
+createBlacksmithNPC=function(){v1234CreateBlacksmithBase();v1234StabilizeMyron();};
+const v1234DeploymentBase=v121HandleDeployment;
+v121HandleDeployment=function(npc,dt){if(npc===blacksmithNPC){v1234StabilizeMyron();v121AnimateTravel(npc,dt,false);return false;}return v1234DeploymentBase(npc,dt);};
+const v1234SocialEligibilityBase=v1233NPCEligibleForSocial;
+v1233NPCEligibleForSocial=function(npc){if(npc===blacksmithNPC)return false;return v1234SocialEligibilityBase(npc);};
+
+// Pose de référence de l'arc conservée pour une réactivation future.
+const V1234_SAVED_BOW_POSE={position:new THREE.Vector3(0,.31,-.31),quaternion:(()=>{const o=new THREE.Object3D();o.rotateY(Math.PI/2);o.rotateX(Math.PI/2);o.rotateY(Math.PI/2);return o.quaternion.clone();})()};
+
+// L'arc reste enregistré dans le projet mais tout le ciblage, la visée et le tir sont neutralisés.
+v1232BindScreenAim=function(){};v1232AimAtScreen=function(){};v119AimDown=function(){};v119AimMove=function(){};v119AimUp=function(){};
+v119AimActive=false;v119AimRelease=false;v1232AimActive=false;v1232AimPointer=-1;v118LockedTarget=null;v118AimTarget=null;
+v118AcquireTarget=function(){return null;};v117Release=function(){};
+v117StartBow=function(){v117BowTimer=0;v117BowReleased=true;els.actionA?.classList.remove('attacking','aiming','bowAimMode');v117Toast('ARC TEMPORAIREMENT INDISPONIBLE');};
+v117EquipBow=function(){v117WeaponMode='xiphos';v117ArcheryTarget=0;v117ArcheryBlend=0;v117BowTimer=0;v117BowReleased=true;v117InventoryState();v117Toast('ARC EN PAUSE — XIPHOS CONSERVÉ');setTimeout(()=>setPocketMenu(false),120);};
+v117ArcheryUpdate=function(){
+  if(!greekGear)return;const g=greekGear.userData;v117WeaponMode='xiphos';v117ArcheryTarget=0;v117ArcheryBlend=0;v117BowTimer=0;v117BowReleased=true;
+  if(g.v117Bow){g.v117Bow.visible=false;g.v117Bow.position.copy(V1234_SAVED_BOW_POSE.position);g.v117Bow.quaternion.copy(V1234_SAVED_BOW_POSE.quaternion);}
+  if(g.v117Quiver)g.v117Quiver.visible=false;
+  const arms=g.v1232BowArms;if(arms){v1232SetArmVisible(arms.left,false);v1232SetArmVisible(arms.right,false);}
+  if(g.leftArm?.shoulder)g.leftArm.shoulder.visible=!equipmentStowed;if(g.rightArm?.shoulder)g.rightArm.shoulder.visible=!equipmentStowed;
+  setShieldArmVisibility(g.shieldArm,!equipmentStowed);
+  v118Reticle?.classList.remove('visible','locked');if(v118Reticle)v118Reticle.style.display='none';
+};
+
+// Reconstruction complète du xiphos : lame en feuille, arête centrale, garde courte et poignée lisible.
+function v1234RebuildXiphos(){
+  if(!greekGear)return false;const g=greekGear.userData,pivot=g.swordPivot;if(!pivot||pivot.userData.v1234Clean)return !!pivot;
+  pivot.userData.v1234Clean=true;
+  while(pivot.children.length)pivot.remove(pivot.children[0]);
+  const bronze=new THREE.MeshStandardMaterial({color:0x9a7445,roughness:.42,metalness:.72});
+  const bronzeDark=new THREE.MeshStandardMaterial({color:0x5f4428,roughness:.58,metalness:.55});
+  const leather=new THREE.MeshStandardMaterial({color:0x35251d,roughness:.94});
+  const steel=new THREE.MeshStandardMaterial({color:0xc4cad0,roughness:.24,metalness:.92});
+  const ridgeMat=new THREE.MeshStandardMaterial({color:0xe3e6e8,roughness:.18,metalness:.96});
+  const root=new THREE.Group();root.name='V1234CleanXiphos';pivot.add(root);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.026,.030,.205,14),leather);grip.position.y=-.105;grip.castShadow=true;root.add(grip);
+  for(const y of [-.175,-.105,-.035]){const ring=new THREE.Mesh(new THREE.TorusGeometry(.030,.0045,7,14),bronzeDark);ring.rotation.x=Math.PI/2;ring.position.y=y;root.add(ring);}
+  const pommel=new THREE.Mesh(new THREE.SphereGeometry(.044,16,12),bronze);pommel.scale.set(1.15,.78,.82);pommel.position.y=-.225;pommel.castShadow=true;root.add(pommel);
+  const guardCore=new THREE.Mesh(new THREE.BoxGeometry(.205,.035,.050),bronze);guardCore.position.y=.015;guardCore.castShadow=true;root.add(guardCore);
+  for(const side of [-1,1]){const q=new THREE.Mesh(new THREE.CapsuleGeometry(.012,.070,5,10),bronze);q.position.set(side*.096,.025,0);q.rotation.z=side*.66;q.castShadow=true;root.add(q);}
+  const shoulder=new THREE.Mesh(new THREE.CylinderGeometry(.050,.060,.050,16),bronzeDark);shoulder.position.y=.065;shoulder.castShadow=true;root.add(shoulder);
+  const shape=new THREE.Shape();
+  shape.moveTo(-.028,0);shape.bezierCurveTo(-.052,.075,-.072,.185,-.064,.300);shape.bezierCurveTo(-.055,.420,-.030,.555,0,.665);
+  shape.bezierCurveTo(.030,.555,.055,.420,.064,.300);shape.bezierCurveTo(.072,.185,.052,.075,.028,0);shape.closePath();
+  const bladeGeom=new THREE.ExtrudeGeometry(shape,{depth:.018,bevelEnabled:true,bevelSegments:1,bevelSize:.004,bevelThickness:.003,steps:1});bladeGeom.translate(0,.080,-.009);
+  const blade=new THREE.Mesh(bladeGeom,steel);blade.name='V1234XiphosBlade';blade.castShadow=true;root.add(blade);
+  const ridge=new THREE.Mesh(new THREE.BoxGeometry(.012,.535,.024),ridgeMat);ridge.position.set(0,.370,.001);ridge.castShadow=true;root.add(ridge);
+  const tip=new THREE.Mesh(new THREE.ConeGeometry(.018,.085,12),steel);tip.position.y=.785;tip.castShadow=true;root.add(tip);
+  root.scale.setScalar(1.04);
+  return true;
+}
+function v1234ApplyXiphosPose(){
+  if(!greekGear||!v1234RebuildXiphos())return;const g=greekGear.userData,pivot=g.swordPivot;
+  if(equipmentStowed){pivot.visible=false;return;}pivot.visible=true;
+  const basePos=new THREE.Vector3(.018,-.018,.018),baseQ=V1234_SAVED_BOW_POSE.quaternion;
+  if(attackTimer>0){
+    const p=THREE.MathUtils.clamp(1-attackTimer/attackDuration,0,1);let swing;
+    if(p<.30){const t=p/.30;swing=new THREE.Euler(-.28*t,.24*t,-.18*t,'YXZ');}
+    else if(p<.64){const t=(p-.30)/.34;swing=new THREE.Euler(THREE.MathUtils.lerp(-.28,.62,t),THREE.MathUtils.lerp(.24,-1.05,t),THREE.MathUtils.lerp(-.18,.30,t),'YXZ');}
+    else{const t=(p-.64)/.36;swing=new THREE.Euler(THREE.MathUtils.lerp(.62,0,t),THREE.MathUtils.lerp(-1.05,0,t),THREE.MathUtils.lerp(.30,0,t),'YXZ');}
+    pivot.quaternion.copy(baseQ).multiply(new THREE.Quaternion().setFromEuler(swing));
+    pivot.position.copy(basePos).add(new THREE.Vector3(0,Math.sin(Math.PI*p)*.025,-Math.sin(Math.PI*p)*.035));
+  }else{pivot.position.copy(basePos);pivot.quaternion.copy(baseQ);}
+}
+
+const v1234UpdateBase=update;
+update=function(){v1234UpdateBase();v1234StabilizeMyron();v1234ApplyXiphosPose();};
+
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1234=V1234_BUILD;
+  window.ODYSSEE_SAVED_BOW_POSE={position:{x:0,y:.31,z:-.31},rotationSequence:['Y 90°','X 90°','Y 90°']};
+}
+/* =================== FIN ODYSSÉE v1.23.4 =================== */
+
 // Music is automatic in v1.19.0; no user toggle.
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.23.3-20260805-2241-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.23.4-20260805-2245-NC -->
