@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.28.2 | 2026-08-06T07:42+11:00 | Collision du xiphos et bras articulé -->
-<meta name="build-id" content="odyssee-v1.28.2-xiphos-collision-arm-20260806-0742-nc">
+<!-- VERIFIED BUILD: Odyssée v1.28.3 | 2026-08-06T22:35+11:00 | Xiphos sur tranche et bandeau supprimé -->
+<meta name="build-id" content="odyssee-v1.28.3-xiphos-edge-topview-20260806-2235-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.28.2 — Collision du xiphos et bras articulé</title>
+<title>Odyssée — v1.28.3 — Xiphos sur tranche et bandeau supprimé</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -445,7 +445,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <button id="bellActionBtn" type="button" aria-label="Faire sonner la cloche et rassembler les troupes"><span><span class="bellIcon">◕</span>Sonner<br>la cloche</span></button>
 <div id="storyOverlay" aria-hidden="true"><div id="storyCard" role="dialog" aria-modal="true" aria-label="Histoire de la cité"><button id="storyClose" type="button" aria-label="Fermer">×</button><div id="storyKicker">Bienvenue à Astérion</div><h2>La cité de Gregorius</h2><p>Fondée en <strong>1186 av. J.-C.</strong> par des marins revenus des guerres de l’Égée, Astérion s’est élevée autour de son port, de sa forge et de ses terres nourricières.</p><p>La cité est dirigée par <strong>Gregorius</strong>, chef militaire et protecteur de ses habitants. Sous son autorité, les remparts s’élèvent, les patrouilles veillent et les ateliers préparent les prochaines expéditions.</p><p>Les habitants honorent principalement <strong>Déméter</strong>, déesse des moissons, de la terre cultivée et du retour des saisons. Les marins d’Astérion invoquent également <strong>Poséidon</strong>, maître des mers et des tempêtes. Son futur sanctuaire doit encore être élevé près du port.</p><div id="storyFacts"><div class="storyFact"><b>Fondation</b><span>1186 av. J.-C.</span></div><div class="storyFact"><b>Chef</b><span>Gregorius</span></div><div class="storyFact"><b>Divinités</b><span>Déméter · Poséidon</span></div><div class="storyFact"><b>Terre</b><span>Île d’Astérion</span></div></div></div></div>
 <div id="npcBubble"><strong>Démos — fermier</strong><span id="npcBubbleText">Que les dieux protègent ta route, guerrier.</span></div>
-<div id="credits">RIGS PNJ : SYSTÈME ARTICULÉ INTERNE • RÉFÉRENCE GLTF : QUATERNIUS, CC0 • TEXTURES : POLY HAVEN, CC0 • PAS : KENNEY RPG AUDIO, CC0 • VFX : KENNEY PARTICLE PACK, CC0 • IMPACTS : KENNEY IMPACT SOUNDS, CC0 • OISEAUX : ISAIAH658 / OPENGAMEART, CC0 • CLOCHE : N4 / OPENGAMEART, CC0 • CIBLES : KYZEROLE / OPENGAMEART, CC0 • ODYSSÉE v1.28.2</div>
+<div id="credits" aria-hidden="true"></div>
 
 <div id="forgeMenu" aria-hidden="true">
   <div class="forgeKicker">Atelier de forge</div>
@@ -3314,7 +3314,7 @@ function addGreekGear(root){
   swordPivot.position.set(.012,-.004,.01);
   swordPivot.rotation.x=-1.12;
   swordPivot.rotation.y=.02;
-  swordPivot.rotation.z=.02;
+  swordPivot.rotation.z=Math.PI/2;
   rightArm.hand.add(swordPivot);
   // Xiphos plus crédible : poignée plus lisible, garde grecque compacte et lame en feuille.
   const xiphosGripGroup=new THREE.Group();
@@ -3564,11 +3564,14 @@ function update(){
       g.backSpearPivot.rotation.x=-1.22 + Math.sin(walkCycle*1.4)*0.010*speedNorm;
       g.backSpearPivot.rotation.y=.26 + turnLean*0.03;
       g.backSpearPivot.rotation.z=-.54 + Math.sin(walkCycle*1.2)*0.010*speedNorm;
-      const swordIdleX=-1.12 + Math.sin(walkCycle+Math.PI)*0.010*speedNorm;
-      const swordIdleY=.02 + turnLean*0.02;
-      const swordIdleZ=.02 + Math.sin(walkCycle*1.3+0.7)*0.008*speedNorm;
-      // Le xiphos est roulé sur sa tranche : la caméra du dessus ne voit jamais sa grande face plate.
-      // En position armée, sa pointe vise le haut de l'écran ; la coupe descend ensuite dans le même axe.
+      const swordBaseX=-1.12;
+      const swordBaseY=.02;
+      const swordBaseZ=Math.PI/2;
+      const swordIdleX=swordBaseX + Math.sin(walkCycle+Math.PI)*0.010*speedNorm;
+      const swordIdleY=swordBaseY + turnLean*0.02;
+      const swordIdleZ=swordBaseZ + Math.sin(walkCycle*1.3+0.7)*0.008*speedNorm;
+      // Le xiphos est roulé sur sa tranche : depuis la vue du dessus, on voit surtout son épaisseur.
+      // Toute l'animation conserve cette rotation de base, puis n'applique que de petites variations.
       let swordAttackX=swordIdleX;
       let swordAttackY=swordIdleY;
       let swordAttackZ=swordIdleZ;
@@ -3583,7 +3586,7 @@ function update(){
         swordAttackY=THREE.MathUtils.lerp(.10,.18,attackLift*(1-attackStrike));
         if(attackStrike>0)swordAttackY=THREE.MathUtils.lerp(.18,.06,attackStrike);
         if(attackRecover>0)swordAttackY=THREE.MathUtils.lerp(.06,swordIdleY,attackRecover);
-        swordAttackZ=THREE.MathUtils.lerp(.10,.05,attackStrike||attackLift);
+        swordAttackZ=swordBaseZ + THREE.MathUtils.lerp(.10,.05,attackStrike||attackLift);
         const poseT=attackStrike>0?attackStrike:attackLift;
         swordPosY=THREE.MathUtils.lerp(-.004,.014,attackLift);
         swordPosZ=THREE.MathUtils.lerp(.01,-.022,attackLift);
@@ -5095,7 +5098,7 @@ async function start(){
   els.hud.classList.add('visible');
   els.controls.classList.add('visible');
   els.vitals?.classList.add('visible');
-  els.credits.classList.add('visible');
+  try{els.credits?.classList.remove('visible','fading');els.credits?.setAttribute('aria-hidden','true');}catch{}
   els.loading.classList.add('visible');
   setTimeout(()=>els.hud.classList.add('fading'),5000);
   setTimeout(()=>els.hud.classList.remove('visible'),5900);
@@ -6614,7 +6617,7 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.28.1 =================== */
 
 
-/* ===================== ODYSSÉE v1.28.2 — COLLISION DU XIPHOS ET BRAS ARTICULÉ ===================== */
+/* ===================== ODYSSÉE v1.28.3 — XIPHOS SUR TRANCHE ET BANDEAU SUPPRIMÉ ===================== */
 const V1282_BUILD='v1.28.2 — xiphos-collision-articulated-arm-20260806-0742-NC';
 
 // Le bandeau de crédits est retiré du DOM : les anciens appels qui ajoutent .visible restent sans effet.
@@ -6799,7 +6802,7 @@ if(typeof window!=='undefined'){
   window.ODYSSEE_BUILD_V1282=V1282_BUILD;
   window.ODYSSEE_XIPHOS_COLLISION=()=>greekGear?.userData?.v1282SwordCollision||null;
 }
-/* =================== FIN ODYSSÉE v1.28.2 =================== */
+/* =================== FIN ODYSSÉE v1.28.3 =================== */
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
