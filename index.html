@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.19.2 | 2026-08-05T18:12+11:00 | Correctif plein écran natif iPhone/Safari -->
-<meta name="build-id" content="odyssee-v1.19.2-native-fullscreen-20260805-1812-nc">
+<!-- VERIFIED BUILD: Odyssée v1.19.3 | 2026-08-05T18:22+11:00 | Entrées, cibles, sols, remparts, cultures et formation -->
+<meta name="build-id" content="odyssee-v1.19.3-entrances-ground-crops-follow-20260805-1822-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
-<title>Odyssée — v1.19.2 — Correctif plein écran</title>
+<title>Odyssée — v1.19.3 — Entrées, sols, cultures et formation</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -157,6 +157,12 @@ html:fullscreen body,html:-webkit-full-screen body{width:100vw!important;height:
 #actionA.bowAimMode::after{content:"VISER";position:absolute;left:50%;top:72%;transform:translateX(-50%);font:900 8px system-ui;letter-spacing:.12em;color:rgba(240,223,184,.72);pointer-events:none}
 .v1191EntranceMarker{pointer-events:none}
 
+
+/* ===================== ODYSSÉE v1.19.3 — UI ===================== */
+#buildingToast{top:max(20px,env(safe-area-inset-top));min-width:min(76vw,430px);padding:9px 18px;border-radius:5px;border-left:5px solid #7c2b21;background:linear-gradient(90deg,rgba(16,23,25,.96),rgba(8,12,14,.91));font-size:11px;letter-spacing:.105em;text-align:center}
+#buildingToast.visible{animation:v1193BuildingBar .24s ease-out}
+@keyframes v1193BuildingBar{from{opacity:0;transform:translate(-50%,-22px) scale(.96)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+
 </style>
 <meta name="runtime-fix" content="v1192-native-fullscreen-ios-safari">
 </head>
@@ -167,7 +173,7 @@ html:fullscreen body,html:-webkit-full-screen body{width:100vw!important;height:
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.19.2 — PLEIN ÉCRAN CORRIGÉ</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.19.3 — ENTRÉES ET CULTURES</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -4265,6 +4271,162 @@ for(const evt of ['fullscreenchange','webkitfullscreenchange'])document.addEvent
 for(const evt of ['fullscreenerror','webkitfullscreenerror'])document.addEventListener(evt,e=>{v1191UpdateFullscreenButton(true);v1192ShowFullscreenHelp(e)});
 /* =================== FIN ODYSSÉE v1.19.1 =================== */
 
+
+/* ===================== ODYSSÉE v1.19.3 — ENTRÉES, SOLS, CULTURES ET FORMATION ===================== */
+const V1193_BUILD='v1.19.3 — entrances-ground-crops-follow-20260805-1822-NC';
+let v1193BuildingToastExpiry=0;
+
+function v1193ExteriorEntranceTexture(){
+  const c=document.createElement('canvas');c.width=512;c.height=180;const x=c.getContext('2d');
+  x.clearRect(0,0,c.width,c.height);x.fillStyle='rgba(44,30,20,.94)';x.fillRect(14,24,484,132);
+  x.strokeStyle='#d9bd83';x.lineWidth=7;x.strokeRect(18,28,476,124);
+  x.fillStyle='#f3dfb3';x.font='900 45px system-ui';x.textAlign='center';x.textBaseline='middle';x.fillText('ENTRÉE',256,90);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+function v1193BuildExteriorEntrances(){
+  if(scene.getObjectByName('V1193ExteriorEntrances'))return;
+  const root=new THREE.Group();root.name='V1193ExteriorEntrances';scene.add(root);
+  const stone=new THREE.MeshStandardMaterial({color:0xc8b38c,roughness:.98}),wood=new THREE.MeshStandardMaterial({color:0x64452e,roughness:.96});
+  const plaqueMat=new THREE.MeshBasicMaterial({map:v1193ExteriorEntranceTexture(),transparent:true,depthWrite:false,side:THREE.DoubleSide});
+  for(const e of v1191EntranceDefs){
+    const g=new THREE.Group();g.position.set(e.x,0,e.z);g.rotation.y=e.rot;g.userData.v1193Entrance=true;root.add(g);
+    const threshold=new THREE.Mesh(new THREE.BoxGeometry(Math.max(1.25,e.halfW*1.75),.09,.54),stone);threshold.position.set(0,.045,0);threshold.receiveShadow=true;g.add(threshold);
+    for(const side of [-1,1]){const post=new THREE.Mesh(new THREE.BoxGeometry(.12,.70,.14),wood);post.position.set(side*Math.max(.58,e.halfW*.86),.35,-.03);post.castShadow=true;g.add(post)}
+    const lintel=new THREE.Mesh(new THREE.BoxGeometry(Math.max(1.36,e.halfW*1.92),.13,.16),wood);lintel.position.set(0,.71,-.03);lintel.castShadow=true;g.add(lintel);
+    const plaque=new THREE.Mesh(new THREE.PlaneGeometry(1.02,.35),plaqueMat.clone());plaque.rotation.x=-Math.PI/2;plaque.position.set(0,.055,.42);plaque.renderOrder=18;g.add(plaque);
+    v1191ClearLaneColliders(e);
+  }
+}
+
+v119UpdateBuildingName=function(){
+  let name='';
+  for(const b of v119BuildingZones){if(Math.abs(player.x-b.x)<b.hx&&Math.abs(player.z-b.z)<b.hz){name=b.name;break;}}
+  const now=performance.now();
+  if(name!==v119CurrentBuilding){
+    v119CurrentBuilding=name;
+    if(name){v119BuildingToast.textContent=`Vous entrez — ${name}`;v119BuildingToast.classList.add('visible');v1193BuildingToastExpiry=now+4000;}
+    else{v119BuildingToast.classList.remove('visible');v1193BuildingToastExpiry=0;}
+  }
+  if(name&&v1193BuildingToastExpiry&&now>=v1193BuildingToastExpiry){v119BuildingToast.classList.remove('visible');v1193BuildingToastExpiry=0;}
+};
+
+function v1193ConfigureTargets(){
+  for(const t of trainingTargets){
+    const d=t.userData;if(!d)continue;
+    d.hitboxVisible=false;d.v1193HitRadius=1.08;d.v1193HitMinY=.18;d.v1193HitMaxY=2.82;
+    if(d.collider){d.collider.x1=t.position.x-1.02;d.collider.x2=t.position.x+1.02;d.collider.z1=t.position.z-.64;d.collider.z2=t.position.z+.64;d.collider.debugVisible=false;d.collider.v1193InvisibleHitbox=true;}
+    t.traverse(o=>{if(o!==t&&(o.userData?.hitboxVisual||/hitbox|debugbox/i.test(o.name||'')))o.visible=false;});
+    const fill=d.healthBar;
+    if(fill){
+      if(!fill.userData.v1193Scaled){fill.geometry.scale(1.38,1.55,1);fill.userData.v1193Scaled=true;}
+      fill.material.color.setHex(0x35d46a);fill.material.opacity=1;fill.material.transparent=false;fill.material.depthTest=false;fill.renderOrder=31;fill.position.y=2.20;
+      const back=t.children.find(o=>o.isMesh&&o!==fill&&o.geometry?.type==='PlaneGeometry'&&Math.abs(o.position.y-1.82)<.2);
+      if(back){if(!back.userData.v1193Scaled){back.geometry.scale(1.42,1.72,1);back.userData.v1193Scaled=true;}back.material.color.setHex(0x09100c);back.material.opacity=.96;back.material.depthTest=false;back.position.y=2.195;back.renderOrder=30;}
+    }
+    if(d.healthLabel){d.healthLabel.visible=false;}
+  }
+}
+v117Bar=function(t){
+  const d=t.userData,r=THREE.MathUtils.clamp(d.health/d.maxHealth,0,1);
+  if(d.healthBar){d.healthBar.scale.x=Math.max(.001,r);d.healthBar.position.x=-.43*(1-r);d.healthBar.material.color.setHex(r>.55?0x35d46a:r>.25?0xe3a12d:0xd33e35);}
+  if(d.healthLabel)v117SetLabel(d.healthLabel,`${Math.max(0,Math.ceil(d.health))} / ${d.maxHealth}`);
+};
+v117ArrowTarget=function(p){for(const t of trainingTargets){if(!t.visible||t.userData.destroyed)continue;const d=t.userData,dx=p.x-t.position.x,dz=p.z-t.position.z,r=d.v1193HitRadius||1.02;if(dx*dx+dz*dz<r*r&&p.y>(d.v1193HitMinY??.24)&&p.y<(d.v1193HitMaxY??2.72))return t;}return null;};
+
+function v1193CleanGroundLayers(){
+  const erosionPoints=[[-12,8],[12,-7],[-13,-2],[13,4]];
+  const remove=[];let shapeLayer=0;
+  scene.updateMatrixWorld(true);
+  for(const o of [...scene.children]){
+    if(!o?.isMesh)continue;
+    const type=o.geometry?.type||'',horizontal=Math.abs(Math.abs(o.rotation.x)-Math.PI/2)<.08;
+    if(!horizontal)continue;
+    const p=o.position;
+    if(type==='PlaneGeometry'&&erosionPoints.some(([x,z])=>Math.hypot(p.x-x,p.z-z)<.45)){remove.push(o);continue;}
+    if(type==='ShapeGeometry'&&p.y<.08){p.y=.008+shapeLayer*.008;shapeLayer++;o.material.depthWrite=false;o.material.polygonOffset=true;o.material.polygonOffsetFactor=-4-shapeLayer;o.renderOrder=shapeLayer;continue;}
+    if(type==='PlaneGeometry'&&p.y>=.012&&p.y<.055){
+      const hasMap=!!o.material?.map;p.y=hasMap?.041:.031;o.material.polygonOffset=true;o.material.polygonOffsetFactor=hasMap?-4:-2;o.material.polygonOffsetUnits=1;o.renderOrder=hasMap?7:5;
+    }
+  }
+  for(const o of remove)o.parent?.remove(o);
+  const doorPaths=scene.getObjectByName('V1191DoorPaths');if(doorPaths)for(const p of doorPaths.children){p.position.y=.052;p.renderOrder=12;p.material.polygonOffset=true;p.material.polygonOffsetFactor=-8;}
+  const visibleEntries=scene.getObjectByName('V1191VisibleEntrances');if(visibleEntries)for(const p of visibleEntries.children)if(p.isMesh&&p.geometry?.type==='PlaneGeometry'){p.position.y=.058;p.renderOrder=14;}
+}
+
+function v1193HideLegacyFieldPlants(){
+  const field=scene.getObjectByName('DemosFieldEntity');if(!field)return;
+  for(const child of field.children){
+    if(!child.isMesh)continue;
+    const x=Math.abs(child.position.x),z=Math.abs(child.position.z),y=child.position.y;
+    if(x<3.72&&z<2.18&&y>.045)child.visible=false;
+  }
+}
+v119BuildCrops=function(){
+  for(const p of v119CropPlots)p.parent?.remove(p);v119CropPlots.length=0;
+  const defs=[
+    {type:'carotte',name:'CAROTTES',pos:farmPlotCenters[0].pos,delay:0},
+    {type:'chou',name:'CHOUX',pos:farmPlotCenters[1].pos,delay:10},
+    {type:'tomate',name:'TOMATES',pos:farmPlotCenters[2].pos,delay:20},
+    {type:'oignon',name:'OIGNONS',pos:farmPlotCenters[3].pos,delay:30}
+  ];
+  for(const d of defs){
+    const g=v119CreateCropPlot(d.pos.x,d.pos.z,d.type,d.delay);g.name=`DemosCropField_${d.type}`;g.scale.set(1.58,1,1.36);g.userData.fieldLabel=d.name;
+    const c=document.createElement('canvas');c.width=256;c.height=72;const x=c.getContext('2d');x.fillStyle='rgba(55,37,23,.92)';x.fillRect(4,4,248,64);x.strokeStyle='#d7bd86';x.lineWidth=4;x.strokeRect(6,6,244,60);x.fillStyle='#f0dfb8';x.font='900 28px system-ui';x.textAlign='center';x.textBaseline='middle';x.fillText(d.name,128,36);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const label=new THREE.Mesh(new THREE.PlaneGeometry(.78,.22),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}));label.rotation.x=-Math.PI/2;label.position.set(0,.075,-.72);label.renderOrder=16;g.add(label);
+  }
+};
+
+rebuildV116Ramparts=function(tex){
+  v116RemoveOldRamparts();
+  const edge=Math.max(...ISLAND_BOUNDARY.filter(p=>Math.abs(p.x)<3.4).map(p=>p.y)),gateZ=edge-1.90;
+  const left=[[-1.72,gateZ],[-3.28,gateZ-.04],[-4.92,gateZ-.48],[-6.38,gateZ-1.26],[-7.62,gateZ-2.28]],right=left.map(([x,z])=>[-x,z]);
+  v116MakeRampartSection(-1.56,gateZ+.02,0,1.34,1.30,.58,tex,'tower');v116MakeRampartSection(1.56,gateZ+.02,0,1.34,1.30,.58,tex,'tower');
+  v116AddWallPath(left,[.55,.46,.36,.27,.18,.10],tex);v116AddWallPath(right,[.55,.46,.36,.27,.18,.10],tex);
+  v116MakeRampartSection(-7.78,gateZ-2.38,.22,1.45,1.18,.08,tex,'tower');v116MakeRampartSection(7.78,gateZ-2.38,-.22,1.45,1.18,.08,tex,'tower');
+  const stone=v115TexturedMaterial(tex.stone,0xb4a58d,.99),wood=v115TexturedMaterial(tex.wood,0x775438,.98);
+  for(const side of [-1,1]){const px=side*8.35,pz=gateZ-2.0;for(let i=0;i<7;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(.24+Math.random()*.18,.13+Math.random()*.08,.22+Math.random()*.16),stone);b.position.set(px+(Math.random()-.5)*.9,.08+(i%3)*.12,pz+(Math.random()-.5)*.6);b.rotation.y=Math.random()*.6;b.castShadow=b.receiveShadow=true;scene.add(b);}for(let i=0;i<3;i++){const l=new THREE.Mesh(new THREE.CylinderGeometry(.05,.065,1.18,9),wood);l.rotation.z=Math.PI/2;l.position.set(px+(i-1)*.14,.10+i*.045,pz+.58);l.castShadow=true;scene.add(l);}}
+  refreshV115BuilderStations();
+};
+
+v1191FollowGuards=function(dt){
+  const f=patrolFormation;if(!f||patrolGuards.length!==2)return;
+  f.spacing=THREE.MathUtils.lerp(f.spacing||.60,.68,1-Math.exp(-5*dt));
+  f.v1193Velocity=f.v1193Velocity||new THREE.Vector3();f.v1193TravelDir=f.v1193TravelDir||new THREE.Vector3(0,0,-1);
+  const leaderVel=new THREE.Vector3(velocity.x,0,velocity.y),leaderMoving=leaderVel.lengthSq()>.006;
+  if(leaderMoving){const raw=leaderVel.clone().normalize(),dot=f.v1193TravelDir.dot(raw),turnRate=dot<-.35?10:6;f.v1193TravelDir.lerp(raw,1-Math.exp(-turnRate*dt));if(f.v1193TravelDir.lengthSq()<.001)f.v1193TravelDir.copy(raw);else f.v1193TravelDir.normalize();}
+  const travel=f.v1193TravelDir.clone();if(travel.lengthSq()<.001)travel.set(0,0,-1);
+  const prediction=leaderMoving?leaderVel.clone().multiplyScalar(.28):new THREE.Vector3();
+  const goal=player.clone().add(prediction).addScaledVector(travel,-1.78),delta=goal.clone().sub(f.position).setY(0),dist=delta.length();
+  const desiredSpeed=leaderMoving?THREE.MathUtils.clamp(.92+dist*.42,.98,2.15):THREE.MathUtils.clamp(dist*1.15,0,1.05);
+  const desiredVel=dist>.025?delta.normalize().multiplyScalar(desiredSpeed):new THREE.Vector3();
+  f.v1193Velocity.lerp(desiredVel,1-Math.exp(-(leaderMoving?8.5:6)*dt));
+  if(leaderMoving&&f.v1193Velocity.length()<.70)f.v1193Velocity.copy(travel).multiplyScalar(.70);
+  let move=f.v1193Velocity.clone().multiplyScalar(dt),candidate=f.position.clone().add(move),heading=f.v1193Velocity.lengthSq()>.002?Math.atan2(f.v1193Velocity.x,f.v1193Velocity.z)+Math.PI:(f.heading||0),moved=false;
+  if(v1191FormationClear(candidate,heading,f.spacing)){f.position.copy(candidate);moved=move.lengthSq()>.000002;f.blockedTime=Math.max(0,(f.blockedTime||0)-dt*2);}
+  else{
+    f.blockedTime=(f.blockedTime||0)+dt;const direct=dist>.03?goal.clone().sub(f.position).setY(0).normalize():travel,angles=[.22,-.22,.46,-.46,.78,-.78,1.08,-1.08];
+    for(const a of angles){const ca=Math.cos(a),sa=Math.sin(a),dir=new THREE.Vector3(direct.x*ca-direct.z*sa,0,direct.x*sa+direct.z*ca),q=f.position.clone().addScaledVector(dir,Math.max(.55,desiredSpeed)*dt),h=Math.atan2(dir.x,dir.z)+Math.PI;if(v1191FormationClear(q,h,f.spacing)){f.position.copy(q);f.v1193Velocity.lerp(dir.multiplyScalar(desiredSpeed),.45);heading=h;moved=true;break;}}
+  }
+  if(f.blockedTime>1.25){const q=player.clone().addScaledVector(travel,-2.0),checked=q.clone();_v1191ResolveCollisions(checked,.30);if(checked.distanceTo(q)<.12)f.position.lerp(checked,.45);f.blockedTime=0;}
+  f.heading=normalizeAngle((f.heading??heading)+THREE.MathUtils.clamp(normalizeAngle(heading-(f.heading??heading)),-dt*7.2,dt*7.2));
+  const forward=new THREE.Vector3(Math.sin(f.heading-Math.PI),0,Math.cos(f.heading-Math.PI)).normalize(),side=new THREE.Vector3(forward.z,0,-forward.x);
+  patrolGuards.forEach((guard,i)=>{const desired=f.position.clone().addScaledVector(side,i===0?-f.spacing:f.spacing);desired.y=getTerrainHeight(desired.x,desired.z);guard.position.lerp(desired,1-Math.exp(-12*dt));guard.rotation.y=normalizeAngle(guard.rotation.y+THREE.MathUtils.clamp(normalizeAngle(f.heading-guard.rotation.y),-dt*7.5,dt*7.5));applySoldierPose(guard,dt,{moving:moved||leaderMoving,alert:.46});});
+  if((moved||leaderMoving)){f.stepTimer=(f.stepTimer||0)+dt;if(f.stepTimer>.29){playPatrolFootstep(.58+Math.random()*.08);f.stepTimer=0;}}
+};
+
+const v1193BaseArcheryUpdate=v117ArcheryUpdate;
+v117ArcheryUpdate=function(dt){
+  v1193BaseArcheryUpdate(dt);const g=greekGear?.userData,bow=g?.v117Bow;if(!bow||v117WeaponMode!=='bow')return;
+  bow.rotation.set(0,Math.PI/2,0);
+  const progress=v117BowTimer>0?1-v117BowTimer/.78:0,draw=v117BowTimer>0?Math.sin(Math.PI*THREE.MathUtils.clamp(progress/.72,0,1)):0,a=bow.userData?.string?.geometry?.attributes?.position;
+  if(a){a.setXYZ(1,-.19-draw*.31,0,0);a.needsUpdate=true;}
+  if(bow.userData?.heldArrow){bow.userData.heldArrow.rotation.set(0,-Math.PI/2,0);bow.userData.heldArrow.position.set(-draw*.31,.012,0);}
+};
+
+const v1193BaseBuildWorld=v119BuildWorld;
+v119BuildWorld=function(){v1193BaseBuildWorld();v1193BuildExteriorEntrances();v1193HideLegacyFieldPlants();v1193ConfigureTargets();v1193CleanGroundLayers();v1191RefreshDockLane();if(v1191DockLane)v1191ClearLaneColliders(v1191DockLane);};
+/* =================== FIN ODYSSÉE v1.19.3 =================== */
+
+
 async function immersive(){
   if(v1192Standalone?.()||v1191FullscreenState?.()){setTimeout(onResize,60);setTimeout(onResize,260);return;}
   try{
@@ -4372,5 +4534,5 @@ addEventListener('pointerup',()=>{setBlocking(false);setBuildHeld(false)});
 addEventListener('blur',()=>{setBlocking(false);setBuildHeld(false);setGuardCommandMenu(false);setPocketMenu(false)});
 // Music is automatic in v1.19.0; no user toggle.
 </script>
-<!-- V1191-PAYLOAD-SHA: 6a1239b81eab7c9899b5f0e5 -->
+<!-- V1193-PAYLOAD: entrances-ground-crops-follow-20260805-1822-NC -->
 </body></html>
