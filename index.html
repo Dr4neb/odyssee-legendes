@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.28.3 | 2026-08-06T22:35+11:00 | Xiphos sur tranche et bandeau supprimé -->
-<meta name="build-id" content="odyssee-v1.28.3-xiphos-edge-topview-20260806-2235-nc">
+<!-- VERIFIED BUILD: Odyssée v1.28.4 | 2026-08-06T09:33+11:00 | Xiphos vertical orienté vers l’avant -->
+<meta name="build-id" content="odyssee-v1.28.4-xiphos-vertical-forward-20260806-0933-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.28.3 — Xiphos sur tranche et bandeau supprimé</title>
+<title>Odyssée — v1.28.4 — Xiphos vertical orienté vers l’avant</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -3312,9 +3312,13 @@ function addGreekGear(root){
   // Xiphos grec tenu dans la main droite.
   const swordPivot=new THREE.Group();
   swordPivot.position.set(.012,-.004,.01);
-  swordPivot.rotation.x=-1.12;
-  swordPivot.rotation.y=.02;
+  // Orientation de référence du xiphos, appliquée dans l'ordre visuel demandé :
+  // 1) lame sur sa tranche, 2) bascule verticale, 3) pointe vers l'avant local de Gregorius (-Z).
+  swordPivot.rotation.order='XYZ';
+  swordPivot.rotation.x=-Math.PI/2;
+  swordPivot.rotation.y=0;
   swordPivot.rotation.z=Math.PI/2;
+  swordPivot.userData.orientation={edgeRoll:Math.PI/2,verticalPitch:-Math.PI/2,forwardYaw:0};
   rightArm.hand.add(swordPivot);
   // Xiphos plus crédible : poignée plus lisible, garde grecque compacte et lame en feuille.
   const xiphosGripGroup=new THREE.Group();
@@ -3564,46 +3568,14 @@ function update(){
       g.backSpearPivot.rotation.x=-1.22 + Math.sin(walkCycle*1.4)*0.010*speedNorm;
       g.backSpearPivot.rotation.y=.26 + turnLean*0.03;
       g.backSpearPivot.rotation.z=-.54 + Math.sin(walkCycle*1.2)*0.010*speedNorm;
-      const swordBaseX=-1.12;
-      const swordBaseY=.02;
+      const swordBaseX=-Math.PI/2;
+      const swordBaseY=0;
       const swordBaseZ=Math.PI/2;
-      const swordIdleX=swordBaseX + Math.sin(walkCycle+Math.PI)*0.010*speedNorm;
-      const swordIdleY=swordBaseY + turnLean*0.02;
-      const swordIdleZ=swordBaseZ + Math.sin(walkCycle*1.3+0.7)*0.008*speedNorm;
-      // Le xiphos est roulé sur sa tranche : depuis la vue du dessus, on voit surtout son épaisseur.
-      // Toute l'animation conserve cette rotation de base, puis n'applique que de petites variations.
-      let swordAttackX=swordIdleX;
-      let swordAttackY=swordIdleY;
-      let swordAttackZ=swordIdleZ;
-      let swordPosY=-.004,swordPosZ=.01;
-      if(attackTimer>0){
-        const swordRaisedX=-1.52;
-        const swordImpactX=1.10;
-        if(attackStrike<1){
-          swordAttackX=THREE.MathUtils.lerp(swordIdleX,swordRaisedX,attackLift);
-          if(attackStrike>0)swordAttackX=THREE.MathUtils.lerp(swordRaisedX,swordImpactX,attackStrike);
-        }else swordAttackX=THREE.MathUtils.lerp(swordImpactX,swordIdleX,attackRecover);
-        swordAttackY=THREE.MathUtils.lerp(.10,.18,attackLift*(1-attackStrike));
-        if(attackStrike>0)swordAttackY=THREE.MathUtils.lerp(.18,.06,attackStrike);
-        if(attackRecover>0)swordAttackY=THREE.MathUtils.lerp(.06,swordIdleY,attackRecover);
-        swordAttackZ=swordBaseZ + THREE.MathUtils.lerp(.10,.05,attackStrike||attackLift);
-        const poseT=attackStrike>0?attackStrike:attackLift;
-        swordPosY=THREE.MathUtils.lerp(-.004,.014,attackLift);
-        swordPosZ=THREE.MathUtils.lerp(.01,-.022,attackLift);
-        if(attackStrike>0){
-          swordPosY=THREE.MathUtils.lerp(.014,-.012,attackStrike);
-          swordPosZ=THREE.MathUtils.lerp(-.022,-.006,attackStrike);
-        }
-        if(attackRecover>0){
-          swordPosY=THREE.MathUtils.lerp(-.012,-.004,attackRecover);
-          swordPosZ=THREE.MathUtils.lerp(-.006,.01,attackRecover);
-        }
-      }
-      g.swordPivot.position.y=swordPosY;
-      g.swordPivot.position.z=swordPosZ;
-      g.swordPivot.rotation.x=swordAttackX;
-      g.swordPivot.rotation.y=swordAttackY;
-      g.swordPivot.rotation.z=swordAttackZ;
+      // La lame reste sur sa tranche, basculée à la verticale puis alignée sur l'avant local (-Z).
+      // Le bras articulé conduit seul l'attaque : aucune rotation parasite de l'objet ne peut l'aplatir.
+      g.swordPivot.position.set(.012,-.004,.01);
+      g.swordPivot.rotation.order='XYZ';
+      g.swordPivot.rotation.set(swordBaseX,swordBaseY,swordBaseZ);
       g.crest.rotation.z=Math.sin(walkCycle*1.7)*0.05*speedNorm + Math.sin(idleCycle*1.5)*0.012;
 
       if(g.cape?.geometry?.attributes?.position){
@@ -6617,8 +6589,8 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.28.1 =================== */
 
 
-/* ===================== ODYSSÉE v1.28.3 — XIPHOS SUR TRANCHE ET BANDEAU SUPPRIMÉ ===================== */
-const V1282_BUILD='v1.28.2 — xiphos-collision-articulated-arm-20260806-0742-NC';
+/* ===================== ODYSSÉE v1.28.4 — XIPHOS VERTICAL ORIENTÉ VERS L’AVANT ===================== */
+const V1282_BUILD='v1.28.4 — xiphos-vertical-forward-20260806-0933-NC';
 
 // Le bandeau de crédits est retiré du DOM : les anciens appels qui ajoutent .visible restent sans effet.
 if(els?.credits){
@@ -6632,9 +6604,13 @@ const V1282_BLADE_RADIUS=.032;
 const V1282_SWORD_IDLE_HAND=new THREE.Vector3(.385,-.085,.055);
 const V1282_SWORD_READY_HAND=new THREE.Vector3(.355,.105,.145);
 const V1282_SWORD_STRIKE_HAND=new THREE.Vector3(.345,.075,-.365);
-const V1282_SWORD_IDLE_DIR=new THREE.Vector3(.025,.20,-.979).normalize();
-const V1282_SWORD_READY_DIR=new THREE.Vector3(.12,.56,-.820).normalize();
-const V1282_SWORD_STRIKE_DIR=new THREE.Vector3(.015,.035,-.999).normalize();
+// Orientation finale du xiphos dans le repère local de Gregorius :
+// - la largeur de la lame reste verticale (plan de lame debout, donc vue sur la tranche depuis le dessus) ;
+// - l'axe longitudinal pointe strictement vers l'avant du personnage (-Z).
+// L'attaque déplace la main et le bras, mais ne réoriente plus la lame indépendamment.
+const V1282_SWORD_IDLE_DIR=new THREE.Vector3(0,0,-1);
+const V1282_SWORD_READY_DIR=new THREE.Vector3(0,0,-1);
+const V1282_SWORD_STRIKE_DIR=new THREE.Vector3(0,0,-1);
 const V1282_PLAYER_BODY_SPHERES=[
   {center:new THREE.Vector3(0,.255,0),radius:.315,name:'torse'},
   {center:new THREE.Vector3(0,.705,-.025),radius:.205,name:'tête'},
@@ -6648,6 +6624,8 @@ function v1282SegmentDistance(point,a,b){
   return point.distanceTo(a.clone().addScaledVector(ab,t));
 }
 function v1282SwordQuaternion(direction){
+  // Axe local Y = longueur du xiphos. Axe local X = largeur de la lame.
+  // On place d'abord la largeur à la verticale, puis la longueur vers l'avant demandé.
   const yAxis=direction.clone().normalize();
   let xAxis=new THREE.Vector3(0,1,0);
   xAxis.addScaledVector(yAxis,-xAxis.dot(yAxis));
@@ -6747,6 +6725,7 @@ function v1282ApplyArticulatedSwordPose(){
 
   pivot.visible=!equipmentStowed;
   if(pivot.visible){
+    // Pose finale : plan de lame vertical, pointe strictement dirigée vers l'avant local de Gregorius.
     pivot.quaternion.copy(v1282SwordQuaternion(dir));
     // Le centre de la poignée est exactement dans la main ; la lame reste donc solidaire du bras.
     pivot.position.copy(dir).multiplyScalar(.105);
@@ -6802,8 +6781,8 @@ if(typeof window!=='undefined'){
   window.ODYSSEE_BUILD_V1282=V1282_BUILD;
   window.ODYSSEE_XIPHOS_COLLISION=()=>greekGear?.userData?.v1282SwordCollision||null;
 }
-/* =================== FIN ODYSSÉE v1.28.3 =================== */
+/* =================== FIN ODYSSÉE v1.28.4 =================== */
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.28.2-20260806-0742-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.28.4-20260806-0933-NC -->
