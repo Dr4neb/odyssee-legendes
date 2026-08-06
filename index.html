@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.30.3 | 2026-08-06T13:40+11:00 | Cape sous casque, xiphos raccourci et casque noir -->
-<meta name="build-id" content="odyssee-v1.30.3-cape-under-helmet-shorter-xiphos-black-helmet-20260806-1340-nc">
+<!-- VERIFIED BUILD: Odyssée v1.30.4 | 2026-08-06T13:55+11:00 | Correctif bouclier et cape sous casque -->
+<meta name="build-id" content="odyssee-v1.30.4-shield-cape-correction-20260806-1355-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.30.3 — Cape sous le casque, xiphos raccourci et casque noir</title>
+<title>Odyssée — v1.30.4 — Correctif bouclier et cape</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -9123,6 +9123,210 @@ if(typeof window!=='undefined'){
   window.ODYSSEE_APPLY_BLACK_HELMET=v1303ApplyBlackHelmet;
 }
 /* =================== FIN ODYSSÉE v1.30.3 =================== */
+
+/* ===================== ODYSSÉE v1.30.4 — CORRECTIF BOUCLIER ET CAPE ===================== */
+const V1304_BUILD='v1.30.4 — shield-cape-correction-20260806-1355-NC';
+const v1304CapeState={lastYaw:null,turnSpeed:0,lastTime:performance.now()};
+
+function v1304InstallShield(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return false;
+  root.updateMatrixWorld(true);
+  const hand=v1291ResolveShieldAnchorNode(gear,root);
+  const arm=v1291ResolveShieldArmNode(gear,root);
+  const chest=gear.chest||gear.hips;
+  const upper=v1294FindUpperArm(arm,root);
+  if(!hand||!arm||!chest||!upper)return false;
+
+  const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  // Recentrage plus propre : le bouclier retombe sur la main gauche sans flotter à côté.
+  const targetRoot=handRoot.clone().add(new THREE.Vector3(.018,.010,.012));
+  targetRoot.x=Math.max(targetRoot.x,chestRoot.x+.235);
+  targetRoot.y=THREE.MathUtils.clamp(targetRoot.y,.65,1.18);
+  targetRoot.z=THREE.MathUtils.clamp(targetRoot.z,-.02,.14);
+  const rootQuat=v1302ShieldRootQuaternion(v1294ShieldState.restNormal,-.035);
+
+  let mount=shield.userData.v1302HandMount||shield.userData.v1294Mount;
+  if(!mount){mount=new THREE.Group();mount.name='Gregorius_Aspis_Left_Hand_Mount';}
+  shield.userData.v1302HandMount=mount;
+  shield.userData.v1294Mount=mount;
+  if(mount.parent!==hand)hand.add(mount);
+  v1294SetNodeFromRootTransform(root,mount,targetRoot,rootQuat);
+  if(shield.parent!==mount)mount.add(shield);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.94);
+
+  let handCover=mount.getObjectByName('Gregorius_Aspis_Hand_Cover');
+  if(!handCover){
+    const coverMat=(gear.materials?.dark?.clone?.()||new THREE.MeshStandardMaterial({color:0x111214,roughness:.88,metalness:.04}));
+    handCover=new THREE.Mesh(new THREE.SphereGeometry(.068,14,10),coverMat);
+    handCover.name='Gregorius_Aspis_Hand_Cover';
+    handCover.castShadow=true;mount.add(handCover);
+  }
+  handCover.scale.set(1.18,.58,.90);
+  handCover.position.set(-.010,-.004,-.055);
+
+  const s=v1294ShieldState;
+  s.ready=true;s.mount=mount;s.arm=arm;s.hand=hand;s.upperArm=upper;s.chest=chest;
+  s.upperAxis=v1294AxisToDescendant(upper,arm);
+  s.foreAxis=v1294AxisToDescendant(arm,hand);
+  s.restPosition=mount.position.clone();
+  shield.userData.v1291Controlled=true;
+  shield.userData.v1291RigidArmAttachment=true;
+  shield.userData.v1294Strapped=true;
+  shield.userData.v1302HandLocked=true;
+  shield.userData.v1294Collider={radius:s.collisionRadius,thickness:s.collisionThickness,active:false};
+  v1291State.shieldInstalled=true;
+  root.updateMatrixWorld(true);
+  return true;
+}
+function v1304UpdateShield(dt=1/60){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root,shield=gear?.shield,s=v1294ShieldState;
+  if(!gear?.ready||!root||!shield)return;
+  if(!s.ready||!s.mount||s.mount.parent!==s.hand||shield.parent!==s.mount){s.ready=false;if(!v1304InstallShield())return;}
+  const t=v1294Smooth(blockBlend);
+  v1294SolveBlockArm(root,t);
+  root.updateMatrixWorld(true);
+  s.mount.position.copy(s.restPosition);
+  const normal=s.restNormal.clone().lerp(s.blockNormal,t).normalize();
+  const desiredRootQuat=v1302ShieldRootQuaternion(normal,THREE.MathUtils.lerp(-.035,.012,t));
+  const worldQuat=root.getWorldQuaternion(new THREE.Quaternion()).multiply(desiredRootQuat);
+  s.mount.quaternion.copy(s.hand.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuat));
+  s.mount.updateWorldMatrix(true,true);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.94);
+  shield.visible=!equipmentStowed;
+  const handCover=s.mount.getObjectByName('Gregorius_Aspis_Hand_Cover');
+  if(handCover)handCover.visible=!equipmentStowed;
+  if(shield.userData.v1294Collider)shield.userData.v1294Collider.active=t>.22&&!equipmentStowed;
+}
+
+function v1304BuildCape(chest,mat){
+  if(!chest||!mat)return null;
+  const root=v1286GregoriusRig?.root||v1287HopliteGear?.root;
+  if(!root)return null;
+  const anchor=new THREE.Group();
+  anchor.name='Gregorius_Cape_Under_Helmet_V1304';
+  anchor.userData.v1304Cape=true;
+  chest.add(anchor);
+
+  root.updateMatrixWorld(true);chest.updateWorldMatrix(true,false);
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  // Juste sous le casque, bien collée à la nuque et réellement dans le dos.
+  const desiredRoot=chestRoot.clone().add(new THREE.Vector3(0,.290,-.145));
+  v1294SetNodeFromRootTransform(root,anchor,desiredRoot,new THREE.Quaternion());
+  anchor.userData.v1304FixedPosition=anchor.position.clone();
+  anchor.userData.v1304FixedQuaternion=anchor.quaternion.clone();
+
+  const geometry=new THREE.PlaneGeometry(.44,.90,12,18);
+  geometry.translate(0,-.45,0);
+  const pos=geometry.attributes.position;
+  const weights=new Float32Array(pos.count);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),y=pos.getY(i);
+    const t=THREE.MathUtils.clamp((-y)/.90,0,1);
+    const width=.72+t*.16;
+    const neckInset=(1-Math.abs(x)/.22);
+    pos.setXYZ(i,x*width,y,-.012-.022*t-.070*t*t);
+    weights[i]=THREE.MathUtils.smoothstep(t,.05,.99);
+    if(t<.10){
+      // Haut plus proche des épaules : moins de largeur près du cou.
+      pos.setX(i,pos.getX(i)*(0.86+0.14*neckInset));
+    }
+  }
+  pos.needsUpdate=true;geometry.computeVertexNormals();
+  const capeMaterial=mat.red?.clone?.()||mat.red;
+  if(capeMaterial){capeMaterial.side=THREE.DoubleSide;capeMaterial.roughness=.95;capeMaterial.metalness=0;}
+  const cloth=new THREE.Mesh(geometry,capeMaterial);
+  cloth.name='Gregorius_Cape_Under_Helmet_Cloth_V1304';
+  cloth.castShadow=true;cloth.receiveShadow=true;
+  cloth.userData.v1304Base=geometry.attributes.position.array.slice();
+  cloth.userData.v1304Weights=weights;
+  anchor.add(cloth);
+
+  const claspMat=mat.leather?.clone?.()||mat.dark||mat.leather;
+  const collar=new THREE.Mesh(new THREE.CapsuleGeometry(.016,.24,6,12),claspMat);
+  collar.rotation.z=Math.PI/2;collar.position.set(0,.012,.004);collar.castShadow=true;anchor.add(collar);
+  const claspL=new THREE.Mesh(new THREE.SphereGeometry(.022,10,8),claspMat);
+  claspL.position.set(-.095,-.010,.002);claspL.castShadow=true;anchor.add(claspL);
+  const claspR=claspL.clone();claspR.position.x=.095;anchor.add(claspR);
+  anchor.userData.v1304Cloth=cloth;
+  return anchor;
+}
+function v1304EnsureCape(){
+  const gear=v1287HopliteGear;
+  if(!gear?.ready||!gear.chest||!gear.materials)return null;
+  if(gear.cape?.userData?.v1304Cape&&gear.cape.parent===gear.chest)return gear.cape;
+  v1299RemoveCapeArtifacts?.();
+  gear.cape=v1304BuildCape(gear.chest,gear.materials);
+  return gear.cape;
+}
+function v1304UpdateCape(dt=.016){
+  v1300RemoveLowerRedArtifact?.();
+  const cape=v1304EnsureCape(),cloth=cape?.userData?.v1304Cloth;
+  const attr=cloth?.geometry?.attributes?.position,base=cloth?.userData?.v1304Base,weights=cloth?.userData?.v1304Weights;
+  if(!cape||!cloth||!attr||!base||!weights)return;
+  cape.position.copy(cape.userData.v1304FixedPosition);
+  cape.quaternion.copy(cape.userData.v1304FixedQuaternion);
+  const now=performance.now(),time=now*.001,safeDt=THREE.MathUtils.clamp(dt||((now-v1304CapeState.lastTime)/1000),.001,.05);
+  v1304CapeState.lastTime=now;
+  const speed=velocity?.length?.()||0,motion=THREE.MathUtils.clamp(speed/2.6,0,1);
+  const yaw=character?.rotation?.y??v1286GregoriusRig?.root?.rotation?.y??0;
+  if(v1304CapeState.lastYaw==null)v1304CapeState.lastYaw=yaw;
+  const rawTurn=normalizeAngle(yaw-v1304CapeState.lastYaw)/safeDt;v1304CapeState.lastYaw=yaw;
+  v1304CapeState.turnSpeed=THREE.MathUtils.lerp(v1304CapeState.turnSpeed,THREE.MathUtils.clamp(rawTurn,-4,4),1-Math.exp(-7*safeDt));
+
+  for(let i=0;i<attr.count;i++){
+    const j=i*3,bx=base[j],by=base[j+1],bz=base[j+2],w=weights[i];
+    if(w<=.001){attr.setXYZ(i,bx,by,bz);continue;}
+    const t=THREE.MathUtils.clamp((-by)/.90,0,1);
+    const flap=Math.sin(time*(4.9+motion*1.9)+t*5.2+bx*5.0);
+    const ripple=Math.cos(time*3.1+t*5.7-bx*3.0);
+    const lateral=(flap*.008*motion-v1304CapeState.turnSpeed*.012*t)*w*t;
+    const lift=(Math.abs(flap)*.007*motion+ripple*.0025*(.3+motion))*w*t;
+    const rear=Math.min(bz-.010*t-flap*.017*t*motion-ripple*.004*t*(.2+motion),-.012-.050*t);
+    attr.setXYZ(i,bx+lateral,by+lift,rear);
+  }
+  attr.needsUpdate=true;cloth.geometry.computeVertexNormals();
+  cloth.rotation.x=.07-.035*motion-Math.sin(time*4.7)*.011*motion;
+  cloth.rotation.z=Math.sin(time*3.0)*.013*motion-v1304CapeState.turnSpeed*.011;
+}
+
+// Activation des correctifs finaux.
+v1294InstallShield=v1304InstallShield;
+v1294UpdateShield=v1304UpdateShield;
+v1291InstallShieldController=v1304InstallShield;
+v1291UpdateShieldController=v1304UpdateShield;
+v1302BuildShoulderCape=v1304BuildCape;
+v1302EnsureCape=v1304EnsureCape;
+v1302UpdateCape=v1304UpdateCape;
+v1303BuildShoulderCape=v1304BuildCape;
+v1303EnsureCape=v1304EnsureCape;
+v1303UpdateCape=v1304UpdateCape;
+v1287BuildCape=function(chest,mat){return v1304BuildCape(chest,mat);};
+
+setTimeout(()=>{
+  try{v1299RemoveCapeArtifacts?.();}catch(error){}
+  if(v1287HopliteGear)v1287HopliteGear.cape=null;
+  v1304EnsureCape();
+  v1294ShieldState.ready=false;
+  v1304InstallShield();
+  v1303ApplyBlackHelmet?.();
+  v1297ApplyXiphosController?.();
+},0);
+
+const v1304CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1304CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1304_BUILD,shieldController:'hand-recentered-v1',capeController:'under-helmet-simple-fitted-v1'};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1304=V1304_BUILD;
+  window.ODYSSEE_REBUILD_CAPE=()=>{v1299RemoveCapeArtifacts?.();if(v1287HopliteGear)v1287HopliteGear.cape=null;return v1304EnsureCape();};
+  window.ODYSSEE_FIX_GREGORIUS_SHIELD=()=>{v1294ShieldState.ready=false;return v1304InstallShield();};
+}
+/* =================== FIN ODYSSÉE v1.30.4 =================== */
+
 
 
 </script>
