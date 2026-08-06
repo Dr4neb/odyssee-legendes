@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.5 | 2026-08-06T12:16+11:00 | Correctif blocage du bouclier vers l’avant -->
-<meta name="build-id" content="odyssee-v1.29.5-block-forward-fix-20260806-1216-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.6 | 2026-08-06T12:31+11:00 | Garde fluide superposée à la locomotion -->
+<meta name="build-id" content="odyssee-v1.29.6-fluid-block-locomotion-20260806-1231-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.5 — Blocage bouclier vers l’avant</title>
+<title>Odyssée — v1.29.6 — Garde fluide et locomotion</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -3429,7 +3429,9 @@ function update(){
     }
   }
   const wantsBlock=(blocking||keys.has('KeyB'))&&attackTimer<=0;
-  blockBlend=THREE.MathUtils.lerp(blockBlend,wantsBlock?1:0,1-Math.exp(-15*dt));
+  // Transition de garde amortie : montée progressive sans pré-mouvement ni à-coup.
+  const blockResponse=wantsBlock?9.2:11.0;
+  blockBlend=THREE.MathUtils.lerp(blockBlend,wantsBlock?1:0,1-Math.exp(-blockResponse*dt));
   els.actionB?.classList.toggle('blocking',blockBlend>.12);
   els.actionB?.setAttribute('aria-pressed',wantsBlock?'true':'false');
   let x=pocketMenuOpen?0:joy.x,z=pocketMenuOpen?0:joy.y;
@@ -7223,15 +7225,16 @@ function v1286UpdateGregoriusSkeleton(){
   if(!rig.ready||!rig.mixer)return;
   const speed=velocity?.length?.()||0;
   const attacking=attackTimer>0;
-  const blockingNow=!attacking&&(blocking||keys.has('KeyB')||blockBlend>.2);
+  const blockingNow=!attacking&&(blocking||keys.has('KeyB')||blockBlend>.02);
   if(attacking){
     if(!rig.attackLatch){v1286SetAction('attack',.08,true);rig.attackLatch=true;}
   }else{
     rig.attackLatch=false;
-    if(blockingNow)v1286SetAction('block',.12);
-    else if(speed>2.10)v1286SetAction('run',.14);
-    else if(speed>.18)v1286SetAction('walk',.16);
-    else v1286SetAction('idle',.18);
+    // Le blocage est une couche procédurale du haut du corps : la locomotion reste active,
+    // ce qui conserve les pas et le mouvement des jambes pendant la garde.
+    if(speed>2.10)v1286SetAction('run',blockingNow?.10:.14);
+    else if(speed>.18)v1286SetAction('walk',blockingNow?.10:.16);
+    else v1286SetAction('idle',blockingNow?.10:.18);
   }
   if(rig.currentName==='walk'&&rig.current)rig.current.setEffectiveTimeScale(THREE.MathUtils.clamp(.72+speed*.20,.78,1.22));
   if(rig.currentName==='run'&&rig.current)rig.current.setEffectiveTimeScale(THREE.MathUtils.clamp(.80+speed*.16,.95,1.34));
@@ -8092,7 +8095,7 @@ if(typeof window!=='undefined'){
 
 
 /* ===================== ODYSSÉE v1.29.4 — ASPIS SANGLÉ ET BLOCAGE ===================== */
-const V1294_BUILD='v1.29.5 — shield-block-forward-fix-20260806-1216-NC';
+const V1294_BUILD='v1.29.6 — fluid-upper-body-block-with-locomotion-20260806-1231-NC';
 const v1294ShieldState={
   ready:false,mount:null,arm:null,hand:null,upperArm:null,chest:null,
   upperAxis:null,foreAxis:null,restPosition:null,frontAxis:new THREE.Vector3(0,0,1),
@@ -8152,9 +8155,10 @@ function v1294SolveBlockArm(root,blend){
   const elbow=fore.getWorldPosition(new THREE.Vector3());
   const wrist=hand.getWorldPosition(new THREE.Vector3());
   const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
-  const targetRoot=chestRoot.clone().add(new THREE.Vector3(.105,.035,.425));
+  // Main gauche plus franchement avancée : l'aspis couvre le corps au lieu de rester collé au torse.
+  const targetRoot=chestRoot.clone().add(new THREE.Vector3(.105,.035,.555));
   targetRoot.y=THREE.MathUtils.clamp(targetRoot.y,.78,1.20);
-  const poleRoot=chestRoot.clone().add(new THREE.Vector3(.72,.25,.015));
+  const poleRoot=chestRoot.clone().add(new THREE.Vector3(.72,.25,.075));
   const target=root.localToWorld(targetRoot.clone());
   const poleWorld=root.localToWorld(poleRoot.clone());
   const upperLen=Math.max(.10,shoulder.distanceTo(elbow));
@@ -8232,7 +8236,7 @@ function v1294ApplyAntiBodyPenetration(root,blend){
   if(centerRoot.x<minSideX)correction.x+=minSideX-centerRoot.x;
   // En garde, le bouclier doit rester devant le torse et ne peut pas le traverser.
   if(blend>.02){
-    const minFrontZ=THREE.MathUtils.lerp(chestRoot.z+.04,chestRoot.z+.315,blend);
+    const minFrontZ=THREE.MathUtils.lerp(chestRoot.z+.04,chestRoot.z+.415,blend);
     if(centerRoot.z<minFrontZ)correction.z+=minFrontZ-centerRoot.z;
   }
   const maxCorrection=.15;
