@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.28.8 | 2026-08-06T11:42+11:00 | Gregorius hoplite authentique -->
-<meta name="build-id" content="odyssee-v1.28.8-gregorius-authentic-hoplite-20260806-1142-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.0 | 2026-08-06T10:49+11:00 | Fondation Quaternius universelle -->
+<meta name="build-id" content="odyssee-v1.29.0-quaternius-universal-rig-20260806-1049-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.28.8 — Gregorius hoplite authentique</title>
+<title>Odyssée — v1.29.0 — Fondation Quaternius universelle</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -7540,7 +7540,212 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.28.8 =================== */
 
 
+/* ===================== ODYSSÉE v1.29.0 — FONDATION QUATERNIUS UNIVERSELLE ===================== */
+const V1290_BUILD='v1.29.0 — fondation-quaternius-universelle-20260806-1049-NC';
+const V1290_CHARACTER_ASSETS={
+  creator:'Quaternius',
+  license:'CC0 1.0 Universal',
+  basePack:'Universal Base Characters',
+  outfitPack:'Modular Character Outfits - Fantasy',
+  animationPack:'Universal Animation Library',
+  runtimeMirror:'lord3nd3r/ffxi-browser (GitHub, fichiers Quaternius CC0)',
+  baseMale:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Superhero_Male_FullBody.gltf',
+  outfitMale:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Male_Ranger.gltf',
+  animations:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/UAL1_Standard.glb',
+  decision:'Le corps, la tête, la tenue et les animations utilisent désormais le même squelette humanoïde universel. KayKit est désactivé pour Gregorius.'
+};
+const v1290State={loading:false,ready:false,failed:false,clips:[],sources:V1290_CHARACTER_ASSETS};
+
+function v1290RemoveLegacyGregorius(){
+  const rig=v1286GregoriusRig;
+  try{rig.current?.stop?.();}catch(_error){}
+  try{rig.mixer?.stopAllAction?.();}catch(_error){}
+  if(rig.root?.parent)rig.root.parent.remove(rig.root);
+  rig.root=null;rig.mixer=null;rig.current=null;rig.currentName='';rig.weapon=null;rig.weaponSocket=null;
+  rig.actions.clear();rig.clips=[];rig.ready=false;rig.loading=false;rig.failed=false;rig.attackLatch=false;
+  const gear=v1287HopliteGear;
+  gear.ready=false;gear.root=null;gear.head=null;gear.chest=null;gear.hips=null;gear.leftHand=null;gear.rightHand=null;
+  gear.leftForearm=null;gear.leftShin=null;gear.rightShin=null;gear.helmet=null;gear.crest=null;gear.cape=null;
+  gear.shield=null;gear.xiphos=null;gear.materials=null;
+}
+
+function v1290PrepareUniversalRig(root){
+  root.name='Gregorius_Quaternius_Universal_Rig';
+  root.traverse(object=>{
+    if(object.isMesh||object.isSkinnedMesh){
+      object.castShadow=true;object.receiveShadow=true;object.frustumCulled=false;
+      const mats=Array.isArray(object.material)?object.material:[object.material];
+      for(const material of mats){
+        if(!material)continue;
+        material.side=THREE.FrontSide;
+        material.needsUpdate=true;
+      }
+    }
+  });
+  root.rotation.set(0,Math.PI,0);
+  root.scale.setScalar(1);
+  root.position.set(0,0,0);
+  root.updateMatrixWorld(true);
+  let box=new THREE.Box3().setFromObject(root);
+  const size=box.getSize(new THREE.Vector3());
+  const scale=1.58/Math.max(.1,size.y);
+  root.scale.setScalar(scale);
+  root.updateMatrixWorld(true);
+  box=new THREE.Box3().setFromObject(root);
+  root.position.y=-box.min.y+.015;
+  root.position.z=.025;
+  root.updateMatrixWorld(true);
+}
+
+function v1290GraftHumanBody(outfitRoot,baseRoot){
+  const bones={};
+  outfitRoot.traverse(object=>{if(object.isBone)bones[object.name]=object;});
+  const grafts=[];
+  baseRoot.traverse(object=>{if(object.isSkinnedMesh)grafts.push(object);});
+  let attached=0;
+  for(const mesh of grafts){
+    const mapped=mesh.skeleton?.bones?.map(bone=>bones[bone.name]);
+    if(!mapped||mapped.some(bone=>!bone))continue;
+    if(mesh.parent)mesh.parent.remove(mesh);
+    mesh.skeleton=new THREE.Skeleton(mapped,mesh.skeleton.boneInverses);
+    mesh.position.set(0,0,0);mesh.rotation.set(0,0,0);mesh.scale.set(1,1,1);
+    mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
+    outfitRoot.add(mesh);attached++;
+  }
+  return attached;
+}
+
+function v1290HideFantasyParts(root){
+  const hidden=['malerangerheadhood','malerangeraccpauldron','hood','quiver','bow'];
+  root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh))return;
+    const tag=v1287NormalizedName(`${object.name} ${Array.isArray(object.material)?object.material.map(m=>m?.name).join(' '):object.material?.name||''}`);
+    if(hidden.some(token=>tag.includes(token)))object.visible=false;
+  });
+}
+
+function v1290FindClip(clips,...patterns){
+  return v1286ClipByName(clips,...patterns);
+}
+
+function v1290RegisterUniversalActions(clips){
+  const rig=v1286GregoriusRig;
+  rig.actions.clear();
+  rig.clips=Array.isArray(clips)?clips:[];
+  rig.mixer=new THREE.AnimationMixer(rig.root);
+  const definitions={
+    idle:['Idle_Loop','Idle','Standing'],
+    walk:['Walk_Fwd_Loop','Walking_Fwd_Loop','Walking','Jog_Fwd_Loop'],
+    run:['Jog_Fwd_Loop','Run_Fwd_Loop','Running','Sprint_Fwd_Loop'],
+    block:['Block_Loop','Sword_Block_Loop','Blocking','Idle_Loop'],
+    attack:['Sword_Attack','Sword_Attack_01','1H_Melee_Attack_Stab','Attack']
+  };
+  for(const [state,names] of Object.entries(definitions)){
+    const clip=v1290FindClip(rig.clips,...names);
+    if(!clip)continue;
+    const action=rig.mixer.clipAction(clip);
+    action.enabled=true;action.setEffectiveWeight(1);action.setEffectiveTimeScale(1);
+    if(state==='attack'){
+      action.setLoop(THREE.LoopOnce,1);
+      action.clampWhenFinished=true;
+    }else action.setLoop(THREE.LoopRepeat,Infinity);
+    rig.actions.set(state,{action,clip});
+  }
+  if(!rig.actions.has('walk')&&rig.actions.has('run'))rig.actions.set('walk',rig.actions.get('run'));
+  if(!rig.actions.has('run')&&rig.actions.has('walk'))rig.actions.set('run',rig.actions.get('walk'));
+  if(!rig.actions.has('block')&&rig.actions.has('idle'))rig.actions.set('block',rig.actions.get('idle'));
+}
+
+function v1290ApplyUniversalHoplite(root){
+  const gear=v1287HopliteGear;
+  gear.ready=false;gear.root=root;gear.materials=v1287CreateMaterials();
+  v1290HideFantasyParts(root);
+  v1287HideMedievalAccessories(root);
+  gear.head=v1287FindRigNode(root,[['head']]);
+  gear.chest=v1287FindRigNode(root,[['spine03'],['spine02'],['spine01'],['upperchest'],['chest']]);
+  gear.hips=v1287FindRigNode(root,[['pelvis'],['hips'],['root']]);
+  gear.leftHand=v1287FindRigNode(root,[['handl'],['lefthand']]);
+  gear.rightHand=v1287FindRigNode(root,[['handr'],['righthand']]);
+  gear.leftForearm=v1287FindRigNode(root,[['lowerarml'],['forearml'],['leftlowerarm']]);
+  gear.leftShin=v1287FindRigNode(root,[['calfl'],['lowerlegl'],['shinl']]);
+  gear.rightShin=v1287FindRigNode(root,[['calfr'],['lowerlegr'],['shinr']]);
+  if(!gear.head||!gear.chest||!gear.hips)throw new Error('Rig universel incomplet : tête, torse ou bassin introuvable.');
+  const helmet=v1287BuildHelmet(gear.head,gear.materials);gear.helmet=helmet.group;gear.crest=helmet.crest;
+  const cuirass=v1287BuildCuirass(gear.chest,gear.hips,gear.materials);gear.cuirass=cuirass.armor;gear.skirt=cuirass.skirt;
+  gear.cape=v1287BuildCape(gear.chest,gear.materials);
+  if(gear.leftForearm||gear.leftHand)gear.shield=v1287BuildShield(gear.leftForearm||gear.leftHand,gear.materials);
+  gear.leftGreave=v1287BuildGreave(gear.leftShin,'L',gear.materials);
+  gear.rightGreave=v1287BuildGreave(gear.rightShin,'R',gear.materials);
+  gear.xiphos=v1287TuneKayKitWeapon(v1286GregoriusRig,gear.materials);
+  root.updateMatrixWorld(true);
+  gear.ready=true;gear.lastTime=performance.now();
+  document.body.dataset.gregoriusAppearance='quaternius-hoplite-prototype';
+  return true;
+}
+
+v1286LoadGregoriusSkeleton=async function(){
+  const rig=v1286GregoriusRig;
+  if(v1290State.loading||v1290State.ready||!character)return;
+  v1290State.loading=true;v1290State.failed=false;
+  v1290RemoveLegacyGregorius();
+  try{
+    v117Toast?.('GREGORIUS — CHARGEMENT DU NOUVEAU RIG HUMANOÏDE');
+    const loader=await v1286LoadGLTFLoader();
+    const [outfitGLTF,baseGLTF,animationGLTF]=await Promise.all([
+      loader.loadAsync(V1290_CHARACTER_ASSETS.outfitMale),
+      loader.loadAsync(V1290_CHARACTER_ASSETS.baseMale),
+      loader.loadAsync(V1290_CHARACTER_ASSETS.animations)
+    ]);
+    if(!outfitGLTF?.scene||!baseGLTF?.scene)throw new Error('Assets Quaternius incomplets.');
+    const attached=v1290GraftHumanBody(outfitGLTF.scene,baseGLTF.scene);
+    if(!attached)throw new Error('La tête et le corps humains n’ont pas pu être greffés sur la tenue.');
+    rig.root=outfitGLTF.scene;
+    rig.source=V1290_CHARACTER_ASSETS.outfitMale;
+    v1290PrepareUniversalRig(rig.root);
+    v1290RegisterUniversalActions(animationGLTF?.animations||[]);
+    character.add(rig.root);
+    await v1286AttachKayKitSword(loader);
+    v1290ApplyUniversalHoplite(rig.root);
+    if(greekGear)greekGear.visible=false;
+    rig.ready=true;rig.loading=false;rig.failed=false;rig.lastFrame=performance.now();
+    v1290State.loading=false;v1290State.ready=true;v1290State.clips=rig.clips.map(clip=>clip.name);
+    v1286SetAction('idle',.01,true);
+    document.body.dataset.gregoriusRig='quaternius-universal';
+    v117Toast?.('GREGORIUS — NOUVEAU CORPS HUMAIN ET RIG UNIVERSEL ACTIFS');
+    console.info('[Odyssée v1.29.0] Rig Quaternius actif.',{attachedBodyMeshes:attached,clips:v1290State.clips});
+  }catch(error){
+    v1290State.loading=false;v1290State.failed=true;v1290State.ready=false;
+    rig.loading=false;rig.failed=true;rig.ready=false;
+    if(rig.root?.parent)rig.root.parent.remove(rig.root);
+    rig.root=null;rig.mixer=null;rig.actions.clear();
+    if(greekGear)greekGear.visible=true;
+    document.body.dataset.gregoriusRig='procedural-safe-fallback';
+    document.body.dataset.gregoriusAppearance='classic-procedural';
+    console.warn('[Odyssée v1.29.0] Repli sûr sans KayKit :',error);
+    v117Toast?.('NOUVEAU RIG INDISPONIBLE — PERSONNAGE CLASSIQUE SANS TÊTE KAYKIT');
+  }
+};
+
+const v1290CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1290CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1290_BUILD,gregoriusRig:v1290State.ready?'quaternius-universal':'procedural-safe-fallback',characterAssetPack:'Quaternius Universal'};
+  return save;
+};
+
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1290=V1290_BUILD;
+  window.ODYSSEE_CHARACTER_ASSETS_V1290=V1290_CHARACTER_ASSETS;
+  window.ODYSSEE_GREGORIUS_V1290=v1290State;
+  window.ODYSSEE_RELOAD_GREGORIUS_SKELETON=()=>{
+    v1290State.ready=false;v1290State.failed=false;v1286GregoriusRig.failed=false;
+    return v1286LoadGregoriusSkeleton();
+  };
+}
+/* =================== FIN ODYSSÉE v1.29.0 =================== */
+
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.28.8-20260806-1142-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.29.0-20260806-1049-NC -->
