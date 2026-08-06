@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.31.1 | 2026-08-06T13:58+11:00 | Correctif chargement stabilisation Gregorius -->
-<meta name="build-id" content="odyssee-v1.31.1-gregorius-stabilization-load-fix-20260806-1358-nc">
+<!-- VERIFIED BUILD: Odyssée v1.31.2 | 2026-08-06T13:59+11:00 | Caméra tactique inclinée à 70 degrés -->
+<meta name="build-id" content="odyssee-v1.31.2-camera-70deg-20260806-1359-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.31.1 — Correctif de chargement</title>
+<title>Odyssée — v1.31.2 — Caméra tactique à 70°</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -1160,11 +1160,16 @@ let anvilBus=null, anvilLastTime=0, anvilSfxBuffer=null, anvilSfxLoading=false, 
 let fieldBus=null, fieldAmbienceStarted=false, fieldNoiseSource=null, fieldCricketSource=null, fieldNoiseGain=null, fieldCricketGain=null, fieldNoiseLfo=null, fieldCricketLfo=null;
 let gateAudio=null,gateCloseAudio=null;
 
+// Caméra tactique : inclinaison de 70° par rapport au sol.
+const CAMERA_INCLINATION_DEG=70;
+const CAMERA_HEIGHT=18;
+const CAMERA_BACK_OFFSET=CAMERA_HEIGHT/Math.tan(CAMERA_INCLINATION_DEG*Math.PI/180);
+
 function setupThree(){
   renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.16;els.game.appendChild(renderer.domElement);
   scene=new THREE.Scene();scene.background=new THREE.Color(0x6d98a5);scene.fog=new THREE.Fog(0x769ba2,28,58);
-  camera=new THREE.OrthographicCamera(-7,7,4,-4,.1,70);camera.position.set(0,18,.001);camera.up.set(0,0,-1);camera.lookAt(0,0,0);camera.zoom=1.08;camera.updateProjectionMatrix();
+  camera=new THREE.OrthographicCamera(-7,7,4,-4,.1,70);camera.position.set(0,CAMERA_HEIGHT,CAMERA_BACK_OFFSET);camera.up.set(0,1,0);camera.lookAt(0,0,0);camera.zoom=1.08;camera.updateProjectionMatrix();
   clock=new THREE.Clock();
   scene.add(new THREE.HemisphereLight(0xf3dfbd,0x2d211c,1.75));
   const sun=new THREE.DirectionalLight(0xffd39a,5.6);sun.position.set(-8,15,-6);sun.castShadow=true;sun.shadow.bias=-0.00018;sun.shadow.mapSize.set(3072,3072);sun.shadow.camera.left=-34;sun.shadow.camera.right=34;sun.shadow.camera.top=34;sun.shadow.camera.bottom=-34;scene.add(sun);
@@ -3661,7 +3666,8 @@ function update(){
   updateV117Combat(dt);
   if(forgeMenuOpen&&(!blacksmithNPC||Math.hypot(player.x-blacksmithNPC.position.x,player.z-blacksmithNPC.position.z)>1.9))closeForgeMenu();
   camera.position.x=THREE.MathUtils.lerp(camera.position.x,player.x,.12);
-  camera.position.z=THREE.MathUtils.lerp(camera.position.z,player.z+.001,.12);
+  camera.position.y=CAMERA_HEIGHT;
+  camera.position.z=THREE.MathUtils.lerp(camera.position.z,player.z+CAMERA_BACK_OFFSET,.12);
   cameraShake=THREE.MathUtils.lerp(cameraShake,0,1-Math.exp(-10*dt));
   cameraShakeX=THREE.MathUtils.lerp(cameraShakeX,(Math.random()-.5)*cameraShake,1-Math.exp(-18*dt));
   cameraShakeZ=THREE.MathUtils.lerp(cameraShakeZ,(Math.random()-.5)*cameraShake,1-Math.exp(-18*dt));
@@ -9744,10 +9750,22 @@ if(typeof window!=='undefined'){
 
 
 
-
+/* ===================== ODYSSÉE v1.31.2 — CAMÉRA TACTIQUE À 70° ===================== */
+const V1312_BUILD='v1.31.2 — camera-70deg-20260806-1359-NC';
+const v1312CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1312CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1312_BUILD,camera:{type:'orthographic',inclinationDeg:CAMERA_INCLINATION_DEG,height:CAMERA_HEIGHT,backOffset:CAMERA_BACK_OFFSET}};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1312=V1312_BUILD;
+  window.ODYSSEE_CAMERA_CONFIG={inclinationDeg:CAMERA_INCLINATION_DEG,height:CAMERA_HEIGHT,backOffset:CAMERA_BACK_OFFSET};
+}
+/* =================== FIN ODYSSÉE v1.31.2 =================== */
 
 
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.31.1-20260806-1358-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.31.2-20260806-1359-NC -->
