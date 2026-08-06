@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.0 | 2026-08-06T10:49+11:00 | Fondation Quaternius universelle -->
-<meta name="build-id" content="odyssee-v1.29.0-quaternius-universal-rig-20260806-1049-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.1 | 2026-08-06T11:18+11:00 | Bouclier, blocage, marche et métiers -->
+<meta name="build-id" content="odyssee-v1.29.1-shield-block-walk-npc-spawns-20260806-1118-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.0 — Fondation Quaternius universelle</title>
+<title>Odyssée — v1.29.1 — Bouclier, animations et métiers</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -319,7 +319,7 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 <div id="titleScreen">
   <div id="menuBg"></div><div id="menuLight"></div>
   <button id="soundBtn" type="button">♪ MUSIQUE</button>
-  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.28.8 — GREGORIUS HOPLITE AUTHENTIQUE</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
+  <div id="titleContent"><div class="kicker">Épopée tactique en mer Égée</div><h1>ODYSSÉE</h1><div class="subtitle">Légendes de l’Égée</div><div class="version">ALPHA v1.29.1 — BOUCLIER, ANIMATIONS ET MÉTIERS</div><div id="menuPanel"><button id="startBtn" class="menuBtn" type="button">Commencer l’aventure</button><div id="saveMenu"><button id="newGameBtn" type="button">Nouvelle partie</button><button id="resetSaveBtn" type="button">Effacer la sauvegarde</button><div id="saveSummary">Aucune sauvegarde détectée.</div></div><button id="fullscreenBtn" type="button">⛶ Passer en plein écran</button><div id="fullscreenHint">Le bouton demande directement le plein écran natif du navigateur.</div></div></div>
 </div>
 <div id="fullscreenHelp" aria-hidden="true"><div id="fullscreenHelpCard"><button id="fullscreenHelpClose" type="button" aria-label="Fermer">×</button><h2 id="fullscreenHelpTitle">Plein écran indisponible</h2><p id="fullscreenHelpText">Le navigateur n’a pas autorisé le plein écran natif.</p><ol id="fullscreenHelpSteps"><li>Ouvre le menu de partage du navigateur.</li><li>Choisis « Sur l’écran d’accueil ».</li><li>Lance ensuite Odyssée depuis son icône : le jeu s’ouvrira sans barre d’adresse.</li></ol></div></div>
 <div id="hud"><div class="hudTitle">ITHAQUE — HOPLITE AU XIPHOS</div><div class="hudSub">CAMÉRA ORTHOGRAPHIQUE VERTICALE</div><div class="hudMode">VUE PLAFOND • XIPHOS EN MAIN • LANCE DORSALE</div></div>
@@ -7745,7 +7745,319 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.29.0 =================== */
 
 
+/* ===================== ODYSSÉE v1.29.1 — BOUCLIER, ANIMATIONS ET SPAWNS MÉTIERS ===================== */
+const V1291_BUILD='v1.29.1 — shield-block-walk-npc-spawns-20260806-1118-NC';
+const v1291State={
+  walkClip:null,blockClip:null,syntheticWalk:false,syntheticBlock:false,
+  shieldInstalled:false,nikonFixed:false,demosDirect:false,myronDirect:false,theronToRampart:false
+};
+
+function v1291Normalize(value){
+  return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ');
+}
+function v1291BestClip(clips,include=[],exclude=[]){
+  const positive=include.map(v1291Normalize),negative=exclude.map(v1291Normalize);
+  let best=null,bestScore=-Infinity;
+  for(const clip of clips||[]){
+    const name=v1291Normalize(clip?.name);
+    if(!name||negative.some(token=>token&&name.includes(token)))continue;
+    let score=0;
+    for(const token of positive){
+      if(!token)continue;
+      if(name===token)score+=180;
+      else if(name.startsWith(token))score+=90;
+      else if(name.includes(token))score+=55;
+    }
+    if(name.includes('loop'))score+=16;
+    if(name.includes('forward')||name.includes('fwd'))score+=12;
+    if(score>bestScore){best=clip;bestScore=score;}
+  }
+  return bestScore>0?best:null;
+}
+function v1291BindRigAction(state,clip,{once=false}={}){
+  const rig=v1286GregoriusRig;
+  if(!rig?.mixer||!clip)return null;
+  const action=rig.mixer.clipAction(clip);
+  action.enabled=true;
+  action.clampWhenFinished=!!once;
+  action.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,once?1:Infinity);
+  action.setEffectiveWeight(1);
+  rig.actions.set(state,{action,clip,v1291:true});
+  return {action,clip};
+}
+
+// Recherche plus tolérante des clips réels du kit Quaternius.
+const v1291RegisterUniversalActionsBase=v1290RegisterUniversalActions;
+v1290RegisterUniversalActions=function(clips){
+  v1291RegisterUniversalActionsBase(clips);
+  const rig=v1286GregoriusRig,list=Array.isArray(clips)?clips:[];
+  const idle=v1291BestClip(list,['idle','standing','stand','breathing'],['attack','hit','death']);
+  const walk=v1291BestClip(list,['walk','walking','locomotion'],['backward','back','strafe','left','right','turn']);
+  const run=v1291BestClip(list,['jog','run','running','sprint'],['backward','back','strafe','left','right','turn']);
+  const block=v1291BestClip(list,['block','blocking','guard','defend','defense','parry','shield'],['break','hit','attack']);
+  const attack=v1291BestClip(list,['sword attack','melee attack','stab','slash','attack'],['block','hit','death']);
+
+  if(idle)v1291BindRigAction('idle',idle);
+  if(walk){v1291BindRigAction('walk',walk);v1291State.walkClip=walk.name;v1291State.syntheticWalk=false;}
+  else if(run){v1291BindRigAction('walk',run);v1291State.walkClip=`${run.name} (ralenti)`;v1291State.syntheticWalk=false;}
+  else if(idle){
+    const synthetic=idle.clone();synthetic.name='V1291_Walk_Safe_Fallback';
+    v1291BindRigAction('walk',synthetic);v1291State.walkClip=synthetic.name;v1291State.syntheticWalk=true;
+  }
+  if(run)v1291BindRigAction('run',run);
+  else if(walk)v1291BindRigAction('run',walk);
+
+  if(block){
+    v1291BindRigAction('block',block,{once:true});
+    v1291State.blockClip=block.name;v1291State.syntheticBlock=false;
+  }else if(idle){
+    // Repli sûr : une courte transition corporelle stable, complétée par la montée animée de l'aspis.
+    const synthetic=idle.clone();synthetic.name='V1291_Block_Safe_Pose';
+    v1291BindRigAction('block',synthetic,{once:true});
+    v1291State.blockClip=synthetic.name;v1291State.syntheticBlock=true;
+  }
+  if(attack)v1291BindRigAction('attack',attack,{once:true});
+
+  const blockEntry=rig.actions.get('block');
+  if(blockEntry){blockEntry.action.clampWhenFinished=true;blockEntry.action.setLoop(THREE.LoopOnce,1);}
+  console.info('[Odyssée v1.29.1] Clips retenus',{walk:v1291State.walkClip,block:v1291State.blockClip,available:list.map(c=>c.name)});
+};
+
+// Le blocage joue une seule entrée en garde puis tient la pose au lieu de reboucler et de tordre le rig.
+const v1291SetActionBase=v1286SetAction;
+v1286SetAction=function(name,fade=.14,force=false){
+  const ok=v1291SetActionBase(name,fade,force);
+  if(!ok)return false;
+  const entry=v1286GregoriusRig.actions.get(name),action=entry?.action,clip=entry?.clip;
+  if(name==='block'&&action&&clip){
+    action.clampWhenFinished=true;action.setLoop(THREE.LoopOnce,1);
+    action.paused=false;
+    action.setEffectiveTimeScale(Math.max(.45,clip.duration/.42));
+  }else if(name==='walk'&&action){
+    action.clampWhenFinished=false;action.setLoop(THREE.LoopRepeat,Infinity);
+  }
+  return true;
+};
+
+function v1291FiniteVector(v){return v&&Number.isFinite(v.x)&&Number.isFinite(v.y)&&Number.isFinite(v.z);}
+function v1291NodeLocalPosition(node,root,target=new THREE.Vector3()){
+  if(!node||!root)return target.set(0,0,0);
+  node.getWorldPosition(target);return root.worldToLocal(target);
+}
+function v1291InstallShieldController(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return false;
+  if(shield.userData.v1291Controlled){v1291State.shieldInstalled=true;return true;}
+  root.attach(shield);
+  shield.userData.v1291Controlled=true;
+  shield.userData.v1291Velocity=new THREE.Vector3();
+  shield.userData.v1291Quat=new THREE.Quaternion();
+  shield.userData.v1291RestNormal=new THREE.Vector3(-.94,.015,-.20).normalize();
+  shield.userData.v1291BlockNormal=new THREE.Vector3(-.03,.015,-1).normalize();
+  shield.userData.v1291FrontAxis=new THREE.Vector3(0,0,1);
+  shield.scale.setScalar(.92);
+  root.updateMatrixWorld(true);
+  v1291State.shieldInstalled=true;
+  return true;
+}
+function v1291UpdateShieldController(dt=1/60){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return;
+  if(!shield.userData.v1291Controlled&&!v1291InstallShieldController())return;
+  root.updateMatrixWorld(true);
+  const handNode=gear.leftHand||gear.leftForearm,chestNode=gear.chest||gear.hips;
+  const hand=v1291NodeLocalPosition(handNode,root,new THREE.Vector3());
+  const chest=v1291NodeLocalPosition(chestNode,root,new THREE.Vector3());
+  if(!v1291FiniteVector(hand)||!v1291FiniteVector(chest))return;
+
+  // Position de repos : sur le flanc gauche, légèrement avancée, sans traverser le corps.
+  const rest=hand.clone().add(new THREE.Vector3(-.085,.105,-.055));
+  rest.y=THREE.MathUtils.clamp(rest.y,.62,1.17);
+  rest.x=THREE.MathUtils.clamp(rest.x,-.58,-.20);
+  rest.z=THREE.MathUtils.clamp(rest.z,-.22,.16);
+  // Position de garde : devant le torse et assez haute pour couvrir le visage sans masquer tout le personnage.
+  const guard=chest.clone().add(new THREE.Vector3(-.085,.035,-.355));
+  guard.y=THREE.MathUtils.clamp(guard.y,.82,1.22);
+  guard.x=THREE.MathUtils.clamp(guard.x,-.28,.04);
+  guard.z=THREE.MathUtils.clamp(guard.z,-.46,-.22);
+
+  const rawBlock=THREE.MathUtils.clamp(blockBlend+(blocking?0.35:0),0,1);
+  const guardBlend=rawBlock*rawBlock*(3-2*rawBlock);
+  const target=rest.lerp(guard,guardBlend);
+  const responsiveness=1-Math.exp(-Math.max(1,dt>0?15:18)*Math.max(.001,dt));
+  shield.position.lerp(target,responsiveness);
+  const normal=shield.userData.v1291RestNormal.clone().lerp(shield.userData.v1291BlockNormal,guardBlend).normalize();
+  const targetQuat=new THREE.Quaternion().setFromUnitVectors(shield.userData.v1291FrontAxis,normal);
+  // Légère inclinaison naturelle vers le porteur, sans retournement de l'aspis.
+  const roll=new THREE.Quaternion().setFromAxisAngle(normal,.035-.055*guardBlend);
+  targetQuat.premultiply(roll);
+  shield.quaternion.slerp(targetQuat,responsiveness);
+  shield.scale.setScalar(THREE.MathUtils.lerp(.92,.98,guardBlend));
+  shield.visible=!equipmentStowed;
+}
+
+function v1291FindBone(root,tokens){
+  const wanted=tokens.map(v1291Normalize);let best=null,bestScore=-1;
+  root?.traverse?.(object=>{
+    if(!object.isBone)return;const name=v1291Normalize(object.name);let score=0;
+    for(const token of wanted)if(name.includes(token))score+=token.length;
+    if(score>bestScore){best=object;bestScore=score;}
+  });
+  return bestScore>0?best:null;
+}
+function v1291ApplySyntheticWalk(){
+  if(!v1291State.syntheticWalk||v1286GregoriusRig.currentName!=='walk'||!v1286GregoriusRig.root)return;
+  const root=v1286GregoriusRig.root;
+  const cache=root.userData.v1291WalkBones||(root.userData.v1291WalkBones={
+    leftLeg:v1291FindBone(root,['upper leg l','left up leg','thigh l','left thigh']),
+    rightLeg:v1291FindBone(root,['upper leg r','right up leg','thigh r','right thigh']),
+    leftArm:v1291FindBone(root,['upper arm l','left arm']),
+    rightArm:v1291FindBone(root,['upper arm r','right arm'])
+  });
+  const speed=velocity?.length?.()||0,phase=performance.now()*.001*(4.2+speed*1.2),swing=Math.sin(phase)*.30;
+  if(cache.leftLeg)cache.leftLeg.rotation.x+=swing;
+  if(cache.rightLeg)cache.rightLeg.rotation.x-=swing;
+  if(cache.leftArm)cache.leftArm.rotation.x-=swing*.42;
+  if(cache.rightArm)cache.rightArm.rotation.x+=swing*.42;
+}
+
+const v1291UpdateSkeletonBase=v1286UpdateGregoriusSkeleton;
+v1286UpdateGregoriusSkeleton=function(){
+  v1291UpdateSkeletonBase();
+  if(!v1286GregoriusRig.ready)return;
+  const dt=THREE.MathUtils.clamp((performance.now()-(v1287HopliteGear.lastTime||performance.now()))/1000,0,.05)||.016;
+  v1291ApplySyntheticWalk();
+  v1291UpdateShieldController(dt);
+};
+
+// --------------------- Apparition et comportement des PNJ de métier ---------------------
+const V1291_NIKON_HOME=()=>new THREE.Vector3(trainingCampCenter.x+2.18,0,trainingCampCenter.z+.76);
+const V1291_DEMOS_HOME=()=>new THREE.Vector3(farmerFieldSoundPos.x-.85,0,farmerFieldSoundPos.z-.55);
+function v1291PlaceOnTerrain(npc,pos){
+  if(!npc||!pos)return;npc.position.set(pos.x,getTerrainHeight(pos.x,pos.z),pos.z);
+}
+function v1291DisableDeployment(npc){
+  if(!npc)return;const d=npc.userData||(npc.userData={});
+  if(d.v121Deployment){d.v121Deployment.active=false;d.v121Deployment.delay=0;d.v121Deployment.detour=null;d.v121Deployment.stuck=0;}
+  d.v121ArrivedAtWork=true;delete d.v122Navigation;delete d.v123WorkRoute;
+}
+function v1291SpawnNikonAtCamp(force=true){
+  if(!trainingNPC)return;
+  v1291DisableDeployment(trainingNPC);
+  if(force)v1291PlaceOnTerrain(trainingNPC,V1291_NIKON_HOME());
+  const d=trainingNPC.userData;d.state=d.state==='talk'?'talk':'wait';d.stateTime=Math.max(0,d.stateTime||0);d.stationIndex=0;
+  v1291State.nikonFixed=true;
+}
+function v1291SpawnDemosAtFields(force=true){
+  if(!farmerNPC)return;
+  v1291DisableDeployment(farmerNPC);
+  if(force)v1291PlaceOnTerrain(farmerNPC,V1291_DEMOS_HOME());
+  const d=farmerNPC.userData;
+  if(Array.isArray(d.route)&&d.route.length){
+    let nearest=0,best=Infinity;d.route.forEach((node,i)=>{const p=node?.pos||node;if(!p)return;const dist=farmerNPC.position.distanceToSquared(p);if(dist<best){best=dist;nearest=i;}});d.targetIndex=nearest;
+  }
+  if(d.state!=='talk')d.state='walk';
+  v1291State.demosDirect=true;
+}
+function v1291SpawnMyronAtForge(){
+  if(!blacksmithNPC)return;
+  if(typeof v1234StabilizeMyron==='function')v1234StabilizeMyron();
+  else{v1291DisableDeployment(blacksmithNPC);v1291PlaceOnTerrain(blacksmithNPC,new THREE.Vector3(-8.30,0,5.62));}
+  v1291State.myronDirect=true;
+}
+function v1291ChooseTheronRampart(){
+  const options=(constructionSections||[]).filter(section=>section?.group&&!section.complete&&(section.progress||0)<1);
+  if(!options.length)return null;
+  options.sort((a,b)=>{
+    const pa=a.group.position,pb=b.group.position;
+    const sa=(pa.z*2.2)-Math.abs(pa.x)*.45-(a.progress||0)*3;
+    const sb=(pb.z*2.2)-Math.abs(pb.x)*.45-(b.progress||0)*3;
+    return sb-sa;
+  });
+  return options[0];
+}
+function v1291PrepareTheronDeployment(){
+  if(!builderNPC)return;
+  const d=builderNPC.userData||(builderNPC.userData={});
+  const section=v1291ChooseTheronRampart();
+  d.v1291InitialRampart=section||null;
+  const goal=section&&typeof v121BuilderApproach==='function'?v121BuilderApproach(section):(constructionStations?.[0]||new THREE.Vector3(0,0,10.25)).clone();
+  d.workPosition=goal.clone();d.v121BuilderState='deploy';d.state='work';d.v121ArrivedAtWork=false;
+  const dep=d.v121Deployment||(d.v121Deployment={active:true,delay:.35,stuck:0,last:builderNPC.position.clone(),detour:null});
+  dep.active=true;dep.delay=.35;dep.stuck=0;dep.detour=null;dep.last=builderNPC.position.clone();
+  // Théron reste le seul métier à apparaître au centre avant de partir vers le rempart prioritaire.
+  const center=new THREE.Vector3(V121_CENTER_SPAWN.x+.36,0,V121_CENTER_SPAWN.z-.48);
+  v1291PlaceOnTerrain(builderNPC,center);
+  v1291State.theronToRampart=true;
+}
+
+const v1291CreateTrainerBase=createTrainingNPC;
+createTrainingNPC=function(){v1291CreateTrainerBase();v1291SpawnNikonAtCamp(true);};
+const v1291CreateFarmerBase=createFarmerNPC;
+createFarmerNPC=function(){v1291CreateFarmerBase();v1291SpawnDemosAtFields(true);};
+const v1291CreateBlacksmithBase=createBlacksmithNPC;
+createBlacksmithNPC=function(){v1291CreateBlacksmithBase();v1291SpawnMyronAtForge();};
+const v1291CreateBuilderBase=createBuilderNPC;
+createBuilderNPC=function(){v1291CreateBuilderBase();v1291PrepareTheronDeployment();};
+
+// Níkon reste à son poste dans le camp : aucune navette intérieur/extérieur et aucune ronde entre les cibles.
+updateTrainingNPC=function(dt){
+  if(!trainingNPC)return;
+  v1291SpawnNikonAtCamp(true);
+  const d=trainingNPC.userData,rig=d.rig;
+  let focus;
+  if(d.state==='talk'){
+    d.stateTime=Math.max(0,(d.stateTime||0)-dt);focus=player.clone();
+    if(d.stateTime<=0)d.state='wait';
+  }else focus=new THREE.Vector3(trainingCampCenter.x,0,trainingCampCenter.z-.55);
+  const q=focus.sub(trainingNPC.position).setY(0);
+  if(q.lengthSq()>.001){const wanted=Math.atan2(q.x,q.z)+Math.PI;trainingNPC.rotation.y=normalizeAngle(trainingNPC.rotation.y+THREE.MathUtils.clamp(normalizeAngle(wanted-trainingNPC.rotation.y),-dt*4.4,dt*4.4));}
+  applySoldierPose(trainingNPC,dt,{moving:false,actionType:'guard',actionPhase:(Math.sin(performance.now()*.0014)+1)*.5});
+  if(rig?.motion)rig.motion.position.y+=Math.sin(performance.now()*.0017)*.002;
+};
+
+const v1291DeploymentBase=v121HandleDeployment;
+v121HandleDeployment=function(npc,dt){
+  if(npc===trainingNPC){v1291SpawnNikonAtCamp(true);return false;}
+  if(npc===farmerNPC){v1291DisableDeployment(farmerNPC);return false;}
+  if(npc===blacksmithNPC){v1291SpawnMyronAtForge();v121AnimateTravel?.(npc,dt,false);return false;}
+  if(npc===builderNPC){
+    const d=npc.userData,dep=d?.v121Deployment,wasActive=!!dep?.active;
+    const active=v1291DeploymentBase(npc,dt);
+    if(wasActive&&!active){
+      const section=(d.v1291InitialRampart&&!d.v1291InitialRampart.complete)?d.v1291InitialRampart:v1291ChooseTheronRampart();
+      if(section){d.v121Section=section;d.v121BuilderState='build';d.v121WorkTimer=0;d.v121Burst=7.5+Math.random()*3.5;}
+      else d.v121BuilderState='inspect';
+    }
+    return active;
+  }
+  return v1291DeploymentBase(npc,dt);
+};
+
+// Les responsables déjà à leur poste ne quittent plus leur métier pour les événements sociaux aléatoires.
+const v1291SocialEligibilityBase=v1233NPCEligibleForSocial;
+v1233NPCEligibleForSocial=function(npc){
+  if(npc===trainingNPC||npc===farmerNPC||npc===blacksmithNPC)return false;
+  return v1291SocialEligibilityBase(npc);
+};
+
+const v1291CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1291CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1291_BUILD,walkClip:v1291State.walkClip,blockClip:v1291State.blockClip,shieldController:'root-space-v1'};
+  return save;
+};
+
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1291=V1291_BUILD;
+  window.ODYSSEE_V1291_STATE=v1291State;
+  window.ODYSSEE_FIX_GREGORIUS_SHIELD=v1291InstallShieldController;
+  window.ODYSSEE_RESET_JOB_SPAWNS=()=>{v1291SpawnNikonAtCamp(true);v1291SpawnDemosAtFields(true);v1291SpawnMyronAtForge();v1291PrepareTheronDeployment();};
+}
+/* =================== FIN ODYSSÉE v1.29.1 =================== */
+
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.29.0-20260806-1049-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.29.1-20260806-1118-NC -->
