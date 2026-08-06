@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.2 | 2026-08-06T11:38+11:00 | Correctif bras gauche du bouclier -->
-<meta name="build-id" content="odyssee-v1.29.2-left-arm-shield-fix-20260806-1138-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.3 | 2026-08-06T11:55+11:00 | Bouclier fixé à l’avant-bras gauche -->
+<meta name="build-id" content="odyssee-v1.29.3-rigid-left-forearm-shield-20260806-1155-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.2 — Correctif bouclier bras gauche</title>
+<title>Odyssée — v1.29.3 — Bouclier fixé à l’avant-bras</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -7854,56 +7854,78 @@ function v1291ResolveShieldAnchorNode(gear,root){
   }
   return best;
 }
+function v1291ResolveShieldArmNode(gear,root){
+  const extremity=v1291ResolveShieldAnchorNode(gear,root);
+  if(!extremity)return null;
+  let node=extremity;
+  while(node&&node!==root){
+    const name=v1291Normalize(node.name||'');
+    if(name.includes('forearm')||name.includes('lowerarm'))return node;
+    node=node.parent;
+  }
+  return extremity;
+}
 function v1291InstallShieldController(){
   const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
   if(!gear?.ready||!root||!shield)return false;
-  if(shield.userData.v1291Controlled){v1291State.shieldInstalled=true;return true;}
-  root.attach(shield);
-  shield.userData.v1291Controlled=true;
-  shield.userData.v1291Velocity=new THREE.Vector3();
-  shield.userData.v1291Quat=new THREE.Quaternion();
-  // Le rig universel fait face vers -Z : le vrai flanc gauche est donc côté +X en local.
-  shield.userData.v1291RestNormal=new THREE.Vector3(.94,.015,-.20).normalize();
-  shield.userData.v1291BlockNormal=new THREE.Vector3(.03,.015,-1).normalize();
-  shield.userData.v1291FrontAxis=new THREE.Vector3(0,0,1);
+  root.updateMatrixWorld(true);
+  const armNode=v1291ResolveShieldArmNode(gear,root);
+  const handNode=v1291ResolveShieldAnchorNode(gear,root);
+  const chestNode=gear.chest||gear.hips;
+  if(!armNode||!handNode||!chestNode)return false;
+
+  const hand=v1291NodeLocalPosition(handNode,root,new THREE.Vector3());
+  const chest=v1291NodeLocalPosition(chestNode,root,new THREE.Vector3());
+  if(!v1291FiniteVector(hand)||!v1291FiniteVector(chest))return false;
+
+  // On conserve exactement l'orientation visuelle validée, puis on la convertit en transform local de l'avant-bras.
+  const restRoot=hand.clone().add(new THREE.Vector3(.085,.105,-.055));
+  restRoot.y=THREE.MathUtils.clamp(restRoot.y,.62,1.17);
+  restRoot.x=THREE.MathUtils.clamp(restRoot.x,.20,.58);
+  restRoot.z=THREE.MathUtils.clamp(restRoot.z,-.22,.16);
+  const restNormal=new THREE.Vector3(.94,.015,-.20).normalize();
+  const frontAxis=new THREE.Vector3(0,0,1);
+  const restRootQuat=new THREE.Quaternion().setFromUnitVectors(frontAxis,restNormal);
+  restRootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(restNormal,-.035));
+
+  const worldPosition=root.localToWorld(restRoot.clone());
+  const worldQuaternion=root.getWorldQuaternion(new THREE.Quaternion()).multiply(restRootQuat);
+  armNode.attach(shield);
+  armNode.updateWorldMatrix(true,false);
+  shield.position.copy(armNode.worldToLocal(worldPosition));
+  const armWorldInverse=armNode.getWorldQuaternion(new THREE.Quaternion()).invert();
+  shield.quaternion.copy(armWorldInverse.multiply(worldQuaternion));
   shield.scale.setScalar(.92);
+
+  shield.userData.v1291Controlled=true;
+  shield.userData.v1291RigidArmAttachment=true;
+  shield.userData.v1291ArmAnchor=armNode;
+  shield.userData.v1291FixedPosition=shield.position.clone();
+  shield.userData.v1291FixedQuaternion=shield.quaternion.clone();
+  shield.userData.v1291FixedScale=.92;
+  shield.userData.v1291FrontAxis=frontAxis;
+  shield.userData.v1291RestNormal=restNormal;
   root.updateMatrixWorld(true);
   v1291State.shieldInstalled=true;
   return true;
 }
-function v1291UpdateShieldController(dt=1/60){
+function v1291UpdateShieldController(){
   const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
   if(!gear?.ready||!root||!shield)return;
-  if(!shield.userData.v1291Controlled&&!v1291InstallShieldController())return;
-  root.updateMatrixWorld(true);
-  const handNode=v1291ResolveShieldAnchorNode(gear,root),chestNode=gear.chest||gear.hips;
-  const hand=v1291NodeLocalPosition(handNode,root,new THREE.Vector3());
-  const chest=v1291NodeLocalPosition(chestNode,root,new THREE.Vector3());
-  if(!v1291FiniteVector(hand)||!v1291FiniteVector(chest))return;
+  const expectedAnchor=v1291ResolveShieldArmNode(gear,root);
+  if(!shield.userData.v1291RigidArmAttachment||!expectedAnchor||shield.parent!==expectedAnchor){
+    shield.userData.v1291Controlled=false;
+    shield.userData.v1291RigidArmAttachment=false;
+    if(!v1291InstallShieldController())return;
+  }
 
-  // Bouclier forcé sur le bras gauche anatomique : on choisit le point d'ancrage le plus à gauche (+X local).
-  const rest=hand.clone().add(new THREE.Vector3(.085,.105,-.055));
-  rest.y=THREE.MathUtils.clamp(rest.y,.62,1.17);
-  rest.x=THREE.MathUtils.clamp(rest.x,.20,.58);
-  rest.z=THREE.MathUtils.clamp(rest.z,-.22,.16);
-  // Position de garde : devant le torse et assez haute pour couvrir le visage sans masquer tout le personnage.
-  const guard=chest.clone().add(new THREE.Vector3(.085,.035,-.355));
-  guard.y=THREE.MathUtils.clamp(guard.y,.82,1.22);
-  guard.x=THREE.MathUtils.clamp(guard.x,-.04,.28);
-  guard.z=THREE.MathUtils.clamp(guard.z,-.46,-.22);
-
-  const rawBlock=THREE.MathUtils.clamp(blockBlend+(blocking?0.35:0),0,1);
-  const guardBlend=rawBlock*rawBlock*(3-2*rawBlock);
-  const target=rest.lerp(guard,guardBlend);
-  const responsiveness=1-Math.exp(-Math.max(1,dt>0?15:18)*Math.max(.001,dt));
-  shield.position.lerp(target,responsiveness);
-  const normal=shield.userData.v1291RestNormal.clone().lerp(shield.userData.v1291BlockNormal,guardBlend).normalize();
-  const targetQuat=new THREE.Quaternion().setFromUnitVectors(shield.userData.v1291FrontAxis,normal);
-  // Légère inclinaison naturelle vers le porteur, miroir de la configuration précédente.
-  const roll=new THREE.Quaternion().setFromAxisAngle(normal,-.035+.055*guardBlend);
-  targetQuat.premultiply(roll);
-  shield.quaternion.slerp(targetQuat,responsiveness);
-  shield.scale.setScalar(THREE.MathUtils.lerp(.92,.98,guardBlend));
+  // Aucun recalcul dans l'espace du personnage : l'aspis reste rigidement solidaire de l'avant-bras.
+  // Les animations de marche et de blocage déplacent l'os ; le bouclier suit donc naturellement sans glisser.
+  const fixedPosition=shield.userData.v1291FixedPosition;
+  const fixedQuaternion=shield.userData.v1291FixedQuaternion;
+  if(fixedPosition)shield.position.copy(fixedPosition);
+  if(fixedQuaternion)shield.quaternion.copy(fixedQuaternion);
+  shield.scale.setScalar(shield.userData.v1291FixedScale||.92);
   shield.visible=!equipmentStowed;
 }
 
