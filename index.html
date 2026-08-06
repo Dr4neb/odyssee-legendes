@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.6 | 2026-08-06T12:31+11:00 | Garde fluide superposée à la locomotion -->
-<meta name="build-id" content="odyssee-v1.29.6-fluid-block-locomotion-20260806-1231-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.7 | 2026-08-06T12:26+11:00 | Calibration précise du xiphos -->
+<meta name="build-id" content="odyssee-v1.29.7-xiphos-calibration-20260806-1226-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.6 — Garde fluide et locomotion</title>
+<title>Odyssée — v1.29.7 — Calibration précise du xiphos</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -8296,7 +8296,136 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.29.4 =================== */
 
+
+/* ===================== ODYSSÉE v1.29.7 — CALIBRATION PRÉCISE DU XIPHOS ===================== */
+const V1297_BUILD='v1.29.7 — xiphos-root-space-calibration-20260806-1226-NC';
+const V1297_XIPHOS_STORAGE='odyssee-v1297-xiphos-calibration';
+const v1297XiphosDefaults={px:0,py:0,pz:0,rx:0,ry:0,rz:0};
+let v1297XiphosConfig={...v1297XiphosDefaults};
+let v1297XiphosPanelOpen=false;
+
+function v1297LoadXiphosConfig(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(V1297_XIPHOS_STORAGE)||'null');
+    if(saved&&typeof saved==='object')for(const key of Object.keys(v1297XiphosDefaults)){
+      const value=Number(saved[key]);if(Number.isFinite(value))v1297XiphosConfig[key]=value;
+    }
+  }catch(error){console.warn('[Odyssée v1.29.7] Calibration xiphos illisible :',error);}
+}
+function v1297SaveXiphosConfig(){
+  try{localStorage.setItem(V1297_XIPHOS_STORAGE,JSON.stringify(v1297XiphosConfig));}catch(error){}
+}
+function v1297XiphosBaseQuaternion(){
+  // Modèle du xiphos : X = largeur de lame, Y = longueur, Z = épaisseur.
+  // Repère de Gregorius : Y = vertical, +Z = avant réel du personnage, X = côté.
+  // On impose donc : largeur locale X -> vertical Y ; longueur locale Y -> avant +Z ; épaisseur locale Z -> côté +X.
+  const bladeWidthUp=new THREE.Vector3(0,1,0);
+  const bladeLengthForward=new THREE.Vector3(0,0,1);
+  const bladeThicknessSide=new THREE.Vector3(1,0,0);
+  return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(bladeWidthUp,bladeLengthForward,bladeThicknessSide));
+}
+function v1297DesiredXiphosQuaternion(){
+  const offset=new THREE.Quaternion().setFromEuler(new THREE.Euler(
+    THREE.MathUtils.degToRad(v1297XiphosConfig.rx),
+    THREE.MathUtils.degToRad(v1297XiphosConfig.ry),
+    THREE.MathUtils.degToRad(v1297XiphosConfig.rz),'XYZ'
+  ));
+  // Les corrections sont appliquées dans le repère de Gregorius afin que les axes restent compréhensibles.
+  return offset.multiply(v1297XiphosBaseQuaternion());
+}
+function v1297ApplyXiphosController(){
+  const rig=v1286GregoriusRig,root=rig?.root,weapon=rig?.weapon,socket=rig?.weaponSocket||weapon?.parent;
+  if(!rig?.ready||!root||!weapon||!socket||equipmentStowed)return;
+  root.updateMatrixWorld(true);socket.updateWorldMatrix(true,false);
+  const desiredRootQuat=v1297DesiredXiphosQuaternion();
+  const rootWorldQuat=root.getWorldQuaternion(new THREE.Quaternion());
+  const desiredWorldQuat=rootWorldQuat.clone().multiply(desiredRootQuat);
+  const parentWorldInv=socket.getWorldQuaternion(new THREE.Quaternion()).invert();
+  weapon.quaternion.copy(parentWorldInv.multiply(desiredWorldQuat));
+
+  // La cible correspond au centre réel de la poignée, pas à l'origine géométrique située près de la garde.
+  const socketWorld=socket.getWorldPosition(new THREE.Vector3());
+  const socketRoot=root.worldToLocal(socketWorld.clone());
+  const gripTargetRoot=socketRoot.add(new THREE.Vector3(v1297XiphosConfig.px,v1297XiphosConfig.py,v1297XiphosConfig.pz));
+  const gripCenterLocal=new THREE.Vector3(0,-.055,0);
+  const originRoot=gripTargetRoot.sub(gripCenterLocal.applyQuaternion(desiredRootQuat));
+  const originWorld=root.localToWorld(originRoot.clone());
+  weapon.position.copy(socket.worldToLocal(originWorld));
+  weapon.visible=!equipmentStowed;
+  weapon.userData.v1297RootSpaceLocked=true;
+  weapon.userData.v1297Calibration={...v1297XiphosConfig};
+}
+function v1297FormatValue(key,value){return key.startsWith('p')?value.toFixed(3):`${Math.round(value)}°`;}
+function v1297RefreshCalibrationUI(){
+  for(const key of Object.keys(v1297XiphosDefaults)){
+    const value=document.querySelector(`[data-v1297-value="${key}"]`);
+    if(value)value.textContent=v1297FormatValue(key,v1297XiphosConfig[key]);
+  }
+}
+function v1297Adjust(key,delta){
+  if(!(key in v1297XiphosConfig))return;
+  v1297XiphosConfig[key]=key.startsWith('p')
+    ?THREE.MathUtils.clamp(v1297XiphosConfig[key]+delta,-.30,.30)
+    :THREE.MathUtils.clamp(v1297XiphosConfig[key]+delta,-180,180);
+  v1297SaveXiphosConfig();v1297RefreshCalibrationUI();v1297ApplyXiphosController();
+}
+function v1297SetPanel(open){
+  v1297XiphosPanelOpen=!!open;
+  document.getElementById('v1297XiphosPanel')?.classList.toggle('open',v1297XiphosPanelOpen);
+  document.getElementById('v1297XiphosCalibBtn')?.setAttribute('aria-expanded',String(v1297XiphosPanelOpen));
+  if(v1297XiphosPanelOpen){joy.x=joy.y=0;joy.active=false;keys.clear();blocking=false;}
+}
+function v1297CalibrationText(){
+  const c=v1297XiphosConfig;
+  return `Xiphos — position: X ${c.px.toFixed(3)}, Y ${c.py.toFixed(3)}, Z ${c.pz.toFixed(3)} | rotation: X ${Math.round(c.rx)}°, Y ${Math.round(c.ry)}°, Z ${Math.round(c.rz)}°`;
+}
+function v1297BuildCalibrationUI(){
+  if(document.getElementById('v1297XiphosCalibBtn'))return;
+  const style=document.createElement('style');style.textContent=`
+    #v1297XiphosCalibBtn{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));z-index:9800;transform:translateX(-50%);padding:8px 12px;border:1px solid rgba(215,189,134,.55);border-radius:8px;background:rgba(10,15,17,.92);color:#ead8b3;font:900 9px/1 system-ui;letter-spacing:.10em;pointer-events:auto;touch-action:manipulation}
+    #v1297XiphosPanel{display:none;position:fixed;left:50%;top:calc(52px + env(safe-area-inset-top));z-index:9900;transform:translateX(-50%);width:min(94vw,430px);max-height:calc(100vh - 80px - env(safe-area-inset-top));overflow:auto;padding:13px;border:1px solid rgba(215,189,134,.48);border-left:5px solid #9a7445;border-radius:12px;background:rgba(9,14,16,.97);box-shadow:0 18px 55px rgba(0,0,0,.62);color:#eee;pointer-events:auto;touch-action:manipulation}
+    #v1297XiphosPanel.open{display:block}.v1297Title{color:#efd9ad;font:950 14px/1.1 system-ui;letter-spacing:.08em}.v1297Help{margin:8px 0 11px;color:#aeb8b6;font:700 10px/1.45 system-ui}.v1297Help b{color:#e2c891}
+    .v1297Group{margin-top:10px;padding:9px;border:1px solid rgba(215,189,134,.16);border-radius:8px;background:rgba(255,255,255,.025)}.v1297GroupTitle{margin-bottom:7px;color:#bda675;font:900 8px/1 system-ui;letter-spacing:.12em;text-transform:uppercase}
+    .v1297Row{display:grid;grid-template-columns:1fr 42px 74px 42px;align-items:center;gap:6px;margin-top:6px}.v1297Row span:first-child{color:#d5d9d7;font:800 10px/1.2 system-ui}.v1297Value{text-align:center;color:#f0ddb6;font:900 10px/1 system-ui}
+    .v1297Step,.v1297Action{min-height:36px;border:1px solid rgba(215,189,134,.28);border-radius:7px;background:#182023;color:#ead9b5;font:900 15px/1 system-ui;touch-action:manipulation}.v1297Actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:11px}.v1297Action{padding:8px 5px;font-size:8px;letter-spacing:.06em}
+  `;document.head.appendChild(style);
+  const button=document.createElement('button');button.id='v1297XiphosCalibBtn';button.type='button';button.textContent='RÉGLAGE XIPHOS';button.setAttribute('aria-expanded','false');
+  const panel=document.createElement('div');panel.id='v1297XiphosPanel';panel.innerHTML=`
+    <div class="v1297Title">CALIBRATION DU XIPHOS</div>
+    <div class="v1297Help"><b>But verrouillé :</b> poignée dans la main droite, pointe vers l’avant réel de Gregorius, lame verticale sur sa tranche. Les réglages ci-dessous servent uniquement à la finition.</div>
+    <div class="v1297Group"><div class="v1297GroupTitle">Position de la poignée — repère de Gregorius</div>
+      <div class="v1297Row"><span>X · gauche / droite</span><button class="v1297Step" data-key="px" data-delta="-.005">−</button><span class="v1297Value" data-v1297-value="px"></span><button class="v1297Step" data-key="px" data-delta=".005">+</button></div>
+      <div class="v1297Row"><span>Y · bas / haut</span><button class="v1297Step" data-key="py" data-delta="-.005">−</button><span class="v1297Value" data-v1297-value="py"></span><button class="v1297Step" data-key="py" data-delta=".005">+</button></div>
+      <div class="v1297Row"><span>Z · arrière / avant</span><button class="v1297Step" data-key="pz" data-delta="-.005">−</button><span class="v1297Value" data-v1297-value="pz"></span><button class="v1297Step" data-key="pz" data-delta=".005">+</button></div>
+    </div>
+    <div class="v1297Group"><div class="v1297GroupTitle">Rotation de finition — pas de 5 degrés</div>
+      <div class="v1297Row"><span>X · inclinaison</span><button class="v1297Step" data-key="rx" data-delta="-5">−</button><span class="v1297Value" data-v1297-value="rx"></span><button class="v1297Step" data-key="rx" data-delta="5">+</button></div>
+      <div class="v1297Row"><span>Y · direction gauche / droite</span><button class="v1297Step" data-key="ry" data-delta="-5">−</button><span class="v1297Value" data-v1297-value="ry"></span><button class="v1297Step" data-key="ry" data-delta="5">+</button></div>
+      <div class="v1297Row"><span>Z · tranche / plat</span><button class="v1297Step" data-key="rz" data-delta="-5">−</button><span class="v1297Value" data-v1297-value="rz"></span><button class="v1297Step" data-key="rz" data-delta="5">+</button></div>
+    </div>
+    <div class="v1297Actions"><button id="v1297Reset" class="v1297Action" type="button">RÉINITIALISER</button><button id="v1297Copy" class="v1297Action" type="button">COPIER VALEURS</button><button id="v1297Close" class="v1297Action" type="button">FERMER</button></div>`;
+  document.body.append(button,panel);
+  button.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();v1297SetPanel(!v1297XiphosPanelOpen);},{passive:false});
+  panel.querySelectorAll('.v1297Step').forEach(control=>control.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();v1297Adjust(control.dataset.key,Number(control.dataset.delta));},{passive:false}));
+  panel.querySelector('#v1297Reset')?.addEventListener('pointerdown',event=>{event.preventDefault();v1297XiphosConfig={...v1297XiphosDefaults};v1297SaveXiphosConfig();v1297RefreshCalibrationUI();v1297ApplyXiphosController();},{passive:false});
+  panel.querySelector('#v1297Copy')?.addEventListener('pointerdown',async event=>{event.preventDefault();const value=v1297CalibrationText();try{await navigator.clipboard.writeText(value);v117Toast?.('VALEURS DU XIPHOS COPIÉES');}catch(error){window.prompt('Copie ces valeurs :',value);}},{passive:false});
+  panel.querySelector('#v1297Close')?.addEventListener('pointerdown',event=>{event.preventDefault();v1297SetPanel(false);},{passive:false});
+  v1297RefreshCalibrationUI();
+}
+v1297LoadXiphosConfig();
+const v1297UpdateBase=update;
+update=function(...args){const result=v1297UpdateBase(...args);v1297ApplyXiphosController();return result;};
+setTimeout(v1297BuildCalibrationUI,120);
+const v1297CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){const save=v1297CaptureSaveBase();save.meta={...(save.meta||{}),build:V1297_BUILD,xiphosCalibration:{...v1297XiphosConfig}};return save;};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1297=V1297_BUILD;
+  window.ODYSSEE_XIPHOS_CALIBRATION=v1297XiphosConfig;
+  window.ODYSSEE_APPLY_XIPHOS=v1297ApplyXiphosController;
+}
+/* =================== FIN ODYSSÉE v1.29.7 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.29.4-20260806-1201-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.29.7-20260806-1226-NC -->
