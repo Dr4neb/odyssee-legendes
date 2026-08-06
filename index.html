@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.3 | 2026-08-06T11:55+11:00 | Bouclier fixé à l’avant-bras gauche -->
-<meta name="build-id" content="odyssee-v1.29.3-rigid-left-forearm-shield-20260806-1155-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.4 | 2026-08-06T12:01+11:00 | Aspis sanglé, anti-traversée et blocage fonctionnel -->
+<meta name="build-id" content="odyssee-v1.29.4-strapped-shield-collision-block-20260806-1201-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.3 — Bouclier fixé à l’avant-bras</title>
+<title>Odyssée — v1.29.4 — Aspis fixé et blocage fonctionnel</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -8090,7 +8090,209 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.29.1 =================== */
 
 
+
+/* ===================== ODYSSÉE v1.29.4 — ASPIS SANGLÉ ET BLOCAGE ===================== */
+const V1294_BUILD='v1.29.4 — strapped-shield-collision-block-20260806-1201-NC';
+const v1294ShieldState={
+  ready:false,mount:null,arm:null,hand:null,upperArm:null,chest:null,
+  upperAxis:null,foreAxis:null,restPosition:null,frontAxis:new THREE.Vector3(0,0,1),
+  restNormal:new THREE.Vector3(.94,.015,-.20).normalize(),
+  blockNormal:new THREE.Vector3(.025,.015,-1).normalize(),
+  collisionRadius:.34,collisionThickness:.11
+};
+function v1294Smooth(t){t=THREE.MathUtils.clamp(t,0,1);return t*t*(3-2*t);}
+function v1294RootVectorToNodeLocal(root,node,vector){
+  const worldVector=vector.clone().applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
+  return worldVector.applyQuaternion(node.getWorldQuaternion(new THREE.Quaternion()).invert());
+}
+function v1294FindUpperArm(forearm,root){
+  let node=forearm?.parent||null,best=null;
+  while(node&&node!==root){
+    const name=v1291Normalize(node.name||'');
+    if(name.includes('upperarm')||name.includes('uparm')||name.includes('armupper'))return node;
+    if(node.isBone&&!name.includes('forearm')&&!name.includes('lowerarm')&&!name.includes('hand'))best=node;
+    node=node.parent;
+  }
+  return best;
+}
+function v1294AxisToDescendant(node,descendant){
+  if(!node||!descendant)return new THREE.Vector3(0,-1,0);
+  node.updateWorldMatrix(true,false);descendant.updateWorldMatrix(true,false);
+  const a=node.getWorldPosition(new THREE.Vector3()),b=descendant.getWorldPosition(new THREE.Vector3());
+  const dir=b.sub(a);
+  if(dir.lengthSq()<1e-7)return new THREE.Vector3(0,-1,0);
+  return dir.normalize().applyQuaternion(node.getWorldQuaternion(new THREE.Quaternion()).invert()).normalize();
+}
+function v1294SetNodeFromRootTransform(root,node,targetRootPosition,targetRootQuaternion){
+  const worldPosition=root.localToWorld(targetRootPosition.clone());
+  const worldQuaternion=root.getWorldQuaternion(new THREE.Quaternion()).multiply(targetRootQuaternion);
+  node.position.copy(node.parent.worldToLocal(worldPosition));
+  node.quaternion.copy(node.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuaternion));
+}
+function v1294AimBoneAt(bone,localAxis,targetWorld){
+  if(!bone||!localAxis||!targetWorld)return;
+  bone.updateWorldMatrix(true,false);
+  const origin=bone.getWorldPosition(new THREE.Vector3());
+  const desired=targetWorld.clone().sub(origin);
+  if(desired.lengthSq()<1e-8)return;
+  desired.normalize();
+  const worldQuat=bone.getWorldQuaternion(new THREE.Quaternion());
+  const currentAxis=localAxis.clone().applyQuaternion(worldQuat).normalize();
+  const delta=new THREE.Quaternion().setFromUnitVectors(currentAxis,desired);
+  const targetWorldQuat=delta.multiply(worldQuat);
+  const parentWorldInv=bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+  bone.quaternion.copy(parentWorldInv.multiply(targetWorldQuat));
+  bone.updateWorldMatrix(true,true);
+}
+function v1294SolveBlockArm(root,blend){
+  const s=v1294ShieldState,upper=s.upperArm,fore=s.arm,hand=s.hand,chest=s.chest;
+  if(!upper||!fore||!hand||!chest||blend<=.001)return;
+  root.updateMatrixWorld(true);
+  const shoulder=upper.getWorldPosition(new THREE.Vector3());
+  const elbow=fore.getWorldPosition(new THREE.Vector3());
+  const wrist=hand.getWorldPosition(new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  const targetRoot=chestRoot.clone().add(new THREE.Vector3(.105,.035,-.425));
+  targetRoot.y=THREE.MathUtils.clamp(targetRoot.y,.78,1.20);
+  const poleRoot=chestRoot.clone().add(new THREE.Vector3(.72,.25,-.015));
+  const target=root.localToWorld(targetRoot.clone());
+  const poleWorld=root.localToWorld(poleRoot.clone());
+  const upperLen=Math.max(.10,shoulder.distanceTo(elbow));
+  const foreLen=Math.max(.10,elbow.distanceTo(wrist));
+  const toTarget=target.clone().sub(shoulder);
+  let dist=Math.max(toTarget.length(),1e-4);
+  const minReach=Math.abs(upperLen-foreLen)+.01,maxReach=upperLen+foreLen-.012;
+  dist=THREE.MathUtils.clamp(dist,minReach,maxReach);
+  const dir=toTarget.normalize();
+  const pole=poleWorld.clone().sub(shoulder);
+  pole.sub(dir.clone().multiplyScalar(pole.dot(dir)));
+  if(pole.lengthSq()<1e-7)pole.set(1,.2,0);
+  pole.normalize();
+  const cosA=THREE.MathUtils.clamp((upperLen*upperLen+dist*dist-foreLen*foreLen)/(2*upperLen*dist),-1,1);
+  const along=cosA*upperLen,away=Math.sqrt(Math.max(0,upperLen*upperLen-along*along));
+  const elbowTarget=shoulder.clone().addScaledVector(dir,along).addScaledVector(pole,away);
+
+  const upperOriginal=upper.quaternion.clone(),foreOriginal=fore.quaternion.clone();
+  v1294AimBoneAt(upper,s.upperAxis,elbowTarget);
+  v1294AimBoneAt(fore,s.foreAxis,target);
+  const upperIK=upper.quaternion.clone(),foreIK=fore.quaternion.clone();
+  upper.quaternion.copy(upperOriginal).slerp(upperIK,blend);
+  upper.updateWorldMatrix(true,true);
+  fore.quaternion.copy(foreOriginal).slerp(foreIK,blend);
+  fore.updateWorldMatrix(true,true);
+}
+function v1294InstallShield(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return false;
+  root.updateMatrixWorld(true);
+  const arm=v1291ResolveShieldArmNode(gear,root),hand=v1291ResolveShieldAnchorNode(gear,root),chest=gear.chest||gear.hips;
+  const upper=v1294FindUpperArm(arm,root);
+  if(!arm||!hand||!chest||!upper)return false;
+
+  const foreRoot=v1291NodeLocalPosition(arm,root,new THREE.Vector3());
+  const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  // Le centre de l'aspis est placé au-dessus du milieu de l'avant-bras, pas au bout de la main.
+  const strappedRoot=foreRoot.clone().lerp(handRoot,.58).add(new THREE.Vector3(.075,.015,-.025));
+  strappedRoot.x=Math.max(strappedRoot.x,chestRoot.x+.335);
+  strappedRoot.y=THREE.MathUtils.clamp(strappedRoot.y,.68,1.18);
+  strappedRoot.z=THREE.MathUtils.clamp(strappedRoot.z,-.24,.14);
+  const rootQuat=new THREE.Quaternion().setFromUnitVectors(v1294ShieldState.frontAxis,v1294ShieldState.restNormal);
+  rootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(v1294ShieldState.restNormal,-.035));
+
+  let mount=shield.userData.v1294Mount;
+  if(!mount){mount=new THREE.Group();mount.name='Gregorius_Aspis_Forearm_Strap';shield.userData.v1294Mount=mount;}
+  if(mount.parent!==arm)arm.add(mount);
+  v1294SetNodeFromRootTransform(root,mount,strappedRoot,rootQuat);
+  if(shield.parent!==mount)mount.add(shield);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.92);
+
+  const s=v1294ShieldState;
+  s.ready=true;s.mount=mount;s.arm=arm;s.hand=hand;s.upperArm=upper;s.chest=chest;
+  s.upperAxis=v1294AxisToDescendant(upper,arm);
+  s.foreAxis=v1294AxisToDescendant(arm,hand);
+  s.restPosition=mount.position.clone();
+  shield.userData.v1291Controlled=true;
+  shield.userData.v1291RigidArmAttachment=true;
+  shield.userData.v1294Strapped=true;
+  shield.userData.v1294Collider={radius:s.collisionRadius,thickness:s.collisionThickness,active:false};
+  v1291State.shieldInstalled=true;
+  root.updateMatrixWorld(true);
+  return true;
+}
+function v1294ApplyAntiBodyPenetration(root,blend){
+  const s=v1294ShieldState,mount=s.mount,chest=s.chest,arm=s.arm;
+  if(!mount||!chest||!arm)return;
+  root.updateMatrixWorld(true);
+  const centerRoot=v1291NodeLocalPosition(mount,root,new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  const correction=new THREE.Vector3();
+  // Au repos, le bord intérieur reste hors de la cage thoracique.
+  const minSideX=THREE.MathUtils.lerp(chestRoot.x+.335,chestRoot.x+.055,blend);
+  if(centerRoot.x<minSideX)correction.x+=minSideX-centerRoot.x;
+  // En garde, le bouclier doit rester devant le torse et ne peut pas le traverser.
+  if(blend>.02){
+    const maxFrontZ=THREE.MathUtils.lerp(chestRoot.z-.04,chestRoot.z-.315,blend);
+    if(centerRoot.z>maxFrontZ)correction.z+=maxFrontZ-centerRoot.z;
+  }
+  const maxCorrection=.15;
+  if(correction.length()>maxCorrection)correction.setLength(maxCorrection);
+  if(correction.lengthSq()>1e-8)mount.position.add(v1294RootVectorToNodeLocal(root,arm,correction));
+}
+function v1294UpdateShield(dt=1/60){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return;
+  const s=v1294ShieldState;
+  if(!s.ready||!s.mount||shield.parent!==s.mount||s.mount.parent!==s.arm){
+    s.ready=false;if(!v1294InstallShield())return;
+  }
+  const t=v1294Smooth(blockBlend);
+  // La pose de garde déplace réellement l'épaule et l'avant-bras gauche.
+  v1294SolveBlockArm(root,t);
+  root.updateMatrixWorld(true);
+
+  const chestRoot=v1291NodeLocalPosition(s.chest,root,new THREE.Vector3());
+  const desiredNormal=s.restNormal.clone().lerp(s.blockNormal,t).normalize();
+  const desiredRootQuat=new THREE.Quaternion().setFromUnitVectors(s.frontAxis,desiredNormal);
+  desiredRootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(desiredNormal,THREE.MathUtils.lerp(-.035,.015,t)));
+  // La sangle reste au même point sur l'avant-bras ; seule la pronation naturelle suit la mise en garde.
+  s.mount.position.copy(s.restPosition);
+  const worldQuat=root.getWorldQuaternion(new THREE.Quaternion()).multiply(desiredRootQuat);
+  s.mount.quaternion.copy(s.arm.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuat));
+  v1294ApplyAntiBodyPenetration(root,t);
+  s.mount.updateWorldMatrix(true,true);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.92);
+  shield.visible=!equipmentStowed;
+  if(shield.userData.v1294Collider)shield.userData.v1294Collider.active=t>.22&&!equipmentStowed;
+}
+// Surface défensive utilisable par les futurs coups et projectiles ennemis.
+function v1294ShieldBlocksWorldPoint(worldPoint){
+  const shield=v1287HopliteGear?.shield,s=v1294ShieldState;
+  if(!shield||!s.mount||blockBlend<.42||equipmentStowed||!worldPoint)return false;
+  s.mount.updateWorldMatrix(true,false);
+  const center=s.mount.getWorldPosition(new THREE.Vector3());
+  const normal=s.blockNormal.clone().applyQuaternion(v1286GregoriusRig.root.getWorldQuaternion(new THREE.Quaternion())).normalize();
+  const delta=worldPoint.clone().sub(center),plane=Math.abs(delta.dot(normal));
+  const radial=delta.clone().addScaledVector(normal,-delta.dot(normal)).length();
+  return plane<=s.collisionThickness+.08&&radial<=s.collisionRadius+.04;
+}
+// Remplace l'ancien contrôleur : le bouclier est désormais réellement sanglé à l'avant-bras.
+v1291InstallShieldController=v1294InstallShield;
+v1291UpdateShieldController=v1294UpdateShield;
+const v1294CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1294CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1294_BUILD,shieldController:'forearm-strap-ik-collision-v1'};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1294=V1294_BUILD;
+  window.ODYSSEE_FIX_GREGORIUS_SHIELD=v1294InstallShield;
+  window.ODYSSEE_SHIELD_BLOCKS_POINT=v1294ShieldBlocksWorldPoint;
+}
+/* =================== FIN ODYSSÉE v1.29.4 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.29.1-20260806-1118-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.29.4-20260806-1201-NC -->
