@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.35.4 | 2026-08-07T09:58+11:00 | Tenues skinnées stables et équipement patrouilleurs recalé -->
-<meta name="build-id" content="odyssee-v1.35.4-stable-skinned-outfits-guard-equipment-20260807-0958-nc">
+<!-- VERIFIED BUILD: Odyssée v1.35.5 | 2026-08-07T10:12+11:00 | Avatar unique, anneaux supprimés et boucliers reconstruits -->
+<meta name="build-id" content="odyssee-v1.35.5-single-avatar-rings-shield-rebuild-20260807-1012-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.35.4 — Tenues stables et patrouilleurs recalés</title>
+<title>Odyssée — v1.35.5 — Personnages nettoyés et boucliers reconstruits</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -12800,6 +12800,278 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.35.4 =================== */
 
 
+/* ===================== ODYSSÉE v1.35.5 — AVATAR UNIQUE, ANNEAUX SUPPRIMÉS, BOUCLIERS RECONSTRUITS ===================== */
+const V1355_BUILD='v1.35.5 — single-avatar-rings-shield-rebuild-20260807-1012-NC';
+const v1355State={lastMaintenance:0,professionLoading:new WeakSet(),guardLoading:new WeakSet(),report:null};
+
+function v1355HasSkinnedMesh(root){
+  let found=false;root?.traverse?.(o=>{if(o?.isSkinnedMesh)found=true;});return found;
+}
+function v1355AvatarCandidates(npc){
+  if(!npc)return [];
+  return npc.children.filter(child=>{
+    const name=(child.name||'').toLowerCase();
+    return v1355HasSkinnedMesh(child)||/v1326_|v1327_|v1352_|v1353_|v1354_|avatar|ranger|peasant/.test(name);
+  });
+}
+function v1355DisposeTree(root){
+  if(!root)return;
+  root.traverse?.(o=>{
+    if(o.geometry&&!o.isSkinnedMesh)o.geometry.dispose?.();
+    const mats=Array.isArray(o.material)?o.material:[o.material];
+    for(const m of mats)m?.dispose?.();
+  });
+  root.parent?.remove(root);
+}
+function v1355MarkAvatar(root){
+  root?.traverse?.(o=>{o.userData=o.userData||{};o.userData.v1326AvatarVisual=true;o.userData.v1355KeptAvatar=true;});
+}
+function v1355KeepSingleAvatar(npc,kind='profession'){
+  if(!npc)return null;
+  const avatar=kind==='guard'?npc.userData?.v1327Avatar:npc.userData?.v1326Avatar;
+  let keep=avatar?.root&&avatar.root.parent===npc?avatar.root:null;
+  const candidates=v1355AvatarCandidates(npc);
+  if(!keep)keep=candidates.find(v1355HasSkinnedMesh)||candidates[0]||null;
+  if(keep)v1355MarkAvatar(keep);
+  for(const candidate of candidates){
+    if(candidate!==keep)v1355DisposeTree(candidate);
+  }
+  if(avatar&&keep)avatar.root=keep;
+  // Cache définitivement le vieux personnage procédural sans toucher au nouvel avatar.
+  npc.traverse?.(o=>{
+    if(!o?.isMesh||keep?.getObjectById?.(o.id))return;
+    let parent=o.parent,insideKeep=false;
+    while(parent){if(parent===keep){insideKeep=true;break;}if(parent===npc)break;parent=parent.parent;}
+    if(!insideKeep)o.visible=false;
+  });
+  return keep;
+}
+function v1355PathName(object,root){
+  const names=[];let node=object;
+  while(node){names.push(node.name||'');if(node===root)break;node=node.parent;}
+  return names.join(' ').toLowerCase();
+}
+function v1355RemoveVisibleCircles(root){
+  if(!root)return 0;
+  let hidden=0;
+  root.traverse?.(o=>{
+    if(!o?.geometry)return;
+    const type=o.geometry.type||'',path=v1355PathName(o,root);
+    const shield=/(aspis|shield|bouclier|porpax|antilabe|boss|rim)/.test(path);
+    const unwanted=/TorusGeometry|RingGeometry|CircleGeometry/.test(type)||/(body_ring|armor_ring|torso_ring|circle|anneau)/.test(path);
+    if(unwanted&&!shield){o.visible=false;hidden++;}
+  });
+  return hidden;
+}
+function v1355ForceRoleColors(npc,role){
+  const avatar=npc?.userData?.v1326Avatar,root=avatar?.root,palette=V1354_ROLE_COLORS[role];
+  if(!root||!palette)return 0;
+  let changed=0;
+  root.traverse?.(o=>{
+    if(!(o?.isMesh||o?.isSkinnedMesh)||!o.material)return;
+    const mats=Array.isArray(o.material)?o.material:[o.material];
+    const tag=`${o.name||''} ${mats.map(m=>m?.name||'').join(' ')}`.toLowerCase();
+    const garment=/(ranger|outfit|tunic|shirt|cloth|pants|trouser|boot|shoe|belt|strap|glove|bracer|pauldron|armor|vest|robe)/.test(tag);
+    const body=/(body|skin|head|face|eye|teeth|hair|beard)/.test(tag)&&!garment;
+    if(!garment||body)return;
+    o.visible=true;
+    o.material=mats.map((m,index)=>{
+      if(!m)return m;
+      const clone=m.userData?.v1355Role===role?m:m.clone();
+      const leather=/(boot|shoe|belt|strap|glove|bracer|leather|pouch)/.test(tag);
+      const secondary=leather||/(pants|trouser|undershirt)/.test(tag)||index%2===1;
+      clone.color?.setHex(leather?palette.leather:(secondary?palette.secondary:palette.cloth));
+      if(clone.map){clone.map=null;clone.needsUpdate=true;}
+      clone.vertexColors=false;clone.transparent=false;clone.opacity=1;clone.depthWrite=true;
+      clone.roughness=.88;clone.metalness=.02;clone.userData={...(clone.userData||{}),v1355Role:role};
+      return clone;
+    });
+    if(o.material.length===1)o.material=o.material[0];
+    changed++;
+  });
+  return changed;
+}
+function v1355CleanProfession(npc,role){
+  const root=v1355KeepSingleAvatar(npc,'profession');
+  if(!root)return null;
+  v1355RemoveVisibleCircles(root);
+  v1355ForceRoleColors(npc,role);
+  root.visible=true;
+  return npc.userData?.v1326Avatar||null;
+}
+
+function v1355RemoveGuardEquipmentDuplicates(avatar){
+  const root=avatar?.root,keepShield=avatar?.gear?.shield;
+  if(!root)return;
+  const remove=[];
+  root.traverse?.(o=>{
+    if(o===root||o===keepShield)return;
+    const name=(o.name||'').toLowerCase();
+    if(/v1328_guard_aspis_forearm_mount|v1353_guard_shield|v1354_guard_shield|v1328_guard_spear|v1353_guard_spear|v1354_guard_spear/.test(name))remove.push(o);
+    else if(/(aspis|shield|bouclier)/.test(name)){
+      let node=o,insideKeep=false;
+      while(node){if(node===keepShield){insideKeep=true;break;}if(node===root)break;node=node.parent;}
+      if(!insideKeep&&o.children?.length)remove.push(o);
+    }
+  });
+  for(const o of remove.filter(o=>!remove.includes(o.parent)))o.parent?.remove(o);
+}
+function v1355InstallShield(avatar){
+  const root=avatar?.root,nodes=avatar?.nodes,shield=avatar?.gear?.shield;
+  const forearm=nodes?.leftForearm||nodes?.leftHand,hand=nodes?.leftHand,chest=nodes?.chest;
+  if(!root||!shield||!forearm||!hand||!chest)return false;
+  v1355RemoveGuardEquipmentDuplicates(avatar);
+  for(const key of ['v1328ShieldMount','v1353ShieldMount','v1354ShieldMount','v1355ShieldMount']){
+    const old=avatar[key];if(old&&old!==avatar.v1355ShieldMount){if(shield.parent===old)old.remove(shield);old.parent?.remove(old);avatar[key]=null;}
+  }
+  let mount=avatar.v1355ShieldMount;
+  if(!mount){mount=new THREE.Group();mount.name='V1355_Guard_Shield_Root_Mount';avatar.v1355ShieldMount=mount;}
+  if(mount.parent!==root)root.add(mount);
+  if(shield.parent!==mount)mount.add(shield);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.74);shield.visible=true;
+  v1355UpdateShield(avatar,true);
+  return true;
+}
+function v1355UpdateShield(avatar,force=false){
+  const root=avatar?.root,nodes=avatar?.nodes,shield=avatar?.gear?.shield;
+  const forearm=nodes?.leftForearm||nodes?.leftHand,hand=nodes?.leftHand,chest=nodes?.chest;
+  let mount=avatar?.v1355ShieldMount;
+  if(!root||!shield||!forearm||!hand||!chest)return;
+  if(!mount||mount.parent!==root||shield.parent!==mount){if(!v1355InstallShield(avatar))return;mount=avatar.v1355ShieldMount;}
+  root.updateMatrixWorld(true);
+  const fore=v1291NodeLocalPosition(forearm,root,new THREE.Vector3());
+  const palm=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  const torso=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  const side=Math.sign((fore.x+palm.x)*.5-torso.x)||-1;
+  const target=fore.clone().lerp(palm,.72);
+  target.x=torso.x+side*.40;
+  target.y=THREE.MathUtils.clamp(target.y,.70,1.17);
+  target.z=THREE.MathUtils.clamp(target.z+.045,-.08,.23);
+  mount.position.copy(target);
+  const normal=new THREE.Vector3(side*.985,.01,-.12).normalize();
+  mount.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.74);shield.visible=true;
+}
+function v1355InstallSpear(avatar){
+  const root=avatar?.root,hand=avatar?.nodes?.rightHand;if(!root||!hand)return null;
+  for(const key of ['v1328SpearMount','v1353SpearMount','v1354SpearMount','v1355SpearMount']){
+    const old=avatar[key];if(old){old.parent?.remove(old);avatar[key]=null;}
+  }
+  if(avatar.tool?.parent)avatar.tool.parent.remove(avatar.tool);
+  const mount=new THREE.Group();mount.name='V1355_Guard_Spear_Root_Mount';root.add(mount);avatar.v1355SpearMount=mount;
+  const wood=new THREE.MeshStandardMaterial({color:0x67472e,roughness:.96,metalness:0});
+  const metal=new THREE.MeshStandardMaterial({color:0xb6bdc3,roughness:.32,metalness:.80});
+  const shaft=v1287Mesh(new THREE.CylinderGeometry(.013,.016,1.50,10),wood,'V1355_Guard_Spear_Shaft');shaft.rotation.x=Math.PI/2;shaft.position.z=.46;mount.add(shaft);
+  const tip=v1287Mesh(new THREE.ConeGeometry(.032,.18,10),metal,'V1355_Guard_Spear_Tip');tip.rotation.x=Math.PI/2;tip.position.z=1.29;mount.add(tip);
+  const butt=v1287Mesh(new THREE.ConeGeometry(.021,.10,10),metal,'V1355_Guard_Spear_Butt');butt.rotation.x=-Math.PI/2;butt.position.z=-.34;mount.add(butt);
+  avatar.tool=mount;v1355UpdateSpear(avatar);return mount;
+}
+function v1355UpdateSpear(avatar){
+  const root=avatar?.root,hand=avatar?.nodes?.rightHand;if(!root||!hand)return;
+  let mount=avatar.v1355SpearMount;if(!mount||mount.parent!==root)mount=v1355InstallSpear(avatar);
+  if(!mount)return;
+  root.updateMatrixWorld(true);
+  const palm=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  mount.position.copy(palm).add(new THREE.Vector3(0,.005,.015));
+  mount.quaternion.setFromEuler(new THREE.Euler(-.10,.02,0,'XYZ'));
+}
+function v1355CleanGuard(guard){
+  const root=v1355KeepSingleAvatar(guard,'guard'),avatar=guard?.userData?.v1327Avatar;
+  if(!root||!avatar)return null;
+  v1355RemoveVisibleCircles(root);
+  v1328RemoveGuardCapeAndRedSquares?.(avatar);
+  v1355RemoveGuardEquipmentDuplicates(avatar);
+  v1355InstallShield(avatar);
+  v1355InstallSpear(avatar);
+  return avatar;
+}
+
+const v1355InstallProfessionBase=v1354InstallProfessionAvatar;
+v1354InstallProfessionAvatar=async function(npc,role){
+  if(v1355State.professionLoading.has(npc))return npc?.userData?.v1326Avatar||null;
+  v1355State.professionLoading.add(npc);
+  try{const avatar=await v1355InstallProfessionBase(npc,role);v1355CleanProfession(npc,role);return avatar;}
+  finally{v1355State.professionLoading.delete(npc);}
+};
+const v1355CreateProfessionBase=v1326CreateAvatarForNPC;
+v1326CreateAvatarForNPC=async function(npc,spec){
+  const role=npc===trainingNPC?'trainer':npc===farmerNPC?'farmer':npc===blacksmithNPC?'blacksmith':npc===builderNPC?'builder':spec?.id;
+  if(npc?.userData?.v1326Avatar){v1355CleanProfession(npc,role);return npc.userData.v1326Avatar;}
+  return v1354InstallProfessionAvatar(npc,role);
+};
+const v1355CreateGuardBase=v1327CreateGuardAvatar;
+v1327CreateGuardAvatar=async function(npc,index=0){
+  if(npc?.userData?.v1327Avatar){v1355CleanGuard(npc);return npc.userData.v1327Avatar;}
+  if(v1355State.guardLoading.has(npc))return null;
+  v1355State.guardLoading.add(npc);
+  try{const avatar=await v1355CreateGuardBase(npc,index);v1355CleanGuard(npc);return avatar;}
+  finally{v1355State.guardLoading.delete(npc);}
+};
+
+v1328InstallGuardShield=v1355InstallShield;
+v1328UpdateGuardShield=v1355UpdateShield;
+v1353InstallGuardShield=v1355InstallShield;
+v1353UpdateGuardShield=v1355UpdateShield;
+v1354InstallGuardShield=v1355InstallShield;
+v1354UpdateGuardShield=v1355UpdateShield;
+v1328CreateForwardSpear=v1355InstallSpear;
+v1328UpdateForwardSpear=v1355UpdateSpear;
+v1353BuildSpear=v1355InstallSpear;
+v1353UpdateGuardSpear=v1355UpdateSpear;
+v1354BuildGuardSpear=v1355InstallSpear;
+v1354UpdateGuardSpear=v1355UpdateSpear;
+
+function v1355Maintenance(){
+  const report={avatarsRemoved:0,circlesHidden:0,professions:0,guards:0};
+  for(const [npc,role] of v1354RoleNPCs()){
+    if(!npc)continue;
+    const before=v1355AvatarCandidates(npc).length;
+    const avatar=v1355CleanProfession(npc,role);
+    const after=v1355AvatarCandidates(npc).length;
+    report.avatarsRemoved+=Math.max(0,before-after);if(avatar){report.professions++;report.circlesHidden+=v1355RemoveVisibleCircles(avatar.root);}
+  }
+  for(const guard of patrolGuards||[]){
+    const before=v1355AvatarCandidates(guard).length;
+    const avatar=v1355CleanGuard(guard);
+    const after=v1355AvatarCandidates(guard).length;
+    report.avatarsRemoved+=Math.max(0,before-after);if(avatar){report.guards++;report.circlesHidden+=v1355RemoveVisibleCircles(avatar.root);}
+  }
+  report.circlesHidden+=v1355RemoveVisibleCircles(v1286GregoriusRig?.root);
+  document.body.dataset.avatarCount='single';document.body.dataset.visibleRings='none';document.body.dataset.guardEquipment='root-space-tracked';
+  v1355State.report=report;return report;
+}
+
+v1327UpdatePatrolGuards=function(dt){
+  const rally=patrolFormation?.mode==='rally';
+  for(const npc of patrolGuards||[]){
+    const avatar=npc?.userData?.v1327Avatar;if(!avatar)continue;
+    v1355KeepSingleAvatar(npc,'guard');
+    const distance=npc.position.distanceTo(avatar.lastPos),speed=distance/Math.max(dt,.001),moved=distance>.0006;
+    v1354SetPatrolLocomotion(avatar,moved?(rally?'run':'walk'):'idle',speed);
+    avatar.mixer.update(dt);v1355UpdateShield(avatar);v1355UpdateSpear(avatar);avatar.lastPos.copy(npc.position);
+  }
+};
+
+setTimeout(()=>{v1354EnsureProfessionAvatars();v1355Maintenance();},120);
+setTimeout(()=>{v1354EnsureProfessionAvatars();v1355Maintenance();},1100);
+setTimeout(()=>{v1354EnsureProfessionAvatars();v1355Maintenance();},3000);
+const v1355UpdateBase=update;
+update=function(){
+  v1355UpdateBase();const now=performance.now();
+  if(now-v1355State.lastMaintenance>1200){v1355State.lastMaintenance=now;v1355Maintenance();}
+};
+const v1355CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1355CaptureSaveBase();save.meta={...(save.meta||{}),build:V1355_BUILD,characterFixes:{singleAvatar:true,legacyProceduralHidden:true,visibleCirclesRemoved:true,roleColorsForced:true,guardShield:'root-space-arm-tracked',guardSpear:'root-space-hand-tracked'}};return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1355=V1355_BUILD;
+  window.ODYSSEE_REPAIR_CHARACTERS_V1355=()=>{v1354EnsureProfessionAvatars();return v1355Maintenance();};
+}
+/* =================== FIN ODYSSÉE v1.35.5 =================== */
+
+
+
 
 
 
@@ -12820,4 +13092,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.35.4-20260807-0958-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.35.5-20260807-1012-NC -->
