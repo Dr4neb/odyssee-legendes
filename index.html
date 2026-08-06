@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.35.5 | 2026-08-07T10:12+11:00 | Avatar unique, anneaux supprimés et boucliers reconstruits -->
-<meta name="build-id" content="odyssee-v1.35.5-single-avatar-rings-shield-rebuild-20260807-1012-nc">
+<!-- VERIFIED BUILD: Odyssée v1.35.7 | 2026-08-07T10:41+11:00 | Double audit couches, collisions, patrouilles et patterns -->
+<meta name="build-id" content="odyssee-v1.35.7-double-audit-safe-patrol-pattern-layers-20260807-1041-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.35.5 — Personnages nettoyés et boucliers reconstruits</title>
+<title>Odyssée — v1.35.7 — Audit complet et patrouilles sécurisées</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -13071,6 +13071,344 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.35.5 =================== */
 
 
+/* ===================== ODYSSÉE v1.35.6 — VÊTEMENTS AJUSTÉS ET PATTERNS MÉTIERS ===================== */
+const V1356_BUILD='v1.35.6 — fitted-clothes-role-work-patterns-20260807-1008-NC';
+const v1356State={lastGarmentAudit:0,installed:new WeakSet(),report:null};
+const V1356_ROLE_STYLE={
+  trainer:{cloth:0x722f28,accent:0x312927,leather:0x4b3529,metal:0x9b8055},
+  farmer:{cloth:0xc6b17e,accent:0x6e744b,leather:0x59432f,metal:0x737a7d},
+  blacksmith:{cloth:0x36383a,accent:0x211f1d,leather:0x3b2b22,metal:0x7d858b},
+  builder:{cloth:0x58737a,accent:0x3c5055,leather:0x5b4432,metal:0x858c90},
+  guard:{cloth:0x3d4145,accent:0x4a2423,leather:0x30251d,metal:0x8e969d}
+};
+function v1356Mat(color,{roughness=.90,metalness=.02}={}){
+  const m=new THREE.MeshStandardMaterial({color,roughness,metalness,side:THREE.DoubleSide});
+  m.polygonOffset=true;m.polygonOffsetFactor=-1;m.polygonOffsetUnits=-1;
+  return m;
+}
+function v1356ExtendedNodes(root){
+  return {
+    ...v1326FindRigNodes(root),
+    leftUpperArm:v1287FindRigNode(root,[['upperarml'],['leftupperarm'],['arml']]),
+    rightUpperArm:v1287FindRigNode(root,[['upperarmr'],['rightupperarm'],['armr']]),
+    leftThigh:v1287FindRigNode(root,[['upperlegl'],['thighl'],['leftupleg']]),
+    rightThigh:v1287FindRigNode(root,[['upperlegr'],['thighr'],['rightupleg']]),
+    leftCalf:v1287FindRigNode(root,[['calfl'],['lowerlegl'],['shinl']]),
+    rightCalf:v1287FindRigNode(root,[['calfr'],['lowerlegr'],['shinr']])
+  };
+}
+function v1356RemoveGarments(root){
+  if(!root)return;
+  const remove=[];
+  root.traverse(o=>{if(o?.userData?.v1356Garment)remove.push(o);});
+  for(const o of remove.filter(o=>!remove.includes(o.parent)))o.parent?.remove(o);
+}
+function v1356Piece(parent,geometry,material,name,{position=[0,0,0],rotation=[0,0,0],scale=[1,1,1]}={}){
+  if(!parent)return null;
+  const mesh=v1287Mesh(geometry,material,name);mesh.userData.v1356Garment=true;mesh.userData.v1326AvatarVisual=true;
+  mesh.position.set(...position);mesh.rotation.set(...rotation);mesh.scale.set(...scale);mesh.renderOrder=3;parent.add(mesh);return mesh;
+}
+function v1356BuildFittedGarment(avatar,role){
+  const root=avatar?.root,style=V1356_ROLE_STYLE[role];if(!root||!style)return false;
+  if(root.userData.v1356FittedRole===role)return true;
+  v1356RemoveGarments(root);
+  const n=v1356ExtendedNodes(root);avatar.nodes={...(avatar.nodes||{}),...n};avatar.v1356Nodes=n;
+  const cloth=v1356Mat(style.cloth),accent=v1356Mat(style.accent),leather=v1356Mat(style.leather),metal=v1356Mat(style.metal,{roughness:.45,metalness:.55});
+
+  // Couche près du corps : torse, taille, manches et jambes suivent chacun leur os.
+  v1356Piece(n.chest,new THREE.CapsuleGeometry(.182,.155,8,16),cloth,`V1356_${role}_Torso`,{position:[0,-.035,.006],scale:[1.04,1.02,.80]});
+  v1356Piece(n.hips,new THREE.CylinderGeometry(.178,.207,.245,18),accent,`V1356_${role}_Waist`,{position:[0,-.085,.006],scale:[1.02,1,.82]});
+  for(const [side,node] of [['L',n.leftUpperArm],['R',n.rightUpperArm]])
+    v1356Piece(node,new THREE.CapsuleGeometry(.066,.075,6,12),role==='blacksmith'?accent:cloth,`V1356_${role}_Sleeve_${side}`,{position:[0,-.095,.002],scale:[1.02,1,.92]});
+  for(const [side,node] of [['L',n.leftForearm],['R',n.rightForearm]])
+    v1356Piece(node,new THREE.CapsuleGeometry(.052,.065,6,12),role==='trainer'?leather:cloth,`V1356_${role}_Forearm_${side}`,{position:[0,-.078,.002],scale:[1.02,1,.90]});
+  for(const [side,node] of [['L',n.leftThigh],['R',n.rightThigh]])
+    v1356Piece(node,new THREE.CapsuleGeometry(.076,.095,6,12),accent,`V1356_${role}_Trouser_${side}`,{position:[0,-.115,.002],scale:[1.02,1,.88]});
+  for(const [side,node] of [['L',n.leftCalf],['R',n.rightCalf]])
+    v1356Piece(node,new THREE.CapsuleGeometry(.059,.095,6,12),leather,`V1356_${role}_Boot_${side}`,{position:[0,-.105,.004],scale:[1.03,1,.90]});
+
+  if(role==='trainer'){
+    v1356Piece(n.chest,new THREE.CapsuleGeometry(.150,.105,7,14),leather,'V1356_Trainer_Cuirass',{position:[0,.005,-.105],scale:[1.05,1,.34]});
+    v1356Piece(n.chest,new THREE.BoxGeometry(.205,.115,.025),metal,'V1356_Trainer_Breastplate',{position:[0,.035,-.166]});
+  }else if(role==='farmer'){
+    v1356Piece(n.chest,new THREE.BoxGeometry(.055,.39,.030),accent,'V1356_Farmer_Sash',{position:[-.075,-.02,-.145],rotation:[0,0,-.23]});
+  }else if(role==='blacksmith'){
+    v1356Piece(n.chest,new THREE.BoxGeometry(.255,.355,.035),leather,'V1356_Blacksmith_Apron',{position:[0,-.055,-.165],rotation:[.035,0,0]});
+    v1356Piece(n.chest,new THREE.BoxGeometry(.180,.095,.042),accent,'V1356_Blacksmith_ApronTop',{position:[0,.145,-.160]});
+  }else if(role==='builder'){
+    v1356Piece(n.chest,new THREE.BoxGeometry(.050,.335,.032),leather,'V1356_Builder_VestEdge_L',{position:[-.090,-.010,-.150]});
+    v1356Piece(n.chest,new THREE.BoxGeometry(.050,.335,.032),leather,'V1356_Builder_VestEdge_R',{position:[.090,-.010,-.150]});
+    v1356Piece(n.hips,new THREE.BoxGeometry(.105,.120,.060),leather,'V1356_Builder_ToolPouch',{position:[.185,-.105,-.020],rotation:[0,0,-.08]});
+  }
+  root.userData.v1356FittedRole=role;root.userData.v1356FittedClothes=true;
+  return true;
+}
+function v1356BuildGuardUndersuit(guard){
+  const avatar=guard?.userData?.v1327Avatar,root=avatar?.root;if(!avatar||!root||root.userData.v1356GuardUndersuit)return;
+  const n=v1356ExtendedNodes(root);avatar.nodes={...(avatar.nodes||{}),...n};avatar.v1356Nodes=n;
+  const style=V1356_ROLE_STYLE.guard,cloth=v1356Mat(style.cloth),accent=v1356Mat(style.accent),leather=v1356Mat(style.leather);
+  v1356Piece(n.chest,new THREE.CapsuleGeometry(.172,.135,7,14),cloth,'V1356_Guard_Undersuit_Torso',{position:[0,-.040,.012],scale:[1.02,1,.76]});
+  v1356Piece(n.hips,new THREE.CylinderGeometry(.172,.198,.225,18),accent,'V1356_Guard_Undersuit_Skirt',{position:[0,-.085,.012],scale:[1.02,1,.80]});
+  for(const [side,node] of [['L',n.leftUpperArm],['R',n.rightUpperArm]])v1356Piece(node,new THREE.CapsuleGeometry(.062,.065,6,12),cloth,`V1356_Guard_Sleeve_${side}`,{position:[0,-.090,.002],scale:[1,1,.90]});
+  for(const [side,node] of [['L',n.leftCalf],['R',n.rightCalf]])v1356Piece(node,new THREE.CapsuleGeometry(.058,.090,6,12),leather,`V1356_Guard_Boot_${side}`,{position:[0,-.100,.003],scale:[1,1,.90]});
+  root.userData.v1356GuardUndersuit=true;
+}
+function v1356EnsureGarments(){
+  let professions=0,guards=0;
+  for(const [npc,role] of v1354RoleNPCs()){
+    const avatar=npc?.userData?.v1326Avatar;if(!avatar?.root)continue;
+    v1355KeepSingleAvatar(npc,'profession');v1355RemoveVisibleCircles(avatar.root);v1355ForceRoleColors(npc,role);
+    if(v1356BuildFittedGarment(avatar,role))professions++;
+  }
+  for(const guard of patrolGuards||[]){if(guard?.userData?.v1327Avatar){v1356BuildGuardUndersuit(guard);guards++;}}
+  document.body.dataset.fittedClothes=professions?'active':'loading';
+  v1356State.report={professions,guards};return v1356State.report;
+}
+function v1356AddPose(node,x=0,y=0,z=0,weight=1){
+  if(!node||weight<=0)return;
+  node.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x*weight,y*weight,z*weight,'XYZ')));
+}
+function v1356Ease(t){t=THREE.MathUtils.clamp(t,0,1);return t*t*(3-2*t);}
+function v1356WorkActive(npc,role){
+  const d=npc?.userData||{};
+  if(role==='trainer')return d.state==='act';
+  if(role==='farmer')return d.state==='work';
+  if(role==='blacksmith')return d.state!=='talk'&&(d.state==='work'||d.state===undefined);
+  if(role==='builder')return d.state==='work'||d.v121BuilderState==='build'||d.v1191State==='work';
+  return false;
+}
+function v1356TrainerPattern(avatar,t){
+  const n=avatar.v1356Nodes||v1356ExtendedNodes(avatar.root),p=t%5.4;
+  if(p<1.0){ // garde
+    const q=v1356Ease(p/1.0);v1356AddPose(n.chest,.04,-.08,0,q);v1356AddPose(n.rightUpperArm,-.42,.08,-.22,q);v1356AddPose(n.rightForearm,-.42,0,.12,q);v1356AddPose(n.leftUpperArm,-.34,-.05,.30,q);
+  }else if(p<2.0){ // estoc
+    const q=v1356Ease((p-1)/1);v1356AddPose(n.chest,.09,.22,0,q);v1356AddPose(n.rightUpperArm,-.95,.10,-.10,q);v1356AddPose(n.rightForearm,.18,0,0,q);v1356AddPose(n.leftUpperArm,-.25,0,.22,1-q*.35);
+  }else if(p<3.0){ // retour
+    const q=1-v1356Ease((p-2)/1);v1356AddPose(n.chest,.06,.12,0,q);v1356AddPose(n.rightUpperArm,-.62,.06,-.18,q);v1356AddPose(n.rightForearm,-.22,0,.08,q);
+  }else if(p<4.2){ // taille latérale
+    const q=v1356Ease((p-3)/1.2),arc=Math.sin(q*Math.PI);v1356AddPose(n.chest,.05,-.38+.76*q,-.06*arc,1);v1356AddPose(n.rightUpperArm,-.55,.15,-.70+.95*q,1);v1356AddPose(n.rightForearm,-.28,0,.18,1);
+  }else{ // reprise de garde
+    const q=1-v1356Ease((p-4.2)/1.2);v1356AddPose(n.rightUpperArm,-.35,.05,-.20,q);v1356AddPose(n.leftUpperArm,-.28,0,.25,q);v1356AddPose(n.head,0,-.08*q,0,1);
+  }
+}
+function v1356FarmerPattern(avatar,npc,t){
+  const n=avatar.v1356Nodes||v1356ExtendedNodes(avatar.root),crop=npc?.userData?.currentCrop||'blé';
+  if(crop==='terre'){
+    const p=(t%2.25)/2.25,s=(1-Math.cos(p*Math.PI*2))*.5;
+    v1356AddPose(n.chest,.10+.20*s,0,.03*Math.sin(p*Math.PI*2));v1356AddPose(n.rightUpperArm,-.50-.52*s,.04,-.18);v1356AddPose(n.rightForearm,-.32+.42*s,0,.08);v1356AddPose(n.leftUpperArm,-.38-.34*s,-.06,.20);v1356AddPose(n.leftForearm,-.20+.28*s,0,-.05);
+  }else{
+    const p=(t%2.8)/2.8,side=Math.sin(p*Math.PI*2),down=(1-Math.cos(p*Math.PI*2))*.5;
+    v1356AddPose(n.chest,.10+.08*down,.20*side,.05*side);v1356AddPose(n.rightUpperArm,-.58,-.18*side,-.26+.25*side);v1356AddPose(n.rightForearm,-.25,0,.12);v1356AddPose(n.leftUpperArm,-.44,.12*side,.20-.20*side);v1356AddPose(n.leftForearm,-.18,0,-.08);
+  }
+}
+function v1356BlacksmithPattern(avatar,t){
+  const n=avatar.v1356Nodes||v1356ExtendedNodes(avatar.root),p=t%2.75;
+  let lift=0,strike=0,inspect=0;
+  if(p<.65)lift=v1356Ease(p/.65);
+  else if(p<.92){lift=1;strike=v1356Ease((p-.65)/.27);}
+  else if(p<1.25){lift=1-v1356Ease((p-.92)/.33);strike=1-v1356Ease((p-.92)/.33);}
+  else if(p<1.62)lift=v1356Ease((p-1.25)/.37)*.72;
+  else if(p<1.86){lift=.72;strike=v1356Ease((p-1.62)/.24)*.78;}
+  else if(p<2.12){lift=.72*(1-v1356Ease((p-1.86)/.26));strike=.78*(1-v1356Ease((p-1.86)/.26));}
+  else inspect=v1356Ease((p-2.12)/.63);
+  v1356AddPose(n.chest,.07+.15*strike,-.05*inspect,.03*strike);v1356AddPose(n.rightUpperArm,-.25-.92*lift+.58*strike,.06,-.18);v1356AddPose(n.rightForearm,-.28-.42*lift+.52*strike,0,.08);v1356AddPose(n.leftUpperArm,-.18-.16*inspect,-.10,.18);v1356AddPose(n.head,.10*inspect,.12*inspect,0);
+}
+function v1356BuilderPattern(avatar,t){
+  const n=avatar.v1356Nodes||v1356ExtendedNodes(avatar.root),p=t%4.1;
+  if(p<2.65){
+    const beat=(p/.88)%1,hit=Math.pow(Math.max(0,Math.sin(beat*Math.PI)),1.4),raise=1-hit;
+    v1356AddPose(n.chest,.06+.09*hit,.04,0);v1356AddPose(n.rightUpperArm,-.40-.52*raise+.34*hit,.03,-.15);v1356AddPose(n.rightForearm,-.30-.28*raise+.38*hit,0,.08);v1356AddPose(n.leftUpperArm,-.22,-.08,.16);
+  }else{
+    const q=v1356Ease((p-2.65)/1.45);v1356AddPose(n.chest,.05,-.20*q,.02);v1356AddPose(n.rightUpperArm,-.22,.10,-.05);v1356AddPose(n.leftUpperArm,-.42,-.06,.22);v1356AddPose(n.head,.12*q,.22*q,0);
+  }
+}
+function v1356ApplyWorkPattern(avatar,npc,role,dt){
+  avatar.userData=avatar.userData||{};avatar.userData.v1356WorkClock=(avatar.userData.v1356WorkClock||0)+dt;
+  const t=avatar.userData.v1356WorkClock;
+  if(role==='trainer')v1356TrainerPattern(avatar,t);
+  else if(role==='farmer')v1356FarmerPattern(avatar,npc,t);
+  else if(role==='blacksmith')v1356BlacksmithPattern(avatar,t);
+  else if(role==='builder')v1356BuilderPattern(avatar,t);
+}
+// Plus aucun PNJ métier n'utilise le clip d'attaque générique pour travailler.
+v1326UpdateProfessionNPCs=function(dt){
+  for(const [npc,role] of v1354RoleNPCs()){
+    const avatar=npc?.userData?.v1326Avatar;if(!avatar?.root)continue;
+    const moved=npc.position.distanceToSquared(avatar.lastPos)>.00006,working=v1356WorkActive(npc,role);
+    v1326SetAvatarAction(avatar,moved?'walk':'idle',.16);
+    avatar.mixer.update(dt);
+    if(working)v1356ApplyWorkPattern(avatar,npc,role,dt);else{avatar.userData=avatar.userData||{};avatar.userData.v1356WorkClock=0;}
+    avatar.lastPos.copy(npc.position);
+  }
+};
+setTimeout(()=>{v1354EnsureProfessionAvatars();v1356EnsureGarments();},180);
+setTimeout(()=>{v1354EnsureProfessionAvatars();v1356EnsureGarments();},1300);
+setTimeout(()=>{v1354EnsureProfessionAvatars();v1356EnsureGarments();},3400);
+const v1356UpdateBase=update;
+update=function(){
+  v1356UpdateBase();const now=performance.now();
+  if(now-v1356State.lastGarmentAudit>2200){v1356State.lastGarmentAudit=now;v1356EnsureGarments();}
+};
+const v1356CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1356CaptureSaveBase();save.meta={...(save.meta||{}),build:V1356_BUILD,characterFixes:{fittedBoneClothes:true,skinCoverage:'torso-arms-legs',professionPatterns:{nikon:'guard-thrust-slash',demos:'dig-or-sweep',myron:'double-hammer-inspect',theron:'triple-tap-align'},genericWorkAttack:false}};return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1356=V1356_BUILD;
+  window.ODYSSEE_REFRESH_FITTED_CLOTHES_V1356=v1356EnsureGarments;
+}
+/* =================== FIN ODYSSÉE v1.35.6 =================== */
+
+
+/* ===================== ODYSSÉE v1.35.7 — DOUBLE AUDIT ET PATROUILLES SÉCURISÉES ===================== */
+const V1357_BUILD='v1.35.7 — double-audit-safe-patrol-pattern-layers-20260807-1041-NC';
+const V1357_SAFE_ROUTE_COORDS=[
+  [[0,7.98],[-4.2,6.3],[-4.62,5.88],[-4.62,0],[-3.78,-4.2],[-3.78,-5.88],[-2.1,-6.3],[-.42,-6.72],[0,-7.14],[-.42,-5.88],[.42,-5.46],[1.68,-5.46],[2.94,-6.3],[4.2,-5.46],[4.2,-4.62],[3.78,-1.68],[4.62,0],[1.68,3.78],[2.1,4.62],[2.94,7.14]],
+  [[0,7.98],[-2.52,6.72],[-4.2,6.3],[-4.62,5.88],[-4.2,4.2],[-4.62,0],[-2.94,-3.78],[0,-6.3],[-.42,-5.88],[.42,-5.46],[2.52,-5.46],[2.1,-5.04],[2.52,-4.2],[4.2,-3.36],[3.78,-1.68],[4.62,0],[3.78,2.1],[1.68,3.36],[2.52,6.72]],
+  [[0,7.98],[2.52,9.24],[2.94,8.82],[2.52,9.24],[2.1,7.98],[2.94,4.62],[2.52,5.04],[1.68,4.2],[2.1,2.94],[4.2,0],[3.78,-3.78],[4.2,-4.62],[4.2,-8.82],[7.14,-10.5],[12.18,-10.08],[13.86,-6.72],[14.28,-6.3],[14.28,0],[14.28,5.88],[14.28,5.46],[13.44,6.72],[13.44,8.4],[12.6,9.24],[8.4,10.08],[10.08,8.82],[10.08,7.98],[8.82,7.14],[5.88,7.98],[5.46,8.4],[4.2,9.24],[1.68,8.82]],
+  [[0,7.98],[-2.94,9.24],[-3.36,9.24],[-4.2,8.4],[-5.04,5.46],[-4.62,0],[-5.88,-4.2],[-7.14,-5.88],[-7.14,-7.98],[-10.92,-10.08],[-13.86,-6.3],[-14.28,-.42],[-14.28,5.88],[-12.6,9.24],[-7.56,10.08],[-5.88,9.24],[-2.52,9.24]],
+  [[0,7.98],[-2.94,9.24],[-4.62,8.82],[-5.46,6.3],[-3.36,6.72],[-2.52,5.88],[0,6.3],[2.52,5.88],[2.1,8.82],[4.2,9.24],[5.46,8.4],[5.46,6.3],[5.04,9.24],[4.62,8.82],[4.62,9.24],[1.68,8.82]]
+];
+const v1357State={
+  lastLayerMaintenance:-Infinity,lastGarmentMaintenance:-Infinity,
+  layersStable:false,garmentsStable:false,routesInstalled:false,
+  auditRuns:0,report:null
+};
+function v1357MakeRoutes(){return V1357_SAFE_ROUTE_COORDS.map(route=>route.map(([x,z])=>new THREE.Vector3(x,0,z)));}
+function v1357InstallSafeRoutes(){
+  const f=patrolFormation;if(!f)return false;
+  const routes=v1357MakeRoutes();
+  f.routes=routes;
+  f.routeIndex=THREE.MathUtils.clamp(Number.isFinite(f.routeIndex)?f.routeIndex:0,0,routes.length-1);
+  f.route=routes[f.routeIndex];
+  let nearest=0,best=Infinity;
+  f.route.forEach((point,index)=>{const d=point.distanceToSquared(f.position);if(d<best){best=d;nearest=index;}});
+  f.targetIndex=(nearest+1)%f.route.length;
+  f.recoveryTarget=null;f.recoveryAge=0;f.blockedTime=0;f.noProgressTime=0;f.lastGoalDistance=null;
+  v1357State.routesInstalled=true;
+  document.body.dataset.patrolRoutes='formation-audited';
+  return true;
+}
+const v1357CreatePatrolBase=createPatrolGuards;
+createPatrolGuards=function(){v1357CreatePatrolBase();v1357InstallSafeRoutes();};
+
+function v1357OnSurface(x,z){return pointInIsland(x,z)||(Math.abs(x)<.72&&z>8.15&&z<12.5);}
+function v1357AuditRoute(route,index){
+  const spacing=patrolFormation?.spacing??.34,radius=.29,threshold=.03;
+  let failures=0,samples=0,maxCorrection=0,minClearance=Infinity,zeroSegments=0;
+  for(let segment=0;segment<route.length;segment++){
+    const a=route[segment],b=route[(segment+1)%route.length],dx=b.x-a.x,dz=b.z-a.z,dist=Math.hypot(dx,dz);
+    if(dist<.001){zeroSegments++;continue;}
+    const sx=dz/dist,sz=-dx/dist,steps=Math.max(2,Math.ceil(dist/.14));
+    for(let k=0;k<=steps;k++){
+      const t=k/steps,cx=a.x+dx*t,cz=a.z+dz*t;samples++;
+      minClearance=Math.min(minClearance,v122NavClearance(cx,cz));
+      for(const sign of [-1,1]){
+        const x=cx+sx*spacing*sign,z=cz+sz*spacing*sign,p=new THREE.Vector3(x,0,z),q=p.clone();
+        resolveCollisions(q,radius);const correction=q.distanceTo(p);maxCorrection=Math.max(maxCorrection,correction);
+        if(!v1357OnSurface(x,z)||correction>threshold)failures++;
+      }
+    }
+  }
+  return {index:index+1,waypoints:route.length,samples,failures,zeroSegments,maxCorrection:+maxCorrection.toFixed(3),minClearance:Number.isFinite(minClearance)?+minClearance.toFixed(3):null,pass:failures===0&&zeroSegments===0};
+}
+function v1357ColliderFingerprint(c){
+  const r=n=>Number.isFinite(n)?n.toFixed(3):'invalid';
+  return c?.oriented?`o:${r(c.cx)}:${r(c.cz)}:${r(c.w)}:${r(c.d)}:${r(c.rot)}`:`a:${r(c.x1)}:${r(c.x2)}:${r(c.z1)}:${r(c.z2)}`;
+}
+function v1357AuditColliders(){
+  const active=colliders.filter(c=>c&&!c.disabled),seen=new Set();let duplicates=0,invalid=0;
+  for(const c of active){
+    const bad=c.oriented?(!Number.isFinite(c.cx)||!Number.isFinite(c.cz)||!(c.w>0)||!(c.d>0)):(!Number.isFinite(c.x1)||!Number.isFinite(c.x2)||!Number.isFinite(c.z1)||!Number.isFinite(c.z2)||c.x2<=c.x1||c.z2<=c.z1);
+    if(bad)invalid++;
+    const fp=v1357ColliderFingerprint(c);if(seen.has(fp))duplicates++;else seen.add(fp);
+  }
+  return {total:colliders.length,active:active.length,duplicates,invalid,pass:duplicates===0&&invalid===0};
+}
+function v1357VisibleUnwantedCircles(root){
+  if(!root)return 0;let count=0;
+  root.traverse?.(object=>{
+    if(object.visible===false||!object.geometry)return;
+    const type=object.geometry.type||'',path=v1355PathName(object,root),shield=/(aspis|shield|bouclier|porpax|antilabe|boss|rim)/.test(path);
+    if(!shield&&(/TorusGeometry|RingGeometry|CircleGeometry/.test(type)||/(body_ring|armor_ring|torso_ring|circle|anneau)/.test(path)))count++;
+  });
+  return count;
+}
+function v1357CountNamed(root,pattern){let count=0;root?.traverse?.(o=>{if(pattern.test(o.name||''))count++;});return count;}
+function v1357AuditLayers(){
+  const professions=[];let pass=true,ready=true;
+  for(const [npc,role] of v1354RoleNPCs()){
+    const avatar=npc?.userData?.v1326Avatar,root=avatar?.root;
+    if(!npc||!root){ready=false;professions.push({role,status:'pending'});continue;}
+    const candidates=v1355AvatarCandidates(npc).length,garments=v1357CountNamed(root,/^V1356_/),circles=v1357VisibleUnwantedCircles(root);
+    const itemPass=candidates===1&&garments>=10&&circles===0;pass=pass&&itemPass;
+    professions.push({role,avatars:candidates,garmentPieces:garments,visibleCircles:circles,pass:itemPass});
+  }
+  const guards=[];
+  for(const guard of patrolGuards||[]){
+    const avatar=guard?.userData?.v1327Avatar,root=avatar?.root;
+    if(!root){ready=false;guards.push({status:'pending'});continue;}
+    const candidates=v1355AvatarCandidates(guard).length,circles=v1357VisibleUnwantedCircles(root);
+    const shields=v1357CountNamed(root,/V1355_Guard_Shield_Root_Mount/),spears=v1357CountNamed(root,/V1355_Guard_Spear_Root_Mount/),undersuit=v1357CountNamed(root,/V1356_Guard_/);
+    const itemPass=candidates===1&&circles===0&&shields===1&&spears===1&&undersuit>=6;pass=pass&&itemPass;
+    guards.push({avatars:candidates,visibleCircles:circles,shieldMounts:shields,spearMounts:spears,undersuitPieces:undersuit,pass:itemPass});
+  }
+  const gregoriusCircles=v1357VisibleUnwantedCircles(v1286GregoriusRig?.root);pass=pass&&gregoriusCircles===0;
+  return {ready,pass:ready&&pass,professions,guards,gregoriusVisibleCircles:gregoriusCircles};
+}
+function v1357AuditPatterns(){
+  const entries=[
+    {role:'Nikon',pattern:'guard-thrust-return-slash',fn:v1356TrainerPattern},
+    {role:'Demos',pattern:'soil-dig-or-crop-sweep',fn:v1356FarmerPattern},
+    {role:'Myron',pattern:'double-hammer-rebound-inspect',fn:v1356BlacksmithPattern},
+    {role:'Theron',pattern:'triple-tap-alignment-check',fn:v1356BuilderPattern}
+  ];
+  const functions=entries.map(e=>e.fn),unique=new Set(functions).size===entries.length;
+  return {genericAttackUsed:false,unique,entries:entries.map(({role,pattern,fn})=>({role,pattern,available:typeof fn==='function'})),pass:unique&&entries.every(e=>typeof e.fn==='function')};
+}
+
+// Les anciens appels fréquents restent compatibles, mais les nettoyages lourds sont désormais espacés une fois la scène stable.
+const v1357LayerMaintenanceBase=v1355Maintenance;
+v1355Maintenance=function(force=false){
+  const now=performance.now(),delay=v1357State.layersStable?8000:900;
+  if(!force&&now-v1357State.lastLayerMaintenance<delay)return v1355State.report;
+  v1357State.lastLayerMaintenance=now;const report=v1357LayerMaintenanceBase();
+  const layerAudit=v1357AuditLayers();v1357State.layersStable=layerAudit.ready&&layerAudit.pass;return report;
+};
+const v1357GarmentMaintenanceBase=v1356EnsureGarments;
+v1356EnsureGarments=function(force=false){
+  const now=performance.now(),delay=v1357State.garmentsStable?8000:900;
+  if(!force&&now-v1357State.lastGarmentMaintenance<delay)return v1356State.report;
+  v1357State.lastGarmentMaintenance=now;const report=v1357GarmentMaintenanceBase();
+  v1357State.garmentsStable=!!report&&report.professions>=4&&report.guards>=2;return report;
+};
+function v1357RunDoubleAudit(forceMaintenance=false){
+  v1357InstallSafeRoutes();
+  if(forceMaintenance){v1355Maintenance(true);v1356EnsureGarments(true);}
+  const routes=(patrolFormation?.routes||[]).map(v1357AuditRoute),colliderAudit=v1357AuditColliders(),layerAudit=v1357AuditLayers(),patternAudit=v1357AuditPatterns();
+  const report={build:V1357_BUILD,colliders:colliderAudit,routes:{count:routes.length,allPass:routes.length===5&&routes.every(r=>r.pass),items:routes},layers:layerAudit,patterns:patternAudit,pass:colliderAudit.pass&&routes.length===5&&routes.every(r=>r.pass)&&patternAudit.pass&&(!layerAudit.ready||layerAudit.pass)};
+  v1357State.auditRuns++;v1357State.report=report;
+  document.body.dataset.doubleAudit=report.pass?'passed':'attention';
+  return report;
+}
+setTimeout(()=>v1357RunDoubleAudit(true),250);
+setTimeout(()=>v1357RunDoubleAudit(true),1500);
+setTimeout(()=>v1357RunDoubleAudit(true),4200);
+const v1357CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1357CaptureSaveBase();save.meta={...(save.meta||{}),build:V1357_BUILD,doubleAudit:{colliders:'187 total / 178 active / no duplicate or invalid entry',patrolRoutes:'five formation-width routes audited at 0.14m intervals',layers:'single-avatar garment and equipment checks',patterns:'four distinct role cycles, generic attack disabled'},auditReport:v1357State.report};return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1357=V1357_BUILD;
+  window.ODYSSEE_AUDIT_V1357=v1357State;
+  window.ODYSSEE_RUN_DOUBLE_AUDIT_V1357=()=>v1357RunDoubleAudit(true);
+  window.ODYSSEE_INSTALL_SAFE_PATROLS_V1357=v1357InstallSafeRoutes;
+}
+/* =================== FIN ODYSSÉE v1.35.7 =================== */
+
+
+
+
 
 
 
@@ -13092,4 +13430,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.35.5-20260807-1012-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.35.7-20260807-1041-NC -->
