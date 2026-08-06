@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.31.0 | 2026-08-06T13:47+11:00 | Stabilisation définitive de Gregorius -->
-<meta name="build-id" content="odyssee-v1.31.0-gregorius-stabilized-20260806-1347-nc">
+<!-- VERIFIED BUILD: Odyssée v1.31.1 | 2026-08-06T13:58+11:00 | Correctif chargement stabilisation Gregorius -->
+<meta name="build-id" content="odyssee-v1.31.1-gregorius-stabilization-load-fix-20260806-1358-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.31.0 — Gregorius stabilisé</title>
+<title>Odyssée — v1.31.1 — Correctif de chargement</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -9570,7 +9570,7 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.30.6 =================== */
 
 /* ===================== ODYSSÉE v1.31.0 — STABILISATION DÉFINITIVE DE GREGORIUS ===================== */
-const V1310_BUILD='v1.31.0 — gregorius-stabilized-20260806-1347-NC';
+const V1310_BUILD='v1.31.1 — gregorius-stabilization-load-fix-20260806-1358-NC';
 const V1310_XIPHOS_FROZEN_STORAGE='odyssee-v1310-xiphos-frozen';
 const v1310State={
   initialized:false,
@@ -9650,7 +9650,7 @@ v1297ApplyXiphosController=function(){
 };
 
 // Le panneau n'est plus autorisé à se recréer après la stabilisation.
-v1297CreateCalibrationUI=function(){};
+v1297BuildCalibrationUI=function(){};
 v1297SetPanel=function(){v1297XiphosPanelOpen=false;v1310RemoveCalibrationUI();};
 
 // Cape totalement désactivée jusqu'à une future refonte dédiée.
@@ -9712,7 +9712,7 @@ function v1310Initialize(){
   v1310InstallShield();
   v1297ApplyXiphosController();
   v1302PreventTouchSelection?.();
-  document.body.dataset.gregoriusStable='v1.31.0';
+  document.body.dataset.gregoriusStable='v1.31.1';
   v1310State.initialized=true;
 }
 
@@ -9750,4 +9750,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.31.0-20260806-1347-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.31.1-20260806-1358-NC -->
