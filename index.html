@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.35.1 | 2026-08-07T08:24+11:00 | Retour d’urgence à la base stable — prototype grec retiré -->
-<meta name="build-id" content="odyssee-v1.35.1-emergency-stable-rollback-20260807-0824-nc">
+<!-- VERIFIED BUILD: Odyssée v1.35.2 | 2026-08-07T08:45+11:00 | Vraies tenues Quaternius pour les PNJ métiers -->
+<meta name="build-id" content="odyssee-v1.35.2-real-quaternius-profession-outfits-20260807-0845-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.35.1 — Retour à la base stable</title>
+<title>Odyssée — v1.35.2 — Vraies tenues Quaternius</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -12105,6 +12105,206 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.35.1 =================== */
 
 
+/* ===================== ODYSSÉE v1.35.2 — VRAIES TENUES QUATERNIUS ===================== */
+const V1352_BUILD='v1.35.2 — real-quaternius-profession-outfits-20260807-0845-NC';
+const V1352_CHARACTER_LIBRARY={
+  license:'CC0-1.0',
+  creator:'Quaternius',
+  mirror:'lord3nd3r/ffxi-browser',
+  maleBase:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Superhero_Male_FullBody.gltf',
+  femaleBase:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Superhero_Female_FullBody.gltf',
+  maleRanger:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Male_Ranger.gltf',
+  femaleRanger:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Female_Ranger.gltf',
+  malePeasant:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Male_Peasant.gltf',
+  femalePeasant:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/Female_Peasant.gltf',
+  animations:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/UAL1_Standard.glb',
+  hair:{
+    beard:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/hair/Hair_Beard.gltf',
+    buns:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/hair/Hair_Buns.gltf',
+    buzzed:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/hair/Hair_Buzzed.gltf',
+    long:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/hair/Hair_Long.gltf',
+    simpleParted:'https://cdn.jsdelivr.net/gh/lord3nd3r/ffxi-browser@main/public/models/chars/hair/Hair_SimpleParted.gltf'
+  }
+};
+const v1352State={loading:new WeakSet(),installed:new WeakSet(),lastEnsure:0,failures:new WeakMap()};
+function v1352RoleForNPC(npc){
+  if(npc===trainingNPC)return 'trainer';
+  if(npc===farmerNPC)return 'farmer';
+  if(npc===blacksmithNPC)return 'blacksmith';
+  if(npc===builderNPC)return 'builder';
+  return null;
+}
+function v1352OutfitForRole(role){
+  return role==='trainer'?V1352_CHARACTER_LIBRARY.maleRanger:V1352_CHARACTER_LIBRARY.malePeasant;
+}
+function v1352RemoveGeneratedDress(root){
+  if(!root)return;
+  const doomed=[];
+  root.traverse(object=>{
+    if(object===root)return;
+    const name=object.name||'';
+    if(object.userData?.v1329Generated||
+       /^V1329_(Trainer|Farmer|Blacksmith|Builder)_/i.test(name)||
+       /^V1326_(Tunic|Work|Straw|Trainer|Farmer|Blacksmith|Builder)/i.test(name))doomed.push(object);
+  });
+  const doomedSet=new Set(doomed);
+  for(const object of doomed){
+    let parent=object.parent,inside=false;
+    while(parent&&parent!==root){if(doomedSet.has(parent)){inside=true;break;}parent=parent.parent;}
+    if(!inside&&object.parent)object.parent.remove(object);
+  }
+}
+function v1352ToolForRole(avatar,role){
+  if(!avatar?.nodes?.rightHand)return null;
+  const spec=V1326_NPC_SPECS[role];
+  const mats=v1326RoleMaterials(spec);
+  const tool=v1326AddTool(avatar.nodes.rightHand,mats,spec.tool);
+  if(tool){tool.name=`V1352_${role}_Profession_Tool`;tool.userData.v1352RealTool=true;}
+  return tool;
+}
+function v1352FarmerHat(avatar){
+  const head=avatar?.nodes?.head;if(!head)return null;
+  const spec=V1326_NPC_SPECS.farmer,mats=v1326RoleMaterials(spec);
+  const before=head.children.length;
+  v1326AddStrawHat(head,mats);
+  const hat=head.children.length>before?head.children[head.children.length-1]:null;
+  if(hat){hat.name='V1352_Farmer_Straw_Hat';hat.userData.v1352RealAccessory=true;}
+  return hat;
+}
+function v1352TintRealOutfit(root,role){
+  const palette={
+    trainer:{cloth:0x693128,secondary:0x332d29},
+    farmer:{cloth:0xb8a276,secondary:0x66523a},
+    blacksmith:{cloth:0x403a36,secondary:0x261f1b},
+    builder:{cloth:0x806b50,secondary:0x493b2e}
+  }[role];
+  if(!palette)return;
+  root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh)||!object.material)return;
+    const mats=Array.isArray(object.material)?object.material:[object.material];
+    const tag=`${object.name||''} ${mats.map(m=>m?.name||'').join(' ')}`.toLowerCase();
+    if(!/(peasant|ranger|outfit|tunic|shirt|pants|trouser|boot|glove|cloth|leather|vest)/.test(tag))return;
+    object.material=mats.map((material,index)=>{
+      if(!material)return material;
+      const clone=material.clone();
+      const secondary=/(boot|glove|leather|belt|strap|shoe)/.test(tag)||index%2===1;
+      clone.color?.setHex(secondary?palette.secondary:palette.cloth);
+      clone.roughness=Math.max(.78,clone.roughness??.82);
+      clone.metalness=Math.min(.06,clone.metalness??.03);
+      clone.needsUpdate=true;
+      return clone;
+    });
+    if(object.material.length===1)object.material=object.material[0];
+  });
+}
+async function v1352InstallRealOutfit(npc,role,{force=false}={}){
+  if(!npc||!role||!scene)return null;
+  if(!force&&npc.userData?.v1352RealOutfit===role&&npc.userData?.v1326Avatar?.root?.parent===npc)return npc.userData.v1326Avatar;
+  if(v1352State.loading.has(npc))return null;
+  const lastFailure=v1352State.failures.get(npc)||0;
+  if(!force&&performance.now()-lastFailure<8000)return null;
+  v1352State.loading.add(npc);
+  try{
+    const {loader,clips}=await v1326SharedAssets();
+    const spec=V1326_NPC_SPECS[role];
+    const outfitUrl=v1352OutfitForRole(role);
+    const [outfitGLTF,baseGLTF]=await Promise.all([
+      loader.loadAsync(outfitUrl),
+      loader.loadAsync(V1352_CHARACTER_LIBRARY.maleBase)
+    ]);
+    const root=outfitGLTF.scene;
+    if(!v1290GraftHumanBody(root,baseGLTF.scene))throw new Error(`Corps Quaternius incompatible pour ${role}`);
+    v1290HideFantasyParts(root);
+    v1287HideMedievalAccessories(root);
+    v1326PrepareAvatarRoot(root,spec);
+    root.name=`V1326_${role}_RealQuaternius_Avatar`;
+    root.userData.v1329Identity=role;
+    root.userData.v1352RealOutfit=true;
+    root.userData.v1352OutfitSource=role==='trainer'?'Male_Ranger':'Male_Peasant';
+    v1352RemoveGeneratedDress(root);
+    const old=npc.userData?.v1326Avatar;
+    if(old?.root?.parent===npc)v1328RemoveRoot(old.root);
+    npc.add(root);
+    const avatar=v1326BuildActionSet(root,clips);
+    avatar.root=root;
+    avatar.nodes=v1326FindRigNodes(root);
+    avatar.lastPos.copy(npc.position);
+    avatar.role=role;
+    v1328ConfigureLocomotion(avatar);
+    v1329SetAvatarScale(avatar,role);
+    v1352TintRealOutfit(root,role);
+    avatar.tool=v1352ToolForRole(avatar,role);
+    if(role==='farmer')avatar.hat=v1352FarmerHat(avatar);
+    npc.userData.v1326Avatar=avatar;
+    npc.userData.v1352RealOutfit=role;
+    v1326State.avatars.add(npc);
+    v1326SetAvatarAction(avatar,'idle',.01);
+    v1328RemoveBodyRings(root,true);
+    v1328DedupeNPC(npc,'profession');
+    v1352State.installed.add(npc);
+    v1352State.failures.delete(npc);
+    return avatar;
+  }catch(error){
+    v1352State.failures.set(npc,performance.now());
+    console.warn('[Odyssée v1.35.2] Échec tenue réelle',role,error);
+    return null;
+  }finally{v1352State.loading.delete(npc);}
+}
+async function v1352EnsureRealOutfits(force=false){
+  const entries=[
+    [trainingNPC,'trainer'],[farmerNPC,'farmer'],[blacksmithNPC,'blacksmith'],[builderNPC,'builder']
+  ];
+  for(const [npc,role] of entries){
+    if(!npc)continue;
+    await v1352InstallRealOutfit(npc,role,{force});
+  }
+  document.body.dataset.professionOutfits='real-quaternius';
+}
+// Empêche les anciennes tenues procédurales de revenir sur les nouveaux avatars.
+const v1352ApplyIdentityBase=v1329ApplyIdentity;
+v1329ApplyIdentity=function(npc,role){
+  const avatar=npc?.userData?.v1326Avatar;
+  if(avatar?.root?.userData?.v1352RealOutfit){
+    avatar.root.userData.v1329Identity=role;
+    return avatar;
+  }
+  return v1352ApplyIdentityBase(npc,role);
+};
+const v1352UpdateBase=update;
+update=function(){
+  v1352UpdateBase();
+  const now=performance.now();
+  if(now-v1352State.lastEnsure>2200){
+    v1352State.lastEnsure=now;
+    v1352EnsureRealOutfits(false);
+  }
+};
+setTimeout(()=>v1352EnsureRealOutfits(false),250);
+setTimeout(()=>v1352EnsureRealOutfits(false),1300);
+setTimeout(()=>v1352EnsureRealOutfits(false),3200);
+const v1352CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1352CaptureSaveBase();
+  save.meta={
+    ...(save.meta||{}),
+    build:V1352_BUILD,
+    characterAssets:{
+      creator:'Quaternius',license:'CC0-1.0',delivery:'public-CDN-mirror',
+      professionOutfits:{trainer:'Male_Ranger',farmer:'Male_Peasant',blacksmith:'Male_Peasant',builder:'Male_Peasant'},
+      additionalLibrary:['Female_Peasant','Female_Ranger','Superhero_Female_FullBody','Hair_Beard','Hair_Buns','Hair_Buzzed','Hair_Long','Hair_SimpleParted']
+    }
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1352=V1352_BUILD;
+  window.ODYSSEE_CHARACTER_LIBRARY_V1352=V1352_CHARACTER_LIBRARY;
+  window.ODYSSEE_RELOAD_REAL_OUTFITS=()=>v1352EnsureRealOutfits(true);
+}
+/* =================== FIN ODYSSÉE v1.35.2 =================== */
+
+
+
 
 
 
@@ -12122,4 +12322,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.35.1-20260807-0824-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.35.2-20260807-0845-NC -->
