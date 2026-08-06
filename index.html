@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.32.4 | 2026-08-06T16:48+11:00 | Son de parade embarqué et déverrouillé sur iPhone -->
-<meta name="build-id" content="odyssee-v1.32.4-embedded-shield-parry-sfx-ios-unlock-20260806-1648-nc">
+<!-- VERIFIED BUILD: Odyssée v1.32.5 | 2026-08-06T17:22+11:00 | Explosion réelle des cibles et rendu renforcé -->
+<meta name="build-id" content="odyssee-v1.32.5-target-explosion-realistic-refresh-20260806-1722-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.32.4 — Son de parade corrigé sur iPhone</title>
+<title>Odyssée — v1.32.5 — Explosion réelle des cibles</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -10708,10 +10708,149 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.32.4 =================== */
 
 
+/* ===================== ODYSSÉE v1.32.5 — EXPLOSION RÉELLE DES CIBLES ===================== */
+const V1325_BUILD='v1.32.5 — target-explosion-realistic-refresh-20260806-1722-NC';
+const v1325TargetEffects=[];
+let v1325FxStamp=performance.now();
+
+function v1325TargetMaterial(color,emissive=0x000000,opacity=1){
+  return new THREE.MeshStandardMaterial({color,emissive,roughness:.64,metalness:.06,transparent:opacity<1,opacity,depthWrite:opacity>=1});
+}
+function v1325EnhanceTargets(){
+  for(const target of trainingTargets||[]){
+    const d=target?.userData;
+    if(!target||!d||d.v1325Enhanced)continue;
+    d.v1325Enhanced=true;
+    const rope=v1325TargetMaterial(0x8b6942),cloth=v1325TargetMaterial(0x6d573d),leather=v1325TargetMaterial(0x4f3724),straw=v1325TargetMaterial(0xbc9b63),shadow=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.15,depthWrite:false,side:THREE.DoubleSide});
+    const discShadow=new THREE.Mesh(new THREE.CircleGeometry(.72,32),shadow);
+    discShadow.position.set(0,1.48,.082);discShadow.renderOrder=10;target.add(discShadow);
+    const frontCap=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,.045,18),leather);
+    frontCap.rotation.x=Math.PI/2;frontCap.position.set(0,1.48,.092);frontCap.castShadow=true;target.add(frontCap);
+    const ropeRing=new THREE.Mesh(new THREE.TorusGeometry(.755,.022,8,42),rope);
+    ropeRing.position.set(0,1.48,.082);ropeRing.castShadow=true;target.add(ropeRing);
+    for(const side of [-1,1]){
+      const lashTop=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.18,8),rope);
+      lashTop.rotation.z=Math.PI/2;lashTop.position.set(side*.50,1.13,.10);target.add(lashTop);
+      const pad=new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.06),cloth);
+      pad.position.set(side*.44,.96,.11);pad.rotation.z=-side*.10;pad.castShadow=true;target.add(pad);
+    }
+    for(let i=0;i<8;i++){
+      const angle=(Math.PI*2*i)/8;
+      const tuft=new THREE.Mesh(new THREE.CylinderGeometry(.012,.018,.16,5),straw);
+      tuft.position.set(Math.cos(angle)*.66,1.48+Math.sin(angle)*.01,.015+Math.sin(angle)*.66*.02);
+      tuft.rotation.z=angle+.35;tuft.rotation.x=.3;tuft.castShadow=true;target.add(tuft);
+    }
+  }
+}
+function v1325SpawnTargetExplosion(position){
+  if(!scene)return;
+  const pos=position.clone();
+  const flash=new THREE.Mesh(new THREE.SphereGeometry(.20,14,14),new THREE.MeshBasicMaterial({color:0xffd89a,transparent:true,opacity:1,depthWrite:false}));
+  flash.position.copy(pos);scene.add(flash);v1325TargetEffects.push({kind:'flash',obj:flash,age:0,life:.22,base:.18});
+  const core=new THREE.Mesh(new THREE.OctahedronGeometry(.14,1),new THREE.MeshBasicMaterial({color:0xff8b2f,transparent:true,opacity:.95,depthWrite:false}));
+  core.position.copy(pos);scene.add(core);v1325TargetEffects.push({kind:'core',obj:core,age:0,life:.28,spin:new THREE.Vector3(4,7,5)});
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.18,.34,30),new THREE.MeshBasicMaterial({color:0xffb251,transparent:true,opacity:.88,side:THREE.DoubleSide,depthWrite:false}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(pos.x,.05,pos.z);ring.renderOrder=18;scene.add(ring);v1325TargetEffects.push({kind:'ring',obj:ring,age:0,life:.42});
+  for(let i=0;i<12;i++){
+    const smoke=new THREE.Mesh(new THREE.IcosahedronGeometry(.08+Math.random()*.04,1),new THREE.MeshStandardMaterial({color:0x3a342f,transparent:true,opacity:.62,roughness:1,metalness:0,depthWrite:false}));
+    smoke.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*.15,(Math.random()-.5)*.12,(Math.random()-.5)*.15));
+    smoke.scale.setScalar(.55+Math.random()*.2);scene.add(smoke);
+    v1325TargetEffects.push({kind:'smoke',obj:smoke,age:0,life:.9+Math.random()*.35,vel:new THREE.Vector3((Math.random()-.5)*.7,.75+Math.random()*.65,(Math.random()-.5)*.7),spin:new THREE.Vector3((Math.random()-.5)*1.4,(Math.random()-.5)*1.4,(Math.random()-.5)*1.4)});
+  }
+  for(let i=0;i<18;i++){
+    const isStraw=i<8;
+    const shard=new THREE.Mesh(new THREE.BoxGeometry(isStraw?.10:.14,isStraw?.025:.045,isStraw?.025:.06),new THREE.MeshStandardMaterial({color:isStraw?0xbe9d63:0x71492b,roughness:isStraw?.98:.86,metalness:0}));
+    shard.position.copy(pos).add(new THREE.Vector3((Math.random()-.5)*.18,(Math.random()-.5)*.12,(Math.random()-.5)*.18));
+    shard.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);shard.castShadow=true;scene.add(shard);
+    v1325TargetEffects.push({kind:'shard',obj:shard,age:0,life:.82+Math.random()*.45,vel:new THREE.Vector3((Math.random()-.5)*(isStraw?2.4:1.85),1.25+Math.random()*1.6,(Math.random()-.5)*(isStraw?2.4:1.85)),spin:new THREE.Vector3((Math.random()-.5)*9,(Math.random()-.5)*9,(Math.random()-.5)*9)});
+  }
+  try{cameraShake=Math.max(cameraShake,.09);}catch(error){}
+}
+function v1325UpdateEffects(dt){
+  for(let i=v1325TargetEffects.length-1;i>=0;i--){
+    const fx=v1325TargetEffects[i],obj=fx.obj;
+    fx.age+=dt;
+    const t=Math.min(1,fx.age/fx.life);
+    if(fx.kind==='flash'){
+      obj.scale.setScalar(fx.base+t*1.85);
+      obj.material.opacity=Math.max(0,1-t);
+    }else if(fx.kind==='core'){
+      obj.scale.setScalar(.55+t*1.35);
+      obj.rotation.x+=dt*(fx.spin?.x||0);obj.rotation.y+=dt*(fx.spin?.y||0);obj.rotation.z+=dt*(fx.spin?.z||0);
+      obj.material.opacity=Math.max(0,.95-t*1.08);
+    }else if(fx.kind==='ring'){
+      obj.scale.setScalar(1+t*4.2);
+      obj.material.opacity=Math.max(0,.88-t*.98);
+    }else if(fx.kind==='smoke'){
+      obj.position.addScaledVector(fx.vel,dt);
+      fx.vel.y+=.22*dt;
+      obj.rotation.x+=dt*(fx.spin?.x||0);obj.rotation.y+=dt*(fx.spin?.y||0);obj.rotation.z+=dt*(fx.spin?.z||0);
+      const scale=.55+t*2.35;obj.scale.setScalar(scale);
+      obj.material.opacity=Math.max(0,.62-t*.62);
+    }else if(fx.kind==='shard'){
+      obj.position.addScaledVector(fx.vel,dt);
+      fx.vel.y-=4.7*dt;
+      obj.rotation.x+=dt*(fx.spin?.x||0);obj.rotation.y+=dt*(fx.spin?.y||0);obj.rotation.z+=dt*(fx.spin?.z||0);
+      if(obj.material?.opacity!==undefined){obj.material.transparent=true;obj.material.opacity=Math.max(0,1-Math.max(0,t-.55)/.45);}
+    }
+    if(fx.age>=fx.life){obj.parent?.remove(obj);obj.geometry?.dispose?.();obj.material?.dispose?.();v1325TargetEffects.splice(i,1);}
+  }
+}
+
+const v1325BuildWorldBase=v119BuildWorld;
+v119BuildWorld=function(){
+  v1325BuildWorldBase();
+  v1325EnhanceTargets();
+};
+
+const v1325DestroyBase=v117Destroy;
+v117Destroy=function(target){
+  const wasDestroyed=!!target?.userData?.destroyed;
+  const origin=target?.position?.clone?.()||null;
+  v1325DestroyBase(target);
+  const d=target?.userData;
+  if(!wasDestroyed&&d?.destroyed&&origin){
+    d.respawnTimer=5;
+    target.visible=false;
+    if(d.collider)d.collider.disabled=true;
+    v1325SpawnTargetExplosion(origin.clone().add(new THREE.Vector3(0,1.42,0)));
+  }
+};
+
+const v1325UpdateBase=update;
+update=function(){
+  v1325UpdateBase();
+  const now=performance.now();
+  const dt=Math.min(.05,(now-v1325FxStamp)/1000||.016);
+  v1325FxStamp=now;
+  v1325UpdateEffects(dt);
+};
+
+setTimeout(v1325EnhanceTargets,0);
+setTimeout(v1325EnhanceTargets,600);
+
+const v1325CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1325CaptureSaveBase();
+  save.meta={
+    ...(save.meta||{}),
+    build:V1325_BUILD,
+    targets:{appearance:'reinforced-realistic-bale-target-v1',destruction:'full-explosion-hide-respawn-5s'}
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1325=V1325_BUILD;
+  window.ODYSSEE_TARGETS_V1325={explode:v1325SpawnTargetExplosion,refresh:v1325EnhanceTargets};
+}
+/* =================== FIN ODYSSÉE v1.32.5 =================== */
+
+
+
 
 
 
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.32.4-20260806-1648-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.32.5-20260806-1722-NC -->
