@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.30.6 | 2026-08-06T14:18+11:00 | Suppression artefact rouge et bouclier rapproché -->
-<meta name="build-id" content="odyssee-v1.30.6-remove-red-artifact-shield-hand-adjust-20260806-1418-nc">
+<!-- VERIFIED BUILD: Odyssée v1.30.7 | 2026-08-06T14:26+11:00 | Bouclier avancé à la limite de la main -->
+<meta name="build-id" content="odyssee-v1.30.7-shield-further-forward-hand-edge-20260806-1426-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.30.6 — Artefact rouge supprimé et bouclier ajusté</title>
+<title>Odyssée — v1.30.7 — Bouclier avancé à la limite de la main</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -9453,7 +9453,7 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.30.5 =================== */
 
 /* ===================== ODYSSÉE v1.30.6 — ARTEFACT ROUGE SUPPRIMÉ ET BOUCLIER AJUSTÉ ===================== */
-const V1306_BUILD='v1.30.6 — remove-red-artifact-shield-hand-adjust-20260806-1418-NC';
+const V1306_BUILD='v1.30.7 — shield-further-forward-hand-edge-20260806-1426-NC';
 
 function v1306RemoveRedArtifact(){
   const gear=v1287HopliteGear,root=v1286GregoriusRig?.root||gear?.root;
@@ -9484,10 +9484,10 @@ function v1306InstallShield(){
   const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
   const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
   // Même logique stable que v1.30.5, mais avancée vers la main pour tomber plus juste.
-  const strappedRoot=foreRoot.clone().lerp(handRoot,.68).add(new THREE.Vector3(.068,.012,-.016));
-  strappedRoot.x=Math.max(strappedRoot.x,chestRoot.x+.318);
+  const strappedRoot=foreRoot.clone().lerp(handRoot,.80).add(new THREE.Vector3(.074,.010,-.010));
+  strappedRoot.x=Math.max(strappedRoot.x,chestRoot.x+.326);
   strappedRoot.y=THREE.MathUtils.clamp(strappedRoot.y,.68,1.18);
-  strappedRoot.z=THREE.MathUtils.clamp(strappedRoot.z,-.22,.14);
+  strappedRoot.z=THREE.MathUtils.clamp(strappedRoot.z,-.20,.16);
   const rootQuat=new THREE.Quaternion().setFromUnitVectors(v1294ShieldState.frontAxis,v1294ShieldState.restNormal);
   rootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(v1294ShieldState.restNormal,-.035));
 
