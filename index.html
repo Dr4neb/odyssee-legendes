@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.32.2 | 2026-08-06T16:18+11:00 | Caméra stabilisée et sons de combat CC0 -->
-<meta name="build-id" content="odyssee-v1.32.2-stable-camera-combat-sfx-cc0-20260806-1618-nc">
+<!-- VERIFIED BUILD: Odyssée v1.32.3 | 2026-08-06T16:30+11:00 | Blocage sonore fiable, mort réaliste et endurance désactivée -->
+<meta name="build-id" content="odyssee-v1.32.3-shield-sfx-realistic-death-no-stamina-20260806-1630-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.32.2 — Caméra stabilisée et sons de combat</title>
+<title>Odyssée — v1.32.3 — Sons corrigés et endurance désactivée</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -10363,7 +10363,7 @@ const V1322_BUILD='v1.32.2 — stable-camera-combat-sfx-cc0-20260806-1618-NC';
 const V1322_SFX_URLS={
   attack:'https://gamesounds.xyz/Kenney%27s%20Sound%20Pack/RPG%20Audio/knifeSlice.ogg',
   shield:'https://gamesounds.xyz/Kenney%27s%20Sound%20Pack/RPG%20Audio/metalPot2.ogg',
-  death:'https://opengameart.org/sites/default/files/deadsound.ogg'
+  death:'https://opengameart.org/sites/default/files/01._death_groan_male.wav'
 };
 const v1322Sfx={attack:null,shield:null,death:null,unlocked:false};
 
@@ -10457,9 +10457,159 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.32.2 =================== */
 
+/* ===================== ODYSSÉE v1.32.3 — BLOCAGE SONORE, MORT RÉALISTE ET ENDURANCE DÉSACTIVÉE ===================== */
+const V1323_BUILD='v1.32.3 — shield-sfx-realistic-death-no-stamina-20260806-1630-NC';
+const V1323_DEATH_URL='https://opengameart.org/sites/default/files/01._death_groan_male.wav';
+const v1323Audio={shield:null,death:null,unlocked:false};
+
+function v1323CreateAudio(url,volume){
+  const audio=new Audio(url);
+  audio.preload='auto';
+  audio.playsInline=true;
+  audio.volume=volume;
+  return audio;
+}
+function v1323EnsureAudio(){
+  if(!v1323Audio.shield)v1323Audio.shield=v1323CreateAudio(V1322_SFX_URLS.shield,.72);
+  if(!v1323Audio.death)v1323Audio.death=v1323CreateAudio(V1323_DEATH_URL,.72);
+}
+function v1323UnlockAudio(){
+  if(v1323Audio.unlocked)return;
+  v1323Audio.unlocked=true;
+  v1323EnsureAudio();
+  for(const audio of [v1323Audio.shield,v1323Audio.death]){
+    try{audio.load();}catch(error){}
+  }
+}
+document.addEventListener('pointerdown',v1323UnlockAudio,{once:true,capture:true,passive:true});
+document.addEventListener('touchstart',v1323UnlockAudio,{once:true,capture:true,passive:true});
+
+function v1323PlayDirect(type,{volume=1,rate=1}={}){
+  v1323EnsureAudio();
+  const base=v1323Audio[type];
+  if(!base)return;
+  try{
+    // Lecture directe du lecteur préchargé : plus fiable sur Safari iOS que cloneNode pour les impacts rares.
+    base.pause();
+    base.currentTime=0;
+    base.volume=THREE.MathUtils.clamp((type==='death'?.72:.72)*volume,0,1);
+    base.playbackRate=THREE.MathUtils.clamp(rate,.72,1.25);
+    const promise=base.play();
+    if(promise?.catch)promise.catch(()=>{});
+  }catch(error){}
+}
+
+// Endurance temporairement neutralisée : aucune dépense, aucune rupture de garde.
+function v1323DisableStamina(){
+  playerStamina=100;
+  v1320Combat.guardBreakTimer=0;
+  els.actionB?.classList.remove('guardBroken');
+  if(els.staminaFill)els.staminaFill.style.width='100%';
+  if(els.staminaValue)els.staminaValue.textContent='100';
+}
+const v1323StaminaStyle=document.createElement('style');
+v1323StaminaStyle.id='v1323NoStaminaStyle';
+v1323StaminaStyle.textContent='#vitals .vitalRow:nth-child(2){display:none!important}';
+document.head.appendChild(v1323StaminaStyle);
+
+v1320TriggerGuardBreak=function(){
+  v1320Combat.guardBreakTimer=0;
+  playerStamina=100;
+};
+v1320CanBlock=function(origin){
+  if(equipmentStowed||blockBlend<.52)return false;
+  const incoming=origin.clone().sub(player).setY(0);
+  if(incoming.lengthSq()<1e-6)return true;
+  incoming.normalize();
+  return incoming.dot(v1320PlayerForward())>=Math.cos(75*Math.PI/180);
+};
+
+// Le son métallique est déclenché ici, dans le résultat réel du blocage du joueur.
+v1320ApplyIncomingAttack=function({origin,damage=V1320_TARGET_COUNTER_DAMAGE,staminaDamage=0,force=1}={}){
+  if(v1320Combat.incomingCooldown>0||!origin)return {blocked:false,ignored:true};
+  const source=origin.isVector3?origin.clone():new THREE.Vector3(origin.x||0,origin.y||0,origin.z||0);
+  v1320Combat.incomingCooldown=.18;
+  v1323DisableStamina();
+  if(v1320CanBlock(source)){
+    v1320Combat.shieldKick=1;
+    v1320ApplyRecoil(source,.42*force);
+    v117ImpactSound?.('stone');
+    v1323PlayDirect('shield',{volume:1,rate:.90+Math.random()*.08});
+    cameraShake=Math.max(cameraShake,.052);
+    v117Toast?.('BLOCAGE');
+    return {blocked:true,guardBroken:false};
+  }
+  playerHealth=Math.max(0,playerHealth-damage);
+  v1320ApplyRecoil(source,.90*force);
+  v117ImpactSound?.('wood');
+  cameraShake=Math.max(cameraShake,.085);
+  v117Toast?.(`TOUCHÉ — ${Math.round(playerHealth)} VIE`);
+  return {blocked:false,guardBroken:false};
+};
+
+const v1323StartSwordAttackBase=startSwordAttack;
+startSwordAttack=function(){
+  v1323DisableStamina();
+  const result=v1323StartSwordAttackBase?.();
+  v1323DisableStamina();
+  return result;
+};
+
+updateV116Vitals=function(dt){
+  v1323DisableStamina();
+  if(els.healthFill)els.healthFill.style.width=playerHealth.toFixed(1)+'%';
+  if(els.healthValue)els.healthValue.textContent=Math.round(playerHealth);
+};
+
+// Mort : appel direct de la fonction originale, puis râle humain réaliste exactement une fois.
+v1321DestroyEnemy=function(){
+  const enemy=v1321EnemyState?.object;
+  const wasAlive=!!enemy&&!enemy.userData?.destroyed&&enemy.visible!==false;
+  const result=v1322DestroyEnemyBase?.();
+  if(wasAlive){
+    v1323PlayDirect('death',{volume:1,rate:.96+Math.random()*.04});
+  }
+  return result;
+};
+
+const v1323CombatUpdateBase=updateV117Combat;
+updateV117Combat=function(dt){
+  v1323DisableStamina();
+  const result=v1323CombatUpdateBase?.(dt);
+  v1323DisableStamina();
+  return result;
+};
+
+setTimeout(()=>{v1323DisableStamina();v1323EnsureAudio();},0);
+setTimeout(v1323DisableStamina,600);
+
+const v1323CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1323CaptureSaveBase();
+  if(save.player)save.player.stamina=100;
+  save.meta={
+    ...(save.meta||{}),
+    build:V1323_BUILD,
+    stamina:{enabled:false,reason:'temporarily-disabled-for-combat-balancing'},
+    combatAudio:{
+      ...(save.meta?.combatAudio||{}),
+      shield:'Kenney RPG Audio metalPot2 — CC0 — direct block event',
+      death:'VoiceBosch 01 death groan male — CC-BY-SA 4.0 — direct enemy death event'
+    }
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1323=V1323_BUILD;
+  window.ODYSSEE_STAMINA_ENABLED=false;
+  window.ODYSSEE_COMBAT_SFX_V1323={play:v1323PlayDirect,deathUrl:V1323_DEATH_URL,shieldUrl:V1322_SFX_URLS.shield};
+}
+/* =================== FIN ODYSSÉE v1.32.3 =================== */
+
+
 
 
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.32.2-20260806-1618-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.32.3-20260806-1630-NC -->
