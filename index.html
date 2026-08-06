@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.31.3 | 2026-08-06T14:02+11:00 | Caméra tactique inclinée à 60 degrés -->
-<meta name="build-id" content="odyssee-v1.31.3-camera-60deg-20260806-1402-nc">
+<!-- VERIFIED BUILD: Odyssée v1.32.0 | 2026-08-06T14:18+11:00 | Combat xiphos, blocage et mannequins actifs -->
+<meta name="build-id" content="odyssee-v1.32.0-combat-foundation-20260806-1418-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.31.3 — Caméra tactique à 60°</title>
+<title>Odyssée — v1.32.0 — Système de combat</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -45,7 +45,7 @@ h1{margin:14px 0 0;color:#f0dfb8;font:900 clamp(49px,11vw,96px)/.86 Georgia,seri
 #controls{display:none;position:fixed;inset:0;z-index:2500;pointer-events:none}#controls.visible{display:block}
 #stick{position:absolute;left:calc(22px + env(safe-area-inset-left));bottom:calc(18px + env(safe-area-inset-bottom));width:124px;height:124px;border:2px solid rgba(191,151,91,.58);border-radius:50%;background:radial-gradient(circle,rgba(25,30,29,.76) 0 43%,rgba(7,10,10,.72) 45%);box-shadow:0 14px 35px rgba(0,0,0,.4);pointer-events:auto;touch-action:none}#stick:before,#stick:after{content:"";position:absolute;background:rgba(191,151,91,.18)}#stick:before{left:50%;top:12%;bottom:12%;width:1px}#stick:after{top:50%;left:12%;right:12%;height:1px}#knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border:1px solid #b88b53;border-radius:50%;background:radial-gradient(circle at 35% 30%,#a98655,#503e27 72%);box-shadow:0 9px 22px rgba(0,0,0,.48)}
 #actionPad{position:absolute;right:calc(23px + env(safe-area-inset-right));bottom:calc(19px + env(safe-area-inset-bottom));width:160px;height:132px;pointer-events:none}
-.actionBtn{position:absolute;display:grid;place-items:center;width:70px;height:70px;padding:0;border:2px solid rgba(191,151,91,.54);border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(115,92,59,.94),rgba(29,31,28,.96) 72%);color:#e5d3ad;box-shadow:0 13px 30px rgba(0,0,0,.46),inset 0 0 0 4px rgba(0,0,0,.18);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s ease,filter .15s ease,border-color .15s ease,opacity .15s ease}.actionBtn:active{transform:scale(.93)}.actionBtn .letter{display:block;font:950 25px/1 system-ui}.actionBtn .label{display:block;margin-top:3px;font:900 8px/1 system-ui;letter-spacing:.12em}.actionBtnA{right:73px;top:0;opacity:1;filter:none;border-color:#b88b52}.actionBtnA.available{opacity:1;filter:none}.actionBtnA.interact{border-color:#ddb369;box-shadow:0 0 0 4px rgba(191,137,70,.18),0 13px 30px rgba(0,0,0,.48),0 0 24px rgba(213,159,79,.28)}.actionBtnA.attacking{transform:scale(.92);border-color:#f0c77c;background:radial-gradient(circle at 34% 28%,rgba(139,91,47,.98),rgba(31,27,24,.98) 72%);box-shadow:0 0 0 5px rgba(201,137,66,.18),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(220,152,72,.30)}.actionBtnB{right:0;bottom:0;opacity:1;filter:none;border-color:rgba(151,179,190,.72)}.actionBtnB .label{color:#c5d0d2}.actionBtnB.blocking{transform:scale(.94);border-color:#d6e3e7;background:radial-gradient(circle at 34% 28%,rgba(105,129,139,.98),rgba(22,28,31,.98) 72%);box-shadow:0 0 0 5px rgba(131,166,180,.20),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(154,196,212,.34)}
+.actionBtn{position:absolute;display:grid;place-items:center;width:70px;height:70px;padding:0;border:2px solid rgba(191,151,91,.54);border-radius:50%;background:radial-gradient(circle at 34% 28%,rgba(115,92,59,.94),rgba(29,31,28,.96) 72%);color:#e5d3ad;box-shadow:0 13px 30px rgba(0,0,0,.46),inset 0 0 0 4px rgba(0,0,0,.18);pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:transform .08s ease,filter .15s ease,border-color .15s ease,opacity .15s ease}.actionBtn:active{transform:scale(.93)}.actionBtn .letter{display:block;font:950 25px/1 system-ui}.actionBtn .label{display:block;margin-top:3px;font:900 8px/1 system-ui;letter-spacing:.12em}.actionBtnA{right:73px;top:0;opacity:1;filter:none;border-color:#b88b52}.actionBtnA.available{opacity:1;filter:none}.actionBtnA.interact{border-color:#ddb369;box-shadow:0 0 0 4px rgba(191,137,70,.18),0 13px 30px rgba(0,0,0,.48),0 0 24px rgba(213,159,79,.28)}.actionBtnA.attacking{transform:scale(.92);border-color:#f0c77c;background:radial-gradient(circle at 34% 28%,rgba(139,91,47,.98),rgba(31,27,24,.98) 72%);box-shadow:0 0 0 5px rgba(201,137,66,.18),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(220,152,72,.30)}.actionBtnB{right:0;bottom:0;opacity:1;filter:none;border-color:rgba(151,179,190,.72)}.actionBtnB .label{color:#c5d0d2}.actionBtnB.blocking{transform:scale(.94);border-color:#d6e3e7;background:radial-gradient(circle at 34% 28%,rgba(105,129,139,.98),rgba(22,28,31,.98) 72%);box-shadow:0 0 0 5px rgba(131,166,180,.20),0 13px 30px rgba(0,0,0,.52),0 0 28px rgba(154,196,212,.34)}.actionBtnB.guardBroken{opacity:.48;filter:saturate(.35);border-color:rgba(173,76,61,.85);box-shadow:0 0 0 5px rgba(151,45,34,.18),0 13px 30px rgba(0,0,0,.52)}
 #credits{position:fixed;right:calc(12px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:2550;display:none;padding:7px 9px;background:rgba(4,7,8,.62);color:#8d9694;font:700 8px system-ui;letter-spacing:.05em;pointer-events:none}#credits.visible{display:block}
 #npcBubble{display:none;position:fixed;z-index:2750;max-width:min(58vw,270px);padding:9px 12px;border:1px solid rgba(215,189,134,.62);border-left:4px solid #8b5d32;background:rgba(16,20,18,.93);color:#eadbb9;box-shadow:0 10px 28px rgba(0,0,0,.48);font:700 11px/1.35 system-ui;letter-spacing:.02em;pointer-events:none;transform:translate(-50%,-115%)}#npcBubble.visible{display:block}#npcBubble strong{display:block;margin-bottom:3px;color:#c99b5c;font:900 9px system-ui;letter-spacing:.14em;text-transform:uppercase}
 
@@ -9765,7 +9765,361 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.31.3 =================== */
 
 
+
+/* ===================== ODYSSÉE v1.32.0 — SOCLE DU SYSTÈME DE COMBAT ===================== */
+const V1320_BUILD='v1.32.0 — combat-foundation-20260806-1418-NC';
+const V1320_ATTACK_STAMINA_COST=10;
+const V1320_BLOCK_DRAIN_PER_SECOND=12;
+const V1320_BLOCK_IMPACT_COST=18;
+const V1320_GUARD_BREAK_DURATION=.95;
+const V1320_TARGET_COUNTER_DELAY=1.18;
+const V1320_TARGET_COUNTER_DAMAGE=10;
+const V1320_TARGET_COMBAT_RADIUS=.64;
+const v1320Combat={
+  attackSerial:0,
+  attackResolved:false,
+  attackWasActive:false,
+  previousBladeBase:null,
+  previousBladeTip:null,
+  guardBreakTimer:0,
+  shieldKick:0,
+  recoilVelocity:new THREE.Vector3(),
+  incomingCooldown:0,
+  lastExertion:performance.now(),
+  initialized:false
+};
+
+function v1320Smooth(t){t=THREE.MathUtils.clamp(t,0,1);return t*t*(3-2*t);}
+function v1320DistancePointToSegment(point,a,b){
+  const ab=b.clone().sub(a),den=ab.lengthSq();
+  if(den<1e-8)return point.distanceTo(a);
+  const t=THREE.MathUtils.clamp(point.clone().sub(a).dot(ab)/den,0,1);
+  return point.distanceTo(a.clone().addScaledVector(ab,t));
+}
+function v1320PlayerForward(){
+  if(typeof v117Forward==='function')return v117Forward();
+  const r=character?.rotation?.y||Math.PI;
+  return new THREE.Vector3(Math.sin(r),0,-Math.cos(r)).normalize();
+}
+function v1320BladeSegment(){
+  const weapon=v1286GregoriusRig?.weapon;
+  if(!weapon||!weapon.visible||equipmentStowed)return null;
+  weapon.updateWorldMatrix(true,true);
+  // Le xiphos est construit le long de son axe local Y : garde à .13, pointe à 1.20.
+  const base=weapon.localToWorld(new THREE.Vector3(0,.145,0));
+  const tip=weapon.localToWorld(new THREE.Vector3(0,1.205,0));
+  return {base,tip};
+}
+function v1320TargetContactDistance(target,segment){
+  const samples=[.62,1.20,1.78].map(y=>target.position.clone().add(new THREE.Vector3(0,y,0)));
+  let best=Infinity;
+  for(const sample of samples){
+    best=Math.min(best,v1320DistancePointToSegment(sample,segment.base,segment.tip));
+    if(v1320Combat.previousBladeTip&&v1320Combat.previousBladeBase){
+      best=Math.min(best,v1320DistancePointToSegment(sample,v1320Combat.previousBladeTip,segment.tip));
+      best=Math.min(best,v1320DistancePointToSegment(sample,v1320Combat.previousBladeBase,segment.base));
+    }
+  }
+  return best;
+}
+function v1320FindBladeHit(segment){
+  if(!segment)return null;
+  const forward=v1320PlayerForward();
+  let best=null,bestDistance=Infinity;
+  for(const target of trainingTargets||[]){
+    const d=target?.userData;
+    if(!target||!target.visible||d?.destroyed)continue;
+    const delta=target.position.clone().sub(player).setY(0),range=delta.length();
+    if(range<.08||range>2.36)continue;
+    if(delta.normalize().dot(forward)<-.03)continue;
+    const contact=v1320TargetContactDistance(target,segment);
+    const radius=d.v1320CombatRadius||V1320_TARGET_COMBAT_RADIUS;
+    if(contact<=radius&&contact<bestDistance){bestDistance=contact;best=target;}
+  }
+  return best;
+}
+
+function v1320EnsureTargetCombat(target,index=0){
+  const d=target?.userData;
+  if(!target||!d)return;
+  if(!d.v1320CombatInitialized){
+    d.v1320CombatInitialized=true;
+    d.v1320CombatRadius=V1320_TARGET_COMBAT_RADIUS;
+    d.v1320CounterTimer=0;
+    d.v1320CounterCooldown=0;
+    d.v1320HitReaction=0;
+    d.v1320BaseRotation={x:target.rotation.x,y:target.rotation.y,z:target.rotation.z};
+    d.v1320TargetIndex=index;
+  }
+  if(!d.v1320Telegraph&&scene){
+    const material=new THREE.MeshBasicMaterial({color:0xd49a45,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
+    const ring=new THREE.Mesh(new THREE.RingGeometry(.54,.62,32),material);
+    ring.name=`Training_Target_Telegraph_${index}`;
+    ring.rotation.x=-Math.PI/2;
+    ring.renderOrder=18;
+    ring.visible=false;
+    scene.add(ring);
+    d.v1320Telegraph=ring;
+  }
+}
+function v1320QueueCounterAttack(target){
+  const d=target?.userData;
+  if(!d||d.destroyed||d.v1320CounterTimer>0||d.v1320CounterCooldown>0)return;
+  if(Math.hypot(player.x-target.position.x,player.z-target.position.z)>2.45)return;
+  d.v1320CounterTimer=V1320_TARGET_COUNTER_DELAY;
+  d.v1320CounterCooldown=2.1;
+}
+function v1320ApplyRecoil(origin,force){
+  const dir=player.clone().sub(origin).setY(0);
+  if(dir.lengthSq()<1e-6)dir.copy(v1320PlayerForward()).multiplyScalar(-1);
+  dir.normalize();
+  v1320Combat.recoilVelocity.addScaledVector(dir,force);
+}
+function v1320TriggerGuardBreak(){
+  v1320Combat.guardBreakTimer=V1320_GUARD_BREAK_DURATION;
+  blocking=false;
+  keys.delete('KeyB');
+  playerStamina=0;
+  blockBlend=Math.min(blockBlend,.34);
+  els.actionB?.classList.remove('blocking');
+  els.actionB?.classList.add('guardBroken');
+  v117Toast?.('GARDE BRISÉE');
+  cameraShake=Math.max(cameraShake,.075);
+}
+function v1320CanBlock(origin){
+  if(equipmentStowed||v1320Combat.guardBreakTimer>0||playerStamina<=0||blockBlend<.52)return false;
+  const incoming=origin.clone().sub(player).setY(0);
+  if(incoming.lengthSq()<1e-6)return true;
+  incoming.normalize();
+  // Arc frontal de 150° : les coups de dos ne peuvent pas être bloqués.
+  return incoming.dot(v1320PlayerForward())>=Math.cos(75*Math.PI/180);
+}
+function v1320ApplyIncomingAttack({origin,damage=V1320_TARGET_COUNTER_DAMAGE,staminaDamage=V1320_BLOCK_IMPACT_COST,force=1}={}){
+  if(v1320Combat.incomingCooldown>0||!origin)return {blocked:false,ignored:true};
+  const source=origin.isVector3?origin.clone():new THREE.Vector3(origin.x||0,origin.y||0,origin.z||0);
+  v1320Combat.incomingCooldown=.18;
+  if(v1320CanBlock(source)){
+    playerStamina=Math.max(0,playerStamina-staminaDamage);
+    v1320Combat.lastExertion=performance.now();
+    v1320Combat.shieldKick=1;
+    v1320ApplyRecoil(source,.42*force);
+    v117ImpactSound?.('stone');
+    cameraShake=Math.max(cameraShake,.052);
+    if(playerStamina<=0){
+      playerHealth=Math.max(0,playerHealth-Math.max(3,damage*.35));
+      v1320TriggerGuardBreak();
+      return {blocked:false,guardBroken:true};
+    }
+    v117Toast?.(`BLOCAGE — ${Math.round(playerStamina)} END.`);
+    return {blocked:true,guardBroken:false};
+  }
+  playerHealth=Math.max(0,playerHealth-damage);
+  v1320ApplyRecoil(source,.90*force);
+  v117ImpactSound?.('wood');
+  cameraShake=Math.max(cameraShake,.085);
+  v117Toast?.(`TOUCHÉ — ${Math.round(playerHealth)} VIE`);
+  return {blocked:false,guardBroken:false};
+}
+
+function v1320ResolveSwordContact(){
+  const segment=v1320BladeSegment();
+  if(!segment)return false;
+  const target=v1320FindBladeHit(segment);
+  v1320Combat.previousBladeBase=segment.base.clone();
+  v1320Combat.previousBladeTip=segment.tip.clone();
+  if(!target)return false;
+  const d=target.userData;
+  const hit=v117Damage?.(target,18,'sword');
+  if(!hit)return false;
+  d.v1320HitReaction=.30;
+  d.v1320HitDirection=Math.sign(target.position.x-player.x)||1;
+  v1320Combat.attackResolved=true;
+  cameraShake=Math.max(cameraShake,.042);
+  if(!d.destroyed)v1320QueueCounterAttack(target);
+  v117Toast?.('IMPACT XIPHOS');
+  return true;
+}
+function v1320UpdateSwordContact(){
+  if(v117WeaponMode!=='xiphos'||attackTimer<=0){
+    if(v1320Combat.attackWasActive&&!v1320Combat.attackResolved){
+      const nearest=(trainingTargets||[]).some(t=>t?.visible&&!t.userData?.destroyed&&Math.hypot(t.position.x-player.x,t.position.z-player.z)<2.2);
+      if(nearest)v117Toast?.('COUP MANQUÉ');
+    }
+    v1320Combat.attackWasActive=false;
+    v1320Combat.previousBladeBase=null;
+    v1320Combat.previousBladeTip=null;
+    return;
+  }
+  v1320Combat.attackWasActive=true;
+  const p=THREE.MathUtils.clamp(1-attackTimer/attackDuration,0,1);
+  const segment=v1320BladeSegment();
+  if(segment){
+    if(p>=.43&&p<=.82&&!v1320Combat.attackResolved)v1320ResolveSwordContact();
+    else{
+      v1320Combat.previousBladeBase=segment.base.clone();
+      v1320Combat.previousBladeTip=segment.tip.clone();
+    }
+  }
+}
+function v1320UpdateTargets(dt){
+  for(const [index,target] of (trainingTargets||[]).entries()){
+    const d=target?.userData;if(!d)continue;
+    v1320EnsureTargetCombat(target,index);
+    d.v1320CounterCooldown=Math.max(0,(d.v1320CounterCooldown||0)-dt);
+    const base=d.v1320BaseRotation||{x:0,y:target.rotation.y,z:0};
+    const ring=d.v1320Telegraph;
+    if(d.destroyed||!target.visible){
+      d.v1320CounterTimer=0;
+      if(ring)ring.visible=false;
+      continue;
+    }
+    if(d.v1320HitReaction>0){
+      d.v1320HitReaction=Math.max(0,d.v1320HitReaction-dt);
+      const q=d.v1320HitReaction/.30;
+      target.rotation.z=base.z+(d.v1320HitDirection||1)*Math.sin(q*Math.PI)*.12;
+    }else if(d.v1320CounterTimer<=0){
+      target.rotation.z=THREE.MathUtils.lerp(target.rotation.z,base.z,1-Math.exp(-12*dt));
+    }
+    if(d.v1320CounterTimer>0){
+      const previous=d.v1320CounterTimer;
+      d.v1320CounterTimer=Math.max(0,d.v1320CounterTimer-dt);
+      const progress=1-d.v1320CounterTimer/V1320_TARGET_COUNTER_DELAY;
+      const wind=v1320Smooth(THREE.MathUtils.clamp(progress/.62,0,1));
+      const strike=v1320Smooth(THREE.MathUtils.clamp((progress-.62)/.38,0,1));
+      target.rotation.z=base.z-.17*wind+.31*strike;
+      if(ring){
+        ring.visible=true;
+        ring.position.set(target.position.x,getTerrainHeight(target.position.x,target.position.z)+.035,target.position.z);
+        ring.material.opacity=.25+.55*Math.sin(Math.PI*THREE.MathUtils.clamp(progress,0,1));
+        ring.scale.setScalar(.82+progress*.45);
+      }
+      if(previous>0&&d.v1320CounterTimer===0){
+        if(ring)ring.visible=false;
+        target.rotation.z=base.z;
+        const distance=Math.hypot(player.x-target.position.x,player.z-target.position.z);
+        if(distance<=2.05)v1320ApplyIncomingAttack({origin:target.position.clone().add(new THREE.Vector3(0,1.15,0)),damage:V1320_TARGET_COUNTER_DAMAGE,staminaDamage:V1320_BLOCK_IMPACT_COST,force:1});
+      }
+    }else if(ring)ring.visible=false;
+  }
+}
+function v1320UpdateRecoil(dt){
+  if(v1320Combat.recoilVelocity.lengthSq()<1e-5)return;
+  const proposed=player.clone().addScaledVector(v1320Combat.recoilVelocity,dt);
+  resolveCollisions(proposed,.24);
+  player.x=proposed.x;player.z=proposed.z;player.y=getTerrainHeight(player.x,player.z);
+  if(character)character.position.copy(player);
+  v1320Combat.recoilVelocity.multiplyScalar(Math.exp(-9*dt));
+}
+function v1320UpdateShieldImpact(dt){
+  v1320Combat.shieldKick=Math.max(0,v1320Combat.shieldKick-dt*5.8);
+  if(v1320Combat.shieldKick<=0)return;
+  const mount=v1294ShieldState?.mount;
+  if(!mount)return;
+  const kick=Math.sin(v1320Combat.shieldKick*Math.PI)*.10;
+  mount.rotateX(-kick);
+  mount.rotateZ(kick*.32);
+}
+function v1320CombatTick(dt){
+  v1320Combat.incomingCooldown=Math.max(0,v1320Combat.incomingCooldown-dt);
+  v1320Combat.guardBreakTimer=Math.max(0,v1320Combat.guardBreakTimer-dt);
+  if(v1320Combat.guardBreakTimer>0){
+    blocking=false;keys.delete('KeyB');blockBlend=Math.min(blockBlend,.30);
+  }else els.actionB?.classList.remove('guardBroken');
+  v1320UpdateSwordContact();
+  v1320UpdateTargets(dt);
+  v1320UpdateRecoil(dt);
+  v1320UpdateShieldImpact(dt);
+}
+
+// Coût immédiat de l'attaque : impossible de frapper sans endurance suffisante.
+const v1320StartSwordAttackBase=startSwordAttack;
+startSwordAttack=function(){
+  if(v117WeaponMode==='xiphos'&&attackTimer<=0){
+    if(v1320Combat.guardBreakTimer>0){v117Toast?.('GARDE BRISÉE');return;}
+    if(playerStamina<V1320_ATTACK_STAMINA_COST){v117Toast?.('ENDURANCE INSUFFISANTE');return;}
+  }
+  const before=attackTimer;
+  v1320StartSwordAttackBase?.();
+  if(v117WeaponMode==='xiphos'&&before<=0&&attackTimer>0){
+    playerStamina=Math.max(0,playerStamina-V1320_ATTACK_STAMINA_COST);
+    v1320Combat.lastExertion=performance.now();
+    v1320Combat.attackSerial++;
+    v1320Combat.attackResolved=false;
+    v1320Combat.attackWasActive=true;
+    v1320Combat.previousBladeBase=null;
+    v1320Combat.previousBladeTip=null;
+  }
+};
+
+// Remplace la consommation ancienne par une économie d'endurance adaptée au combat.
+updateV116Vitals=function(dt){
+  const moving=velocity.length()>.22&&!pocketMenuOpen;
+  const working=buildHeld&&!!activeBuildSection;
+  const guarding=(blocking||keys.has('KeyB')||blockBlend>.25)&&!equipmentStowed&&v1320Combat.guardBreakTimer<=0;
+  let drain=0;
+  if(moving)drain+=.85;
+  if(guarding)drain+=V1320_BLOCK_DRAIN_PER_SECOND;
+  if(attackTimer>0)drain+=1.2;
+  if(working)drain+=5.2;
+  if(drain>0){
+    playerStamina=Math.max(0,playerStamina-drain*dt);
+    v1320Combat.lastExertion=performance.now();
+  }else if(performance.now()-v1320Combat.lastExertion>650){
+    playerStamina=Math.min(100,playerStamina+11.5*dt);
+  }
+  if(guarding&&playerStamina<=0)v1320TriggerGuardBreak();
+  if(els.healthFill)els.healthFill.style.width=playerHealth.toFixed(1)+'%';
+  if(els.staminaFill)els.staminaFill.style.width=playerStamina.toFixed(1)+'%';
+  if(els.healthValue)els.healthValue.textContent=Math.round(playerHealth);
+  if(els.staminaValue)els.staminaValue.textContent=Math.round(playerStamina);
+};
+
+// Neutralise les anciens dégâts par cône puis applique le contact réel de la lame.
+const v1320CombatUpdateBase=updateV117Combat;
+updateV117Combat=function(dt){
+  const suppressLegacySword=v117WeaponMode==='xiphos'&&attackTimer>0;
+  if(suppressLegacySword)v117SwordHitDone=true;
+  v1320CombatUpdateBase?.(dt);
+  v1320CombatTick(dt);
+  if(attackTimer<=0)v117SwordHitDone=false;
+};
+
+function v1320InitializeCombat(){
+  for(const [index,target] of (trainingTargets||[]).entries())v1320EnsureTargetCombat(target,index);
+  v1320Combat.initialized=true;
+  document.body.dataset.combatSystem='v1.32.0';
+}
+setTimeout(v1320InitializeCombat,0);
+setTimeout(v1320InitializeCombat,600);
+
+const v1320CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1320CaptureSaveBase();
+  save.meta={
+    ...(save.meta||{}),
+    build:V1320_BUILD,
+    combat:{
+      swordHitDetection:'blade-segment-sweep-v1',
+      frontalShieldBlock:true,
+      attackStaminaCost:V1320_ATTACK_STAMINA_COST,
+      blockDrainPerSecond:V1320_BLOCK_DRAIN_PER_SECOND,
+      trainingCounterattacks:true
+    }
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1320=V1320_BUILD;
+  window.ODYSSEE_COMBAT={
+    state:v1320Combat,
+    bladeSegment:v1320BladeSegment,
+    applyIncomingAttack:v1320ApplyIncomingAttack,
+    queueTrainingCounter:v1320QueueCounterAttack
+  };
+}
+/* =================== FIN ODYSSÉE v1.32.0 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.31.3-20260806-1402-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.32.0-20260806-1418-NC -->
