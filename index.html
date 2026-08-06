@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.34.0 | 2026-08-06T18:54+11:00 | Refonte totale KayKit — île, bâtiments et personnages -->
-<meta name="build-id" content="odyssee-v1.34.0-total-kaykit-refactor-20260806-1854-nc">
+<!-- VERIFIED BUILD: Odyssée v1.34.1 | 2026-08-06T19:39+11:00 | Suppression complète des tuiles vertes KayKit -->
+<meta name="build-id" content="odyssee-v1.34.1-no-green-hex-overlay-20260806-1939-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.34.0 — Refonte totale KayKit</title>
+<title>Odyssée — v1.34.1 — Île continue sans tuiles vertes</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -12455,6 +12455,59 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.34.0 =================== */
 
 
+/* ===================== ODYSSÉE v1.34.1 — SUPPRESSION DES TUILES VERTES ===================== */
+const V1341_BUILD='v1.34.1 — no-green-hex-overlay-20260806-1939-NC';
+function v1341RemoveGreenIslandTiles(){
+  let removed=0;
+  const roots=[];
+  if(v1340State?.worldRoot)roots.push(v1340State.worldRoot);
+  if(scene)roots.push(scene);
+  const seen=new Set();
+  for(const root of roots){
+    if(!root||seen.has(root))continue;seen.add(root);
+    const targets=[];
+    root.traverse?.(object=>{
+      const name=(object.name||'');
+      if(/^V1340_Island_Hex_/i.test(name)||object.userData?.v1340IslandTile)targets.push(object);
+    });
+    for(const object of targets){
+      if(!object?.parent)continue;
+      object.traverse?.(child=>{
+        if(child.geometry&&!child.isSkinnedMesh)child.geometry.dispose?.();
+        const mats=Array.isArray(child.material)?child.material:[child.material];
+        for(const mat of mats)mat?.dispose?.();
+      });
+      object.parent.remove(object);removed++;
+    }
+  }
+  document.body.dataset.kaykitIsland='continuous';
+  return removed;
+}
+v1340BuildIslandTiles=async function(){v1341RemoveGreenIslandTiles();return null;};
+const v1341InstallWorldBase=v1340InstallWorld;
+v1340InstallWorld=async function(){
+  v1341RemoveGreenIslandTiles();
+  const result=await v1341InstallWorldBase();
+  v1341RemoveGreenIslandTiles();
+  return result;
+};
+setTimeout(v1341RemoveGreenIslandTiles,0);
+setTimeout(v1341RemoveGreenIslandTiles,500);
+setTimeout(v1341RemoveGreenIslandTiles,1800);
+const v1341CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1341CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1341_BUILD,kaykitIsland:{hexOverlay:false,continuousLegacyTerrain:true}};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1341=V1341_BUILD;
+  window.ODYSSEE_REMOVE_GREEN_TILES=v1341RemoveGreenIslandTiles;
+}
+/* =================== FIN ODYSSÉE v1.34.1 =================== */
+
+
+
 
 
 
@@ -12470,4 +12523,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.34.0-20260806-1854-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.34.1-20260806-1939-NC -->
