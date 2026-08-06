@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.7 | 2026-08-06T12:26+11:00 | Calibration précise du xiphos -->
-<meta name="build-id" content="odyssee-v1.29.7-xiphos-calibration-20260806-1226-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.8 | 2026-08-06T12:38+11:00 | Commandes regroupées et cape dorsale fixée -->
+<meta name="build-id" content="odyssee-v1.29.8-compact-controls-rigid-back-cape-20260806-1238-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.7 — Calibration précise du xiphos</title>
+<title>Odyssée — v1.29.8 — Commandes compactes et cape fixée</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -310,6 +310,35 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
 #credits,#credits.visible{display:none!important;visibility:hidden!important;opacity:0!important;height:0!important;padding:0!important;overflow:hidden!important;pointer-events:none!important}
 </style>
 
+
+<style id="v1298CompactControlsStyle">
+/* v1.29.8 — commandes rapprochées dans une grappe ergonomique pour le pouce droit */
+#actionPad{
+  right:calc(18px + env(safe-area-inset-right))!important;
+  bottom:calc(14px + env(safe-area-inset-bottom))!important;
+  width:194px!important;height:142px!important;
+}
+#actionPad .actionBtn{box-shadow:0 9px 22px rgba(0,0,0,.43),inset 0 0 0 3px rgba(0,0,0,.18)}
+#actionPad .actionBtnA{right:59px!important;top:0!important;bottom:auto!important;width:66px!important;height:66px!important}
+#actionPad .actionBtnB{right:0!important;top:29px!important;bottom:auto!important;width:66px!important;height:66px!important}
+#actionPad .actionBtnY{right:134px!important;top:4px!important;bottom:auto!important;width:50px!important;height:50px!important}
+#actionPad .actionBtnX{right:134px!important;top:auto!important;bottom:4px!important;width:50px!important;height:50px!important}
+#actionPad .actionBtnPocket{right:72px!important;top:auto!important;bottom:0!important;width:50px!important;height:50px!important;border-radius:16px!important}
+#actionPad .guardCommandBtn{right:8px!important;top:auto!important;bottom:0!important;width:44px!important;height:44px!important;border-radius:13px!important}
+#actionPad .actionBtnA .letter,#actionPad .actionBtnB .letter{font-size:23px!important}
+#actionPad .actionBtnA .label,#actionPad .actionBtnB .label{font-size:7px!important}
+#actionPad .actionBtnY .letter,#actionPad .actionBtnX .letter,#actionPad .actionBtnPocket .letter{font-size:18px!important}
+#actionPad .actionBtnY .label,#actionPad .actionBtnX .label,#actionPad .actionBtnPocket .label{font-size:6px!important;letter-spacing:.08em!important}
+#guardCommandMenu,#buildProgress{right:calc(18px + env(safe-area-inset-right))!important;bottom:calc(164px + env(safe-area-inset-bottom))!important}
+#prayBtn{right:calc(18px + env(safe-area-inset-right))!important;bottom:calc(164px + env(safe-area-inset-bottom))!important;width:52px!important;height:52px!important;font-size:7px!important}
+#bellActionBtn{right:calc(78px + env(safe-area-inset-right))!important;bottom:calc(164px + env(safe-area-inset-bottom))!important;width:52px!important;height:52px!important;font-size:7px!important}
+#bellActionBtn .bellIcon{font-size:17px!important;margin-bottom:0!important}
+@media(max-height:520px){
+  #actionPad{right:calc(12px + env(safe-area-inset-right))!important;bottom:calc(8px + env(safe-area-inset-bottom))!important;transform:scale(.90);transform-origin:right bottom}
+  #prayBtn{right:calc(12px + env(safe-area-inset-right))!important;bottom:calc(140px + env(safe-area-inset-bottom))!important}
+  #bellActionBtn{right:calc(70px + env(safe-area-inset-right))!important;bottom:calc(140px + env(safe-area-inset-bottom))!important}
+}
+</style>
 </head>
 <body>
 <div id="game"></div>
@@ -8425,7 +8454,140 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.29.7 =================== */
 
+
+/* ===================== ODYSSÉE v1.29.8 — COMMANDES COMPACTES ET CAPE DORSALE ===================== */
+const V1298_BUILD='v1.29.8 — compact-controls-rigid-back-cape-20260806-1238-NC';
+const v1298CapeState={lastYaw:null,turnSpeed:0,lastTime:performance.now()};
+
+function v1298BuildRigidBackCape(chest,mat){
+  if(!chest||!mat)return null;
+  const cape=new THREE.Group();
+  cape.name='Gregorius_Rigid_Back_Cape_Mount';
+  cape.userData.v1298RigidBackCape=true;
+  // +Z est l'avant réel de Gregorius : la cape est donc fixée sur le dos en -Z.
+  chest.add(cape);
+  // Placement calculé dans le repère de Gregorius, puis mémorisé dans le repère de l'os du torse.
+  const root=v1286GregoriusRig?.root||v1287HopliteGear?.root;
+  if(root&&typeof v1294SetNodeFromRootTransform==='function'&&typeof v1291NodeLocalPosition==='function'){
+    root.updateMatrixWorld(true);chest.updateWorldMatrix(true,false);
+    const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+    const desiredRoot=chestRoot.add(new THREE.Vector3(0,.155,-.185));
+    v1294SetNodeFromRootTransform(root,cape,desiredRoot,new THREE.Quaternion());
+  }else{
+    cape.position.set(0,.185,-.185);cape.rotation.set(0,0,0);
+  }
+  cape.userData.v1298FixedPosition=cape.position.clone();
+  cape.userData.v1298FixedQuaternion=cape.quaternion.clone();
+
+  const capeMaterial=(mat.red?.clone?.()||mat.red);
+  if(capeMaterial){capeMaterial.side=THREE.DoubleSide;capeMaterial.roughness=.92;capeMaterial.metalness=0;}
+  const geometry=new THREE.PlaneGeometry(.52,.82,10,16);
+  geometry.translate(0,-.41,0);
+  const pos=geometry.attributes.position;
+  const weights=new Float32Array(pos.count);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),y=pos.getY(i);
+    const t=THREE.MathUtils.clamp(-y/.82,0,1);
+    const width=.94+.06*t;
+    // Courbure initiale vers l'arrière, jamais vers le torse.
+    const z=-.010-.035*t-.030*t*t;
+    pos.setXYZ(i,x*width,y,z);
+    // Les 12 % supérieurs sont totalement verrouillés au dos.
+    weights[i]=THREE.MathUtils.smoothstep(t,.10,1);
+  }
+  pos.needsUpdate=true;geometry.computeVertexNormals();
+  const cloth=v1287Mesh(geometry,capeMaterial,'Gregorius_Cape_Dorsale_Tissu');
+  cloth.castShadow=true;cloth.receiveShadow=true;
+  cloth.userData.v1298Base=geometry.attributes.position.array.slice();
+  cloth.userData.v1298Weights=weights;
+  cape.add(cloth);
+
+  // Barre et attaches rigides : elles ne sont jamais déformées par le vent.
+  const shoulderBar=v1287Mesh(new THREE.CapsuleGeometry(.022,.34,6,12),mat.bronzeEdge,'Cape_Dorsale_Barre_Epaules');
+  shoulderBar.rotation.z=Math.PI/2;shoulderBar.position.set(0,-.005,.015);cape.add(shoulderBar);
+  const claspL=v1287Mesh(new THREE.SphereGeometry(.037,12,9),mat.bronzeEdge,'Cape_Dorsale_Attache_Gauche');
+  claspL.position.set(-.185,-.006,.020);cape.add(claspL);
+  const claspR=claspL.clone();claspR.name='Cape_Dorsale_Attache_Droite';claspR.position.x=.185;cape.add(claspR);
+  const strapMat=mat.leather;
+  for(const side of [-1,1]){
+    const strap=v1287Mesh(new THREE.BoxGeometry(.035,.19,.018),strapMat,side<0?'Cape_Sangle_Gauche':'Cape_Sangle_Droite');
+    strap.position.set(side*.17,-.075,.004);strap.rotation.z=side*.10;cape.add(strap);
+  }
+  cape.userData.v1298Cloth=cloth;
+  return cape;
+}
+
+// Toute création de cape passe désormais par l'ancrage dorsal rigide.
+const v1298LegacyBuildCape=v1287BuildCape;
+v1287BuildCape=function(chest,mat){return v1298BuildRigidBackCape(chest,mat)||v1298LegacyBuildCape(chest,mat);};
+
+function v1298EnsureCape(){
+  const gear=v1287HopliteGear;
+  if(!gear?.ready||!gear.chest||!gear.materials)return null;
+  if(gear.cape?.userData?.v1298RigidBackCape)return gear.cape;
+  if(gear.cape?.parent)gear.cape.parent.remove(gear.cape);
+  gear.cape=v1298BuildRigidBackCape(gear.chest,gear.materials);
+  return gear.cape;
+}
+function v1298UpdateCape(dt=.016){
+  const cape=v1298EnsureCape();
+  const cloth=cape?.userData?.v1298Cloth;
+  const attr=cloth?.geometry?.attributes?.position;
+  const base=cloth?.userData?.v1298Base,weights=cloth?.userData?.v1298Weights;
+  if(!cape||!attr||!base||!weights)return;
+
+  // L'ancrage ne bouge jamais par rapport au torse : seule la toile située dessous flotte.
+  cape.position.copy(cape.userData.v1298FixedPosition||new THREE.Vector3(0,.185,-.185));
+  cape.quaternion.copy(cape.userData.v1298FixedQuaternion||new THREE.Quaternion());
+  const now=performance.now(),time=now*.001;
+  const safeDt=THREE.MathUtils.clamp(dt||((now-v1298CapeState.lastTime)/1000),.001,.05);
+  v1298CapeState.lastTime=now;
+  const speed=velocity?.length?.()||0;
+  const motion=THREE.MathUtils.clamp(speed/2.6,0,1);
+  const yaw=character?.rotation?.y??v1286GregoriusRig?.root?.rotation?.y??0;
+  if(v1298CapeState.lastYaw==null)v1298CapeState.lastYaw=yaw;
+  const rawTurn=normalizeAngle(yaw-v1298CapeState.lastYaw)/safeDt;
+  v1298CapeState.lastYaw=yaw;
+  v1298CapeState.turnSpeed=THREE.MathUtils.lerp(v1298CapeState.turnSpeed,THREE.MathUtils.clamp(rawTurn,-4,4),1-Math.exp(-7*safeDt));
+
+  for(let i=0;i<attr.count;i++){
+    const j=i*3,bx=base[j],by=base[j+1],bz=base[j+2],w=weights[i];
+    if(w<=.001){attr.setXYZ(i,bx,by,bz);continue;}
+    const t=THREE.MathUtils.clamp(-by/.82,0,1);
+    const wave=Math.sin(time*(5.4+motion*2.4)-t*4.2+bx*5.5);
+    const secondary=Math.sin(time*3.1+t*6.0)*.5;
+    const side=(wave*.018*motion+secondary*.004)*w*t;
+    const turn=-v1298CapeState.turnSpeed*.022*w*t*t;
+    const lift=(Math.abs(wave)*.012*motion+.003*Math.sin(time*2.2+t*3.0))*w*t;
+    // Plus Gregorius avance, plus la cape traîne derrière (-Z), sans jamais entrer dans son dos.
+    const trail=-(.018+.085*t*t)*motion*w;
+    const flutter=(wave*.016+secondary*.006)*motion*w*t;
+    const z=Math.min(bz+trail+flutter,bz-.004*w);
+    attr.setXYZ(i,bx+side+turn,by+lift,z);
+  }
+  attr.needsUpdate=true;
+  cloth.geometry.computeVertexNormals();
+}
+
+const v1298UpdateHopliteBase=v1287UpdateHopliteGear;
+v1287UpdateHopliteGear=function(dt=0){
+  v1298UpdateHopliteBase(dt);
+  v1298UpdateCape(dt||.016);
+};
+
+const v1298CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1298CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1298_BUILD,capeController:'rigid-chest-anchor-deformed-cloth-v1',controlsLayout:'compact-thumb-cluster-v1'};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1298=V1298_BUILD;
+  window.ODYSSEE_REBUILD_CAPE=()=>{if(v1287HopliteGear.cape?.parent)v1287HopliteGear.cape.parent.remove(v1287HopliteGear.cape);v1287HopliteGear.cape=null;return v1298EnsureCape();};
+}
+/* =================== FIN ODYSSÉE v1.29.8 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.29.7-20260806-1226-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.29.8-20260806-1238-NC -->
