@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <!-- VERIFIED BUILD: Odyssée v1.30.0 | 2026-08-06T12:53+11:00 | Cape plaquée au dos et artefact rouge supprimé -->
-<meta name="build-id" content="odyssee-v1.30.0-cape-tight-back-remove-red-artifact-20260806-1253-nc">
+<meta name="build-id" content="odyssee-v1.30.1-cape-high-shield-black-20260806-1320-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -7427,21 +7427,23 @@ function v1287BuildCape(chest,mat){
 function v1287BuildShield(leftHand,mat){
   const shield=new THREE.Group();shield.name='Gregorius_Authentic_Aspis';leftHand.add(shield);
   shield.position.set(.018,.018,.070);shield.rotation.set(0,0,0);
-  // Aspis profond : calotte convexe, large bordure, âme en bois et double prise intérieure.
-  const bronzeFront=mat.bronze.clone();bronzeFront.side=THREE.DoubleSide;
-  const leatherInside=mat.leather.clone();leatherInside.side=THREE.BackSide;
+  // Aspis noir uni : plus aucun emblème peint en façade.
+  const blackFront=(mat.dark?.clone?.()||new THREE.MeshStandardMaterial({color:0x111214,roughness:.76,metalness:.22}));
+  blackFront.side=THREE.DoubleSide;blackFront.roughness=.76;blackFront.metalness=.22;
+  const blackInner=(mat.dark?.clone?.()||new THREE.MeshStandardMaterial({color:0x151618,roughness:.86,metalness:.10}));
+  blackInner.side=THREE.BackSide;blackInner.roughness=.86;blackInner.metalness=.10;
+  const blackTrim=(mat.dark?.clone?.()||new THREE.MeshStandardMaterial({color:0x1d1f22,roughness:.58,metalness:.28}));
+  blackTrim.roughness=.58;blackTrim.metalness=.28;
   const capGeom=new THREE.SphereGeometry(.342,32,14,0,Math.PI*2,0,Math.PI*.50);
-  const front=v1287Mesh(capGeom,bronzeFront,'Aspis_Convex_Bronze_Face');front.scale.set(1,.29,1);front.rotation.x=Math.PI/2;shield.add(front);
-  const inner=v1287Mesh(capGeom,leatherInside,'Aspis_Leather_Interior');inner.scale.set(.94,.255,.94);inner.rotation.x=Math.PI/2;inner.position.z=-.010;shield.add(inner);
-  const rim=v1287Mesh(new THREE.TorusGeometry(.340,.030,10,36),mat.bronzeEdge,'Aspis_Broad_Rim');rim.position.z=.002;shield.add(rim);
-  const woodRing=v1287Mesh(new THREE.TorusGeometry(.300,.020,8,32),mat.leather,'Aspis_Wood_Core');woodRing.position.z=-.018;shield.add(woodRing);
-  const faceDisc=v1287Mesh(new THREE.CircleGeometry(.255,32),mat.redDark,'Aspis_Painted_Center');faceDisc.position.z=.101;shield.add(faceDisc);
-  const lambdaL=v1287Mesh(new THREE.BoxGeometry(.034,.245,.016),mat.bronzeEdge,'Aspis_Lambda_L');lambdaL.position.set(-.048,.000,.112);lambdaL.rotation.z=-.36;shield.add(lambdaL);
-  const lambdaR=lambdaL.clone();lambdaR.name='Aspis_Lambda_R';lambdaR.position.x=.048;lambdaR.rotation.z=.36;shield.add(lambdaR);
+  const front=v1287Mesh(capGeom,blackFront,'Aspis_Black_Face');front.scale.set(1,.29,1);front.rotation.x=Math.PI/2;shield.add(front);
+  const inner=v1287Mesh(capGeom,blackInner,'Aspis_Black_Interior');inner.scale.set(.94,.255,.94);inner.rotation.x=Math.PI/2;inner.position.z=-.010;shield.add(inner);
+  const rim=v1287Mesh(new THREE.TorusGeometry(.340,.030,10,36),blackTrim,'Aspis_Black_Rim');rim.position.z=.002;shield.add(rim);
+  const woodRing=v1287Mesh(new THREE.TorusGeometry(.300,.020,8,32),blackInner,'Aspis_Black_Core');woodRing.position.z=-.018;shield.add(woodRing);
+  const boss=v1287Mesh(new THREE.SphereGeometry(.070,16,12),blackTrim,'Aspis_Black_Boss');boss.scale.set(1,.30,1);boss.position.set(0,.000,.098);shield.add(boss);
   // Porpax central pour l'avant-bras et antilabè près du bord.
-  const porpax=v1287Mesh(new THREE.TorusGeometry(.092,.018,8,22,Math.PI*1.30),mat.bronzeDark,'Aspis_Porpax');porpax.rotation.z=Math.PI*.35;porpax.position.set(-.035,.005,-.052);shield.add(porpax);
+  const porpax=v1287Mesh(new THREE.TorusGeometry(.092,.018,8,22,Math.PI*1.30),blackTrim,'Aspis_Porpax');porpax.rotation.z=Math.PI*.35;porpax.position.set(-.035,.005,-.052);shield.add(porpax);
   const antilabe=v1287Mesh(new THREE.CapsuleGeometry(.018,.150,5,9),mat.leather,'Aspis_Antilabe');antilabe.rotation.z=Math.PI/2;antilabe.position.set(.205,-.015,-.050);shield.add(antilabe);
-  const gripRivetA=v1287Mesh(new THREE.SphereGeometry(.018,8,6),mat.bronzeEdge,'Aspis_Grip_Rivet_A');gripRivetA.position.set(.125,-.015,-.050);shield.add(gripRivetA);
+  const gripRivetA=v1287Mesh(new THREE.SphereGeometry(.018,8,6),blackTrim,'Aspis_Grip_Rivet_A');gripRivetA.position.set(.125,-.015,-.050);shield.add(gripRivetA);
   const gripRivetB=gripRivetA.clone();gripRivetB.name='Aspis_Grip_Rivet_B';gripRivetB.position.x=.285;shield.add(gripRivetB);
   shield.scale.setScalar(.94);
   return shield;
@@ -8226,10 +8228,10 @@ function v1294InstallShield(){
   const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
   const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
   // Le centre de l'aspis est placé au-dessus du milieu de l'avant-bras, pas au bout de la main.
-  const strappedRoot=foreRoot.clone().lerp(handRoot,.58).add(new THREE.Vector3(.075,.015,-.025));
-  strappedRoot.x=Math.max(strappedRoot.x,chestRoot.x+.335);
+  const strappedRoot=foreRoot.clone().lerp(handRoot,.70).add(new THREE.Vector3(.082,.012,-.010));
+  strappedRoot.x=Math.max(strappedRoot.x,chestRoot.x+.355);
   strappedRoot.y=THREE.MathUtils.clamp(strappedRoot.y,.68,1.18);
-  strappedRoot.z=THREE.MathUtils.clamp(strappedRoot.z,-.24,.14);
+  strappedRoot.z=THREE.MathUtils.clamp(strappedRoot.z,-.20,.18);
   const rootQuat=new THREE.Quaternion().setFromUnitVectors(v1294ShieldState.frontAxis,v1294ShieldState.restNormal);
   rootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(v1294ShieldState.restNormal,-.035));
 
@@ -8588,7 +8590,7 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.29.8 =================== */
 
 /* ===================== ODYSSÉE v1.29.9 — CAPE DES PATROUILLEURS ===================== */
-const V1299_BUILD='v1.30.0 — cape-tight-back-remove-red-artifact-20260806-1253-NC';
+const V1299_BUILD='v1.30.1 — cape-high-shoulders-shield-black-20260806-1320-NC';
 const v1299CapeState={lastYaw:null,turnSpeed:0,lastTime:performance.now()};
 
 function v1299RemoveCapeArtifacts(){
@@ -8619,7 +8621,7 @@ function v1299BuildPatrolCape(chest,mat){
   // Le xiphos a fixé la convention : +Z est l'avant de Gregorius, donc la cape est placée en -Z.
   root.updateMatrixWorld(true);chest.updateWorldMatrix(true,false);
   const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
-  const desiredRoot=chestRoot.clone().add(new THREE.Vector3(0,.095,-.105));
+  const desiredRoot=chestRoot.clone().add(new THREE.Vector3(0,.215,-.122));
   v1294SetNodeFromRootTransform(root,anchor,desiredRoot,new THREE.Quaternion());
   anchor.userData.v1299FixedPosition=anchor.position.clone();
   anchor.userData.v1299FixedQuaternion=anchor.quaternion.clone();
@@ -8627,21 +8629,21 @@ function v1299BuildPatrolCape(chest,mat){
   // Géométrie identique à celle de Gregorius procédural et des patrouilleurs, miroir vers le dos du nouveau rig.
   const capeMaterial=mat.red?.clone?.()||mat.red;
   if(capeMaterial){capeMaterial.side=THREE.DoubleSide;capeMaterial.roughness=.94;capeMaterial.metalness=0;}
-  const geometry=new THREE.PlaneGeometry(.46,.82,10,14);
+  const geometry=new THREE.PlaneGeometry(.54,.98,12,16);
   const pos=geometry.attributes.position;
   const weights=new Float32Array(pos.count);
   for(let i=0;i<pos.count;i++){
     const x=pos.getX(i),y=pos.getY(i);
-    const t=THREE.MathUtils.clamp((.41-y)/.82,0,1);
-    const width=.92-t*.30;
-    // Miroir exact de l'ancienne cape : la toile descend et s'éloigne uniquement vers l'arrière (-Z).
-    pos.setXYZ(i,x*width,-t*.36,-.008-t*.085);
-    weights[i]=THREE.MathUtils.smoothstep(t,.08,.98);
+    const t=THREE.MathUtils.clamp((.49-y)/.98,0,1);
+    const width=.98-t*.26;
+    // Cape plus haute sur les épaules, légèrement plus large et plus longue.
+    pos.setXYZ(i,x*width,-t*.44,-.010-t*.110);
+    weights[i]=THREE.MathUtils.smoothstep(t,.06,.99);
   }
   pos.needsUpdate=true;geometry.computeVertexNormals();
   const cloth=new THREE.Mesh(geometry,capeMaterial);
   cloth.name='Gregorius_Patrol_Cape_Cloth';
-  cloth.rotation.x=.16;
+  cloth.rotation.x=.15;
   cloth.castShadow=true;cloth.receiveShadow=true;
   cloth.userData.v1299Base=geometry.attributes.position.array.slice();
   cloth.userData.v1299Weights=weights;
@@ -8651,7 +8653,7 @@ function v1299BuildPatrolCape(chest,mat){
   const claspMaterial=mat.leather?.clone?.()||mat.leather||mat.bronzeDark;
   const clasp=new THREE.Mesh(new THREE.BoxGeometry(.16,.04,.05),claspMaterial);
   clasp.name='Gregorius_Patrol_Cape_Clasp';
-  clasp.position.set(0,.02,-.01);clasp.castShadow=true;
+  clasp.position.set(0,.048,-.012);clasp.castShadow=true;
   anchor.add(clasp);
 
   anchor.userData.v1299Cloth=cloth;
@@ -8690,18 +8692,18 @@ function v1299UpdateCape(dt=.016){
   for(let i=0;i<attr.count;i++){
     const j=i*3,bx=base[j],by=base[j+1],bz=base[j+2],w=weights[i];
     if(w<=.001){attr.setXYZ(i,bx,by,bz);continue;}
-    const t=THREE.MathUtils.clamp((-by)/.36,0,1);
+    const t=THREE.MathUtils.clamp((-by)/.44,0,1);
     const width=Math.abs(bx)/.23;
     const flap=Math.sin(time*(5.0+motion*2.2)+t*5+width*2.6);
     const ripple=Math.cos(time*3.5+bx*6+t*4);
     const lateral=(flap*.010*motion-v1299CapeState.turnSpeed*.016*t)*w*t;
     const vertical=(-t*(.012+.010*motion)+Math.cos(time*2.8+t*3)*.004*t*(.3+motion))*w;
     // Toujours derrière : aucune partie mobile ne peut passer devant le plan du dos.
-    const rear=Math.min(bz-.010*t-flap*.022*t*motion-ripple*.006*t*(.2+motion),-.012-t*.050);
+    const rear=Math.min(bz-.014*t-flap*.024*t*motion-ripple*.007*t*(.2+motion),-.018-t*.062);
     attr.setXYZ(i,bx+lateral,by+vertical,rear);
   }
   attr.needsUpdate=true;cloth.geometry.computeVertexNormals();
-  cloth.rotation.x=.16-.055*motion-Math.sin(time*5.2)*.018*motion;
+  cloth.rotation.x=.15-.060*motion-Math.sin(time*5.2)*.018*motion;
   cloth.rotation.z=Math.sin(time*3.4)*.025*motion-v1299CapeState.turnSpeed*.018;
 }
 
