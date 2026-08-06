@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.4 | 2026-08-06T12:01+11:00 | Aspis sanglé, anti-traversée et blocage fonctionnel -->
-<meta name="build-id" content="odyssee-v1.29.4-strapped-shield-collision-block-20260806-1201-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.5 | 2026-08-06T12:16+11:00 | Correctif blocage du bouclier vers l’avant -->
+<meta name="build-id" content="odyssee-v1.29.5-block-forward-fix-20260806-1216-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.4 — Aspis fixé et blocage fonctionnel</title>
+<title>Odyssée — v1.29.5 — Blocage bouclier vers l’avant</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -8092,12 +8092,12 @@ if(typeof window!=='undefined'){
 
 
 /* ===================== ODYSSÉE v1.29.4 — ASPIS SANGLÉ ET BLOCAGE ===================== */
-const V1294_BUILD='v1.29.4 — strapped-shield-collision-block-20260806-1201-NC';
+const V1294_BUILD='v1.29.5 — shield-block-forward-fix-20260806-1216-NC';
 const v1294ShieldState={
   ready:false,mount:null,arm:null,hand:null,upperArm:null,chest:null,
   upperAxis:null,foreAxis:null,restPosition:null,frontAxis:new THREE.Vector3(0,0,1),
   restNormal:new THREE.Vector3(.94,.015,-.20).normalize(),
-  blockNormal:new THREE.Vector3(.025,.015,-1).normalize(),
+  blockNormal:new THREE.Vector3(.025,.015,1).normalize(),
   collisionRadius:.34,collisionThickness:.11
 };
 function v1294Smooth(t){t=THREE.MathUtils.clamp(t,0,1);return t*t*(3-2*t);}
@@ -8152,9 +8152,9 @@ function v1294SolveBlockArm(root,blend){
   const elbow=fore.getWorldPosition(new THREE.Vector3());
   const wrist=hand.getWorldPosition(new THREE.Vector3());
   const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
-  const targetRoot=chestRoot.clone().add(new THREE.Vector3(.105,.035,-.425));
+  const targetRoot=chestRoot.clone().add(new THREE.Vector3(.105,.035,.425));
   targetRoot.y=THREE.MathUtils.clamp(targetRoot.y,.78,1.20);
-  const poleRoot=chestRoot.clone().add(new THREE.Vector3(.72,.25,-.015));
+  const poleRoot=chestRoot.clone().add(new THREE.Vector3(.72,.25,.015));
   const target=root.localToWorld(targetRoot.clone());
   const poleWorld=root.localToWorld(poleRoot.clone());
   const upperLen=Math.max(.10,shoulder.distanceTo(elbow));
@@ -8232,8 +8232,8 @@ function v1294ApplyAntiBodyPenetration(root,blend){
   if(centerRoot.x<minSideX)correction.x+=minSideX-centerRoot.x;
   // En garde, le bouclier doit rester devant le torse et ne peut pas le traverser.
   if(blend>.02){
-    const maxFrontZ=THREE.MathUtils.lerp(chestRoot.z-.04,chestRoot.z-.315,blend);
-    if(centerRoot.z>maxFrontZ)correction.z+=maxFrontZ-centerRoot.z;
+    const minFrontZ=THREE.MathUtils.lerp(chestRoot.z+.04,chestRoot.z+.315,blend);
+    if(centerRoot.z<minFrontZ)correction.z+=minFrontZ-centerRoot.z;
   }
   const maxCorrection=.15;
   if(correction.length()>maxCorrection)correction.setLength(maxCorrection);
