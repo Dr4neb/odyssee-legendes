@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.8 | 2026-08-06T12:38+11:00 | Commandes regroupées et cape dorsale fixée -->
-<meta name="build-id" content="odyssee-v1.29.8-compact-controls-rigid-back-cape-20260806-1238-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.9 | 2026-08-06T12:46+11:00 | Cape des patrouilleurs sur le nouveau rig -->
+<meta name="build-id" content="odyssee-v1.29.9-patrol-cape-clean-back-mount-20260806-1246-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.8 — Commandes compactes et cape fixée</title>
+<title>Odyssée — v1.29.9 — Cape des patrouilleurs</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -8587,7 +8587,151 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.29.8 =================== */
 
+/* ===================== ODYSSÉE v1.29.9 — CAPE DES PATROUILLEURS ===================== */
+const V1299_BUILD='v1.29.9 — patrol-cape-clean-back-mount-20260806-1246-NC';
+const v1299CapeState={lastYaw:null,turnSpeed:0,lastTime:performance.now()};
+
+function v1299RemoveCapeArtifacts(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root||gear?.root;
+  if(!root)return;
+  const remove=[];
+  root.traverse(object=>{
+    if(object===root)return;
+    const name=(object.name||'').toLowerCase();
+    if(name.includes('cape')||object.userData?.v1298RigidBackCape||object.userData?.v1299PatrolCape)remove.push(object);
+  });
+  // Ne retirer que les racines de cape afin d'éviter de parcourir plusieurs fois les mêmes enfants.
+  const roots=remove.filter(object=>!remove.includes(object.parent));
+  for(const object of roots)if(object.parent)object.parent.remove(object);
+  if(gear)gear.cape=null;
+}
+
+function v1299BuildPatrolCape(chest,mat){
+  if(!chest||!mat)return null;
+  const root=v1286GregoriusRig?.root||v1287HopliteGear?.root;
+  if(!root)return null;
+
+  const anchor=new THREE.Group();
+  anchor.name='Gregorius_Patrol_Cape_Anchor';
+  anchor.userData.v1299PatrolCape=true;
+  chest.add(anchor);
+
+  // Le xiphos a fixé la convention : +Z est l'avant de Gregorius, donc la cape est placée en -Z.
+  root.updateMatrixWorld(true);chest.updateWorldMatrix(true,false);
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  const desiredRoot=chestRoot.clone().add(new THREE.Vector3(0,.115,-.185));
+  v1294SetNodeFromRootTransform(root,anchor,desiredRoot,new THREE.Quaternion());
+  anchor.userData.v1299FixedPosition=anchor.position.clone();
+  anchor.userData.v1299FixedQuaternion=anchor.quaternion.clone();
+
+  // Géométrie identique à celle de Gregorius procédural et des patrouilleurs, miroir vers le dos du nouveau rig.
+  const capeMaterial=mat.red?.clone?.()||mat.red;
+  if(capeMaterial){capeMaterial.side=THREE.DoubleSide;capeMaterial.roughness=.94;capeMaterial.metalness=0;}
+  const geometry=new THREE.PlaneGeometry(.46,.82,10,14);
+  const pos=geometry.attributes.position;
+  const weights=new Float32Array(pos.count);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),y=pos.getY(i);
+    const t=THREE.MathUtils.clamp((.41-y)/.82,0,1);
+    const width=.92-t*.30;
+    // Miroir exact de l'ancienne cape : la toile descend et s'éloigne uniquement vers l'arrière (-Z).
+    pos.setXYZ(i,x*width,-t*.36,-.04-t*.11);
+    weights[i]=THREE.MathUtils.smoothstep(t,.08,.98);
+  }
+  pos.needsUpdate=true;geometry.computeVertexNormals();
+  const cloth=new THREE.Mesh(geometry,capeMaterial);
+  cloth.name='Gregorius_Patrol_Cape_Cloth';
+  cloth.rotation.x=.30;
+  cloth.castShadow=true;cloth.receiveShadow=true;
+  cloth.userData.v1299Base=geometry.attributes.position.array.slice();
+  cloth.userData.v1299Weights=weights;
+  anchor.add(cloth);
+
+  // Une seule attache sombre, comme sur la cape validée des anciens personnages.
+  const claspMaterial=mat.leather?.clone?.()||mat.leather||mat.bronzeDark;
+  const clasp=new THREE.Mesh(new THREE.BoxGeometry(.16,.04,.05),claspMaterial);
+  clasp.name='Gregorius_Patrol_Cape_Clasp';
+  clasp.position.set(0,.02,-.01);clasp.castShadow=true;
+  anchor.add(clasp);
+
+  anchor.userData.v1299Cloth=cloth;
+  return anchor;
+}
+
+function v1299EnsureCape(){
+  const gear=v1287HopliteGear;
+  if(!gear?.ready||!gear.chest||!gear.materials)return null;
+  if(gear.cape?.userData?.v1299PatrolCape&&gear.cape.parent===gear.chest)return gear.cape;
+  v1299RemoveCapeArtifacts();
+  gear.cape=v1299BuildPatrolCape(gear.chest,gear.materials);
+  return gear.cape;
+}
+
+function v1299UpdateCape(dt=.016){
+  const cape=v1299EnsureCape(),cloth=cape?.userData?.v1299Cloth;
+  const attr=cloth?.geometry?.attributes?.position;
+  const base=cloth?.userData?.v1299Base,weights=cloth?.userData?.v1299Weights;
+  if(!cape||!cloth||!attr||!base||!weights)return;
+
+  // L'attache est rigide sur le dos. Seule la toile se déforme.
+  cape.position.copy(cape.userData.v1299FixedPosition);
+  cape.quaternion.copy(cape.userData.v1299FixedQuaternion);
+  const now=performance.now(),time=now*.001;
+  const safeDt=THREE.MathUtils.clamp(dt||((now-v1299CapeState.lastTime)/1000),.001,.05);
+  v1299CapeState.lastTime=now;
+  const speed=velocity?.length?.()||0;
+  const motion=THREE.MathUtils.clamp(speed/2.6,0,1);
+  const yaw=character?.rotation?.y??v1286GregoriusRig?.root?.rotation?.y??0;
+  if(v1299CapeState.lastYaw==null)v1299CapeState.lastYaw=yaw;
+  const rawTurn=normalizeAngle(yaw-v1299CapeState.lastYaw)/safeDt;
+  v1299CapeState.lastYaw=yaw;
+  v1299CapeState.turnSpeed=THREE.MathUtils.lerp(v1299CapeState.turnSpeed,THREE.MathUtils.clamp(rawTurn,-4,4),1-Math.exp(-7*safeDt));
+
+  for(let i=0;i<attr.count;i++){
+    const j=i*3,bx=base[j],by=base[j+1],bz=base[j+2],w=weights[i];
+    if(w<=.001){attr.setXYZ(i,bx,by,bz);continue;}
+    const t=THREE.MathUtils.clamp((-by)/.36,0,1);
+    const width=Math.abs(bx)/.23;
+    const flap=Math.sin(time*(5.0+motion*2.2)+t*5+width*2.6);
+    const ripple=Math.cos(time*3.5+bx*6+t*4);
+    const lateral=(flap*.010*motion-v1299CapeState.turnSpeed*.016*t)*w*t;
+    const vertical=(-t*(.012+.010*motion)+Math.cos(time*2.8+t*3)*.004*t*(.3+motion))*w;
+    // Toujours derrière : aucune partie mobile ne peut passer devant le plan du dos.
+    const rear=Math.min(bz-.018*t-flap*.025*t*motion-ripple*.008*t*(.2+motion),-.045-t*.055);
+    attr.setXYZ(i,bx+lateral,by+vertical,rear);
+  }
+  attr.needsUpdate=true;cloth.geometry.computeVertexNormals();
+  cloth.rotation.x=.30-.08*motion-Math.sin(time*5.2)*.025*motion;
+  cloth.rotation.z=Math.sin(time*3.4)*.025*motion-v1299CapeState.turnSpeed*.018;
+}
+
+// Neutralisation de l'ancien contrôleur v1.29.8 pour empêcher toute recréation ou superposition de cape.
+v1298EnsureCape=function(){return v1287HopliteGear?.cape||null;};
+v1298UpdateCape=function(){};
+// Toutes les futures créations utilisent directement la cape des patrouilleurs.
+v1287BuildCape=function(chest,mat){return v1299BuildPatrolCape(chest,mat);};
+const v1299UpdateHopliteBase=v1287UpdateHopliteGear;
+v1287UpdateHopliteGear=function(dt=0){
+  v1299UpdateHopliteBase(dt);
+  v1299UpdateCape(dt||.016);
+};
+
+// Remplacement immédiat de la cape v1.29.8 déjà présente.
+setTimeout(()=>{v1299RemoveCapeArtifacts();v1299EnsureCape();},0);
+
+const v1299CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1299CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1299_BUILD,capeController:'patrol-cape-rigid-back-mount-v1'};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1299=V1299_BUILD;
+  window.ODYSSEE_REBUILD_CAPE=()=>{v1299RemoveCapeArtifacts();return v1299EnsureCape();};
+}
+/* =================== FIN ODYSSÉE v1.29.9 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.29.8-20260806-1238-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.29.9-20260806-1246-NC -->
