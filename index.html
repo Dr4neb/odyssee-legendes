@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.30.0 | 2026-08-06T12:53+11:00 | Cape plaquée au dos et artefact rouge supprimé -->
-<meta name="build-id" content="odyssee-v1.30.1-cape-high-shield-black-20260806-1320-nc">
+<!-- VERIFIED BUILD: Odyssée v1.30.2 | 2026-08-06T13:18+11:00 | Bouclier main gauche, cape épaules et anti-sélection iOS -->
+<meta name="build-id" content="odyssee-v1.30.2-hand-locked-shield-shoulder-cape-touch-fix-20260806-1318-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.30.0 — Cape plaquée au dos</title>
+<title>Odyssée — v1.30.2 — Bouclier verrouillé et cape épaules</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -338,6 +338,15 @@ body.v121-demeter-blessing #staminaFill{filter:brightness(1.18) saturate(1.12)}
   #prayBtn{right:calc(12px + env(safe-area-inset-right))!important;bottom:calc(140px + env(safe-area-inset-bottom))!important}
   #bellActionBtn{right:calc(70px + env(safe-area-inset-right))!important;bottom:calc(140px + env(safe-area-inset-bottom))!important}
 }
+</style>
+
+<style id="v1302TouchSelectionFix">
+html,body,#game,#controls,#controls *,#actionPad,#actionPad *,button,.actionBtn,.actionBtn *,#stick,#stick *{
+  -webkit-user-select:none!important;user-select:none!important;
+  -webkit-touch-callout:none!important;-webkit-tap-highlight-color:transparent!important;
+}
+#controls,#actionPad,.actionBtn,#stick{touch-action:none!important;}
+.actionBtn::selection,.actionBtn *::selection,#controls *::selection{background:transparent!important;color:inherit!important;}
 </style>
 </head>
 <body>
@@ -8755,6 +8764,202 @@ window.ODYSSEE_REMOVE_RED_FOOT_ARTIFACT=v1300RemoveLowerRedArtifact;
 /* =================== FIN ODYSSÉE v1.30.0 =================== */
 
 /* =================== FIN ODYSSÉE v1.29.9 =================== */
+
+
+/* ===================== ODYSSÉE v1.30.2 — BOUCLIER MAIN, CAPE ÉPAULES, ANTI-SÉLECTION ===================== */
+const V1302_BUILD='v1.30.2 — hand-locked-shield-shoulder-cape-touch-fix-20260806-1318-NC';
+
+function v1302ShieldRootQuaternion(normal,roll=0){
+  const q=new THREE.Quaternion().setFromUnitVectors(v1294ShieldState.frontAxis,normal);
+  q.premultiply(new THREE.Quaternion().setFromAxisAngle(normal,roll));
+  return q;
+}
+function v1302InstallShield(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return false;
+  root.updateMatrixWorld(true);
+  const hand=v1291ResolveShieldAnchorNode(gear,root);
+  const arm=v1291ResolveShieldArmNode(gear,root);
+  const chest=gear.chest||gear.hips;
+  const upper=v1294FindUpperArm(arm,root);
+  if(!hand||!arm||!chest||!upper)return false;
+
+  const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  // Le centre du bouclier est désormais calé sur la main : elle reste derrière l'aspis pendant toutes les animations.
+  const targetRoot=handRoot.clone().add(new THREE.Vector3(.034,.018,.024));
+  targetRoot.x=Math.max(targetRoot.x,chestRoot.x+.255);
+  targetRoot.y=THREE.MathUtils.clamp(targetRoot.y,.65,1.20);
+  const rootQuat=v1302ShieldRootQuaternion(v1294ShieldState.restNormal,-.035);
+
+  let mount=shield.userData.v1302HandMount||shield.userData.v1294Mount;
+  if(!mount){mount=new THREE.Group();mount.name='Gregorius_Aspis_Left_Hand_Mount';}
+  shield.userData.v1302HandMount=mount;
+  shield.userData.v1294Mount=mount;
+  if(mount.parent!==hand)hand.add(mount);
+  v1294SetNodeFromRootTransform(root,mount,targetRoot,rootQuat);
+  if(shield.parent!==mount)mount.add(shield);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.94);
+
+  // Petit cache noir intérieur : aucune portion de la main ne dépasse visuellement du disque.
+  let handCover=mount.getObjectByName('Gregorius_Aspis_Hand_Cover');
+  if(!handCover){
+    const coverMat=(gear.materials?.dark?.clone?.()||new THREE.MeshStandardMaterial({color:0x111214,roughness:.88,metalness:.04}));
+    handCover=new THREE.Mesh(new THREE.SphereGeometry(.073,14,10),coverMat);
+    handCover.name='Gregorius_Aspis_Hand_Cover';
+    handCover.scale.set(1.25,.62,.95);
+    handCover.position.set(-.012,-.004,-.058);
+    handCover.castShadow=true;mount.add(handCover);
+  }
+
+  const s=v1294ShieldState;
+  s.ready=true;s.mount=mount;s.arm=arm;s.hand=hand;s.upperArm=upper;s.chest=chest;
+  s.upperAxis=v1294AxisToDescendant(upper,arm);
+  s.foreAxis=v1294AxisToDescendant(arm,hand);
+  s.restPosition=mount.position.clone();
+  shield.userData.v1291Controlled=true;
+  shield.userData.v1291RigidArmAttachment=true;
+  shield.userData.v1294Strapped=true;
+  shield.userData.v1302HandLocked=true;
+  shield.userData.v1294Collider={radius:s.collisionRadius,thickness:s.collisionThickness,active:false};
+  v1291State.shieldInstalled=true;
+  root.updateMatrixWorld(true);
+  return true;
+}
+function v1302UpdateShield(dt=1/60){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root,shield=gear?.shield,s=v1294ShieldState;
+  if(!gear?.ready||!root||!shield)return;
+  if(!s.ready||!s.mount||s.mount.parent!==s.hand||shield.parent!==s.mount){
+    s.ready=false;if(!v1302InstallShield())return;
+  }
+  const t=v1294Smooth(blockBlend);
+  // Les os du bras se mettent en garde ; le bouclier suit ensuite la main sans recalcul flottant de position.
+  v1294SolveBlockArm(root,t);
+  root.updateMatrixWorld(true);
+  s.mount.position.copy(s.restPosition);
+  const normal=s.restNormal.clone().lerp(s.blockNormal,t).normalize();
+  const desiredRootQuat=v1302ShieldRootQuaternion(normal,THREE.MathUtils.lerp(-.035,.012,t));
+  const worldQuat=root.getWorldQuaternion(new THREE.Quaternion()).multiply(desiredRootQuat);
+  s.mount.quaternion.copy(s.hand.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuat));
+  s.mount.updateWorldMatrix(true,true);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.94);
+  shield.visible=!equipmentStowed;
+  const handCover=s.mount.getObjectByName('Gregorius_Aspis_Hand_Cover');
+  if(handCover)handCover.visible=!equipmentStowed;
+  if(shield.userData.v1294Collider)shield.userData.v1294Collider.active=t>.22&&!equipmentStowed;
+}
+v1294InstallShield=v1302InstallShield;
+v1294UpdateShield=v1302UpdateShield;
+v1291InstallShieldController=v1302InstallShield;
+v1291UpdateShieldController=v1302UpdateShield;
+
+const v1302CapeState={lastYaw:null,turnSpeed:0,lastTime:performance.now()};
+function v1302BuildShoulderCape(chest,mat){
+  if(!chest||!mat)return null;
+  const root=v1286GregoriusRig?.root||v1287HopliteGear?.root;
+  if(!root)return null;
+  const anchor=new THREE.Group();anchor.name='Gregorius_Shoulder_Fitted_Cape';anchor.userData.v1302ShoulderCape=true;chest.add(anchor);
+  root.updateMatrixWorld(true);chest.updateWorldMatrix(true,false);
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  // Ancrage remonté au niveau des épaules et rapproché du dos.
+  const desiredRoot=chestRoot.clone().add(new THREE.Vector3(0,.335,-.078));
+  v1294SetNodeFromRootTransform(root,anchor,desiredRoot,new THREE.Quaternion());
+  anchor.userData.v1302FixedPosition=anchor.position.clone();
+  anchor.userData.v1302FixedQuaternion=anchor.quaternion.clone();
+
+  const cols=12,rows=18,length=.92,topWidth=.405,bottomWidth=.555;
+  const positions=[],uvs=[],indices=[],weights=[];
+  for(let y=0;y<=rows;y++){
+    const t=y/rows,soft=t*t*(3-2*t),width=THREE.MathUtils.lerp(topWidth,bottomWidth,soft);
+    for(let x=0;x<=cols;x++){
+      const u=x/cols,side=u*2-1;
+      const shoulderDrop=.026*Math.pow(Math.abs(side),1.7)*(1-t);
+      positions.push(side*width*.5,-length*t-shoulderDrop,-.006-.030*t-.052*t*t);
+      uvs.push(u,1-t);weights.push(THREE.MathUtils.smoothstep(t,.055,.98));
+    }
+  }
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    const a=y*(cols+1)+x,b=a+1,c=a+(cols+1),d=c+1;
+    indices.push(a,c,b,b,c,d);
+  }
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+  geometry.setIndex(indices);geometry.computeVertexNormals();
+  const capeMaterial=mat.red?.clone?.()||mat.red;
+  if(capeMaterial){capeMaterial.side=THREE.DoubleSide;capeMaterial.roughness=.94;capeMaterial.metalness=0;}
+  const cloth=new THREE.Mesh(geometry,capeMaterial);cloth.name='Gregorius_Shoulder_Fitted_Cape_Cloth';cloth.castShadow=true;cloth.receiveShadow=true;
+  cloth.userData.v1302Base=geometry.attributes.position.array.slice();cloth.userData.v1302Weights=new Float32Array(weights);cloth.userData.v1302Length=length;anchor.add(cloth);
+
+  const claspMat=mat.leather?.clone?.()||mat.dark||mat.leather;
+  const collar=new THREE.Mesh(new THREE.CapsuleGeometry(.018,.355,6,12),claspMat);collar.name='Gregorius_Cape_Shoulder_Collar';collar.rotation.z=Math.PI/2;collar.position.set(0,.006,.006);collar.castShadow=true;anchor.add(collar);
+  anchor.userData.v1302Cloth=cloth;
+  return anchor;
+}
+function v1302EnsureCape(){
+  const gear=v1287HopliteGear;
+  if(!gear?.ready||!gear.chest||!gear.materials)return null;
+  if(gear.cape?.userData?.v1302ShoulderCape&&gear.cape.parent===gear.chest)return gear.cape;
+  v1299RemoveCapeArtifacts();
+  gear.cape=v1302BuildShoulderCape(gear.chest,gear.materials);
+  return gear.cape;
+}
+function v1302UpdateCape(dt=.016){
+  v1300RemoveLowerRedArtifact?.();
+  const cape=v1302EnsureCape(),cloth=cape?.userData?.v1302Cloth;
+  const attr=cloth?.geometry?.attributes?.position,base=cloth?.userData?.v1302Base,weights=cloth?.userData?.v1302Weights;
+  if(!cape||!cloth||!attr||!base||!weights)return;
+  cape.position.copy(cape.userData.v1302FixedPosition);cape.quaternion.copy(cape.userData.v1302FixedQuaternion);
+  const now=performance.now(),time=now*.001,safeDt=THREE.MathUtils.clamp(dt||((now-v1302CapeState.lastTime)/1000),.001,.05);
+  v1302CapeState.lastTime=now;
+  const speed=velocity?.length?.()||0,motion=THREE.MathUtils.clamp(speed/2.6,0,1);
+  const yaw=character?.rotation?.y??v1286GregoriusRig?.root?.rotation?.y??0;
+  if(v1302CapeState.lastYaw==null)v1302CapeState.lastYaw=yaw;
+  const rawTurn=normalizeAngle(yaw-v1302CapeState.lastYaw)/safeDt;v1302CapeState.lastYaw=yaw;
+  v1302CapeState.turnSpeed=THREE.MathUtils.lerp(v1302CapeState.turnSpeed,THREE.MathUtils.clamp(rawTurn,-4,4),1-Math.exp(-7*safeDt));
+  const length=cloth.userData.v1302Length||.92;
+  for(let i=0;i<attr.count;i++){
+    const j=i*3,bx=base[j],by=base[j+1],bz=base[j+2],w=weights[i];
+    if(w<=.001){attr.setXYZ(i,bx,by,bz);continue;}
+    const t=THREE.MathUtils.clamp((-by)/length,0,1);
+    const flap=Math.sin(time*(5.0+motion*2.0)+t*5.1+bx*6.0),ripple=Math.cos(time*3.2+t*6.2-bx*4.0);
+    const lateral=(flap*.010*motion-v1302CapeState.turnSpeed*.014*t)*w*t;
+    const lift=(Math.abs(flap)*.008*motion+ripple*.003*(.3+motion))*w*t;
+    const rear=Math.min(bz-.012*t-flap*.021*t*motion-ripple*.006*t*(.2+motion),-.010-.050*t);
+    attr.setXYZ(i,bx+lateral,by+lift,rear);
+  }
+  attr.needsUpdate=true;cloth.geometry.computeVertexNormals();
+  cloth.rotation.x=.075-.045*motion-Math.sin(time*5.0)*.014*motion;
+  cloth.rotation.z=Math.sin(time*3.3)*.018*motion-v1302CapeState.turnSpeed*.014;
+}
+v1299BuildPatrolCape=v1302BuildShoulderCape;
+v1299EnsureCape=v1302EnsureCape;
+v1299UpdateCape=v1302UpdateCape;
+v1287BuildCape=function(chest,mat){return v1302BuildShoulderCape(chest,mat);};
+
+function v1302PreventTouchSelection(){
+  const controls=document.getElementById('controls');
+  if(!controls||controls.dataset.v1302NoSelect==='1')return;
+  controls.dataset.v1302NoSelect='1';
+  for(const type of ['selectstart','dragstart','contextmenu'])controls.addEventListener(type,event=>event.preventDefault(),{capture:true});
+  document.addEventListener('selectionchange',()=>{
+    if(!started)return;const selection=window.getSelection?.();if(selection&&!selection.isCollapsed)selection.removeAllRanges();
+  });
+}
+v1302PreventTouchSelection();
+setTimeout(()=>{
+  v1299RemoveCapeArtifacts();v1287HopliteGear.cape=null;v1302EnsureCape();
+  v1294ShieldState.ready=false;v1302InstallShield();
+  v1302PreventTouchSelection();
+},0);
+const v1302CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){const save=v1302CaptureSaveBase();save.meta={...(save.meta||{}),build:V1302_BUILD,shieldController:'left-hand-locked-v1',capeController:'shoulder-fitted-v1',touchSelection:'disabled-v1'};return save;};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1302=V1302_BUILD;
+  window.ODYSSEE_REBUILD_CAPE=()=>{v1299RemoveCapeArtifacts();v1287HopliteGear.cape=null;return v1302EnsureCape();};
+  window.ODYSSEE_FIX_GREGORIUS_SHIELD=()=>{v1294ShieldState.ready=false;return v1302InstallShield();};
+}
+/* =================== FIN ODYSSÉE v1.30.2 =================== */
 
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
