@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.30.4 | 2026-08-06T13:55+11:00 | Correctif bouclier et cape sous casque -->
-<meta name="build-id" content="odyssee-v1.30.4-shield-cape-correction-20260806-1355-nc">
+<!-- VERIFIED BUILD: Odyssée v1.30.5 | 2026-08-06T14:07+11:00 | Retour bouclier v1.30.0 et suppression cape -->
+<meta name="build-id" content="odyssee-v1.30.5-revert-shield-v1300-remove-cape-20260806-1407-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.30.4 — Correctif bouclier et cape</title>
+<title>Odyssée — v1.30.5 — Retour bouclier v1.30.0 et suppression cape</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -9326,6 +9326,132 @@ if(typeof window!=='undefined'){
   window.ODYSSEE_FIX_GREGORIUS_SHIELD=()=>{v1294ShieldState.ready=false;return v1304InstallShield();};
 }
 /* =================== FIN ODYSSÉE v1.30.4 =================== */
+
+/* ===================== ODYSSÉE v1.30.5 — RETOUR BOUCLIER v1.30.0 ET SUPPRESSION CAPE ===================== */
+const V1305_BUILD='v1.30.5 — revert-shield-v1300-remove-cape-20260806-1407-NC';
+
+function v1305RemoveAllCapes(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root||gear?.root;
+  try{v1299RemoveCapeArtifacts?.();}catch(error){}
+  if(gear?.cape){
+    if(gear.cape.parent)gear.cape.parent.remove(gear.cape);
+    gear.cape=null;
+  }
+  root?.traverse?.(object=>{
+    const name=(object.name||'').toLowerCase();
+    if(name.includes('cape')||object.userData?.v1298RigidBackCape||object.userData?.v1299PatrolCape||object.userData?.v1302ShoulderCape||object.userData?.v1303ShoulderCape||object.userData?.v1304Cape){
+      object.visible=false;
+      if(object.parent)object.parent.remove(object);
+    }
+  });
+}
+
+function v1305InstallShield(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return false;
+  root.updateMatrixWorld(true);
+  const arm=v1291ResolveShieldArmNode(gear,root),hand=v1291ResolveShieldAnchorNode(gear,root),chest=gear.chest||gear.hips;
+  const upper=v1294FindUpperArm(arm,root);
+  if(!arm||!hand||!chest||!upper)return false;
+
+  const foreRoot=v1291NodeLocalPosition(arm,root,new THREE.Vector3());
+  const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  // Retour au placement de la version v1.30.0 (même base que l'ancien montage stable avant les derniers essais).
+  const strappedRoot=foreRoot.clone().lerp(handRoot,.58).add(new THREE.Vector3(.075,.015,-.025));
+  strappedRoot.x=Math.max(strappedRoot.x,chestRoot.x+.335);
+  strappedRoot.y=THREE.MathUtils.clamp(strappedRoot.y,.68,1.18);
+  strappedRoot.z=THREE.MathUtils.clamp(strappedRoot.z,-.24,.14);
+  const rootQuat=new THREE.Quaternion().setFromUnitVectors(v1294ShieldState.frontAxis,v1294ShieldState.restNormal);
+  rootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(v1294ShieldState.restNormal,-.035));
+
+  let mount=shield.userData.v1294Mount||shield.userData.v1302HandMount;
+  if(!mount){mount=new THREE.Group();mount.name='Gregorius_Aspis_Forearm_Strap';}
+  shield.userData.v1294Mount=mount;
+  if(mount.parent!==arm)arm.add(mount);
+  v1294SetNodeFromRootTransform(root,mount,strappedRoot,rootQuat);
+  if(shield.parent!==mount)mount.add(shield);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.92);
+
+  // Supprime le cache-main des versions plus récentes.
+  const handCover=mount.getObjectByName('Gregorius_Aspis_Hand_Cover');
+  if(handCover&&handCover.parent)handCover.parent.remove(handCover);
+
+  const s=v1294ShieldState;
+  s.ready=true;s.mount=mount;s.arm=arm;s.hand=hand;s.upperArm=upper;s.chest=chest;
+  s.upperAxis=v1294AxisToDescendant(upper,arm);
+  s.foreAxis=v1294AxisToDescendant(arm,hand);
+  s.restPosition=mount.position.clone();
+  shield.userData.v1291Controlled=true;
+  shield.userData.v1291RigidArmAttachment=true;
+  shield.userData.v1294Strapped=true;
+  shield.userData.v1294Collider={radius:s.collisionRadius,thickness:s.collisionThickness,active:false};
+  v1291State.shieldInstalled=true;
+  root.updateMatrixWorld(true);
+  return true;
+}
+function v1305UpdateShield(dt=1/60){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
+  if(!gear?.ready||!root||!shield)return;
+  const s=v1294ShieldState;
+  if(!s.ready||!s.mount||shield.parent!==s.mount||s.mount.parent!==s.arm){
+    s.ready=false;if(!v1305InstallShield())return;
+  }
+  const t=v1294Smooth(blockBlend);
+  // Retour à la garde procédurale stable de la série v1294/v1300.
+  v1294SolveBlockArm(root,t);
+  root.updateMatrixWorld(true);
+  const desiredNormal=s.restNormal.clone().lerp(s.blockNormal,t).normalize();
+  const desiredRootQuat=new THREE.Quaternion().setFromUnitVectors(s.frontAxis,desiredNormal);
+  desiredRootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(desiredNormal,THREE.MathUtils.lerp(-.035,.015,t)));
+  s.mount.position.copy(s.restPosition);
+  const worldQuat=root.getWorldQuaternion(new THREE.Quaternion()).multiply(desiredRootQuat);
+  s.mount.quaternion.copy(s.arm.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuat));
+  v1294ApplyAntiBodyPenetration(root,t);
+  s.mount.updateWorldMatrix(true,true);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.92);
+  shield.visible=!equipmentStowed;
+  if(shield.userData.v1294Collider)shield.userData.v1294Collider.active=t>.22&&!equipmentStowed;
+}
+
+// Désactive complètement toutes les versions de cape.
+v1287BuildCape=function(){return null;};
+v1298EnsureCape=function(){return null;};
+v1298UpdateCape=function(){};
+v1299EnsureCape=function(){return null;};
+v1299UpdateCape=function(){};
+v1302EnsureCape=function(){return null;};
+v1302UpdateCape=function(){};
+v1303EnsureCape=function(){return null;};
+v1303UpdateCape=function(){};
+v1304EnsureCape=function(){return null;};
+v1304UpdateCape=function(){};
+
+// Réactive le bouclier comme à l'époque stable demandée.
+v1294InstallShield=v1305InstallShield;
+v1294UpdateShield=v1305UpdateShield;
+v1291InstallShieldController=v1305InstallShield;
+v1291UpdateShieldController=v1305UpdateShield;
+
+setTimeout(()=>{
+  v1305RemoveAllCapes();
+  v1294ShieldState.ready=false;
+  v1305InstallShield();
+},0);
+
+const v1305CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1305CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1305_BUILD,shieldController:'reverted-v1300-placement',capeController:'disabled'};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1305=V1305_BUILD;
+  window.ODYSSEE_REMOVE_CAPE=v1305RemoveAllCapes;
+  window.ODYSSEE_FIX_GREGORIUS_SHIELD=()=>{v1294ShieldState.ready=false;return v1305InstallShield();};
+}
+/* =================== FIN ODYSSÉE v1.30.5 =================== */
+
 
 
 
