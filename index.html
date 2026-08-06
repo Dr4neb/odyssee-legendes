@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.32.7 | 2026-08-06T18:18+11:00 | Patrouilleurs squelettiques et suppression de l’ennemi -->
-<meta name="build-id" content="odyssee-v1.32.7-patrol-skeletal-no-enemy-20260806-1818-nc">
+<!-- VERIFIED BUILD: Odyssée v1.32.8 | 2026-08-06T17:06+11:00 | Nettoyage rigs, marche PNJ et patrouilleurs corrigés -->
+<meta name="build-id" content="odyssee-v1.32.8-rig-cleanup-walk-patrol-fix-20260806-1706-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.32.7 — Patrouilleurs squelettiques</title>
+<title>Odyssée — v1.32.8 — Rigs nettoyés et patrouilleurs corrigés</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -11266,6 +11266,256 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.32.7 =================== */
 
+/* ===================== ODYSSÉE v1.32.8 — NETTOYAGE RIGS, MARCHE PNJ ET PATROUILLEURS CORRIGÉS ===================== */
+const V1328_BUILD='v1.32.8 — rig-cleanup-walk-patrol-fix-20260806-1706-NC';
+const v1328State={professionLoading:new WeakSet(),guardLoading:new WeakSet(),lastFrame:performance.now()};
+
+function v1328AvatarRoots(npc){
+  if(!npc)return [];
+  return npc.children.filter(child=>/^(V1326_|V1327_).+_Avatar$/i.test(child.name||''));
+}
+function v1328RemoveRoot(root){
+  if(!root)return;
+  root.traverse?.(object=>{
+    if(object.geometry&&!object.isSkinnedMesh)object.geometry.dispose?.();
+    const mats=Array.isArray(object.material)?object.material:[object.material];
+    for(const material of mats)material?.dispose?.();
+  });
+  root.parent?.remove(root);
+}
+function v1328DedupeNPC(npc,kind='profession'){
+  if(!npc)return null;
+  const avatar=kind==='guard'?npc.userData?.v1327Avatar:npc.userData?.v1326Avatar;
+  const roots=v1328AvatarRoots(npc);
+  let keep=avatar?.root&&avatar.root.parent===npc?avatar.root:roots[0]||null;
+  for(const root of roots)if(root!==keep)v1328RemoveRoot(root);
+  if(avatar&&keep&&avatar.root!==keep)avatar.root=keep;
+  return keep;
+}
+function v1328RemoveBodyRings(root){
+  if(!root)return;
+  root.traverse(object=>{
+    if(!object?.geometry||object.geometry.type!=='TorusGeometry')return;
+    let node=object,path='';
+    while(node&&node!==root.parent){path+=` ${(node.name||'').toLowerCase()}`;node=node.parent;}
+    // Les anneaux techniques des boucliers restent conservés. Tous les anneaux de torse/cuirasse sont supprimés.
+    if(!/(aspis|shield|bouclier|straw|paille|grip|poignee|bell|cloche)/i.test(path))object.visible=false;
+  });
+}
+function v1328CleanAllRings(){
+  v1328RemoveBodyRings(v1286GregoriusRig?.root);
+  for(const npc of [trainingNPC,farmerNPC,blacksmithNPC,builderNPC,...(patrolGuards||[])]){
+    v1328RemoveBodyRings(npc?.userData?.v1326Avatar?.root);
+    v1328RemoveBodyRings(npc?.userData?.v1327Avatar?.root);
+  }
+}
+function v1328FindExactClip(clips,type){
+  const list=Array.isArray(clips)?clips:[];
+  const normalized=clip=>(clip?.name||'').toLowerCase();
+  if(type==='walk'){
+    const exact=['walk_fwd_loop','walking_fwd_loop','walk_loop','walking','walk'];
+    for(const name of exact){const clip=list.find(c=>normalized(c)===name);if(clip)return clip;}
+    return list.find(c=>/walk/.test(normalized(c))&&!/(run|jog|sprint)/.test(normalized(c)))||null;
+  }
+  if(type==='run'){
+    const exact=['jog_fwd_loop','run_fwd_loop','running','sprint_fwd_loop','run_loop'];
+    for(const name of exact){const clip=list.find(c=>normalized(c)===name);if(clip)return clip;}
+    return list.find(c=>/(run|jog|sprint)/.test(normalized(c)))||null;
+  }
+  return null;
+}
+function v1328ConfigureLocomotion(avatar,{guard=false}={}){
+  if(!avatar?.mixer||!avatar.actionMap)return;
+  const walkClip=v1328FindExactClip(v1326State.clips,'walk');
+  if(walkClip){
+    const old=avatar.actionMap.get('walk');
+    const walk=avatar.mixer.clipAction(walkClip);walk.enabled=true;walk.setLoop(THREE.LoopRepeat,Infinity);walk.setEffectiveWeight(1);walk.setEffectiveTimeScale(.78);
+    if(old&&old!==walk)old.stop?.();
+    avatar.actionMap.set('walk',walk);
+  }
+  if(guard){
+    const runClip=v1328FindExactClip(v1326State.clips,'run');
+    if(runClip){
+      const run=avatar.mixer.clipAction(runClip);run.enabled=true;run.setLoop(THREE.LoopRepeat,Infinity);run.setEffectiveWeight(1);run.setEffectiveTimeScale(.92);
+      avatar.actionMap.set('run',run);
+    }else if(avatar.actionMap.get('walk'))avatar.actionMap.set('run',avatar.actionMap.get('walk'));
+  }
+  avatar.userData=avatar.userData||{};
+  avatar.userData.v1328Locomotion=true;
+}
+
+const v1328CreateProfessionBase=v1326CreateAvatarForNPC;
+v1326CreateAvatarForNPC=async function(npc,spec){
+  if(!npc)return null;
+  const existing=npc.userData?.v1326Avatar;
+  if(existing){v1328DedupeNPC(npc,'profession');v1328ConfigureLocomotion(existing);v1328RemoveBodyRings(existing.root);return existing;}
+  if(v1328State.professionLoading.has(npc))return null;
+  v1328State.professionLoading.add(npc);
+  try{
+    await v1328CreateProfessionBase(npc,spec);
+    const avatar=npc.userData?.v1326Avatar;
+    v1328DedupeNPC(npc,'profession');
+    v1328ConfigureLocomotion(avatar);
+    v1328RemoveBodyRings(avatar?.root);
+    return avatar;
+  }finally{v1328State.professionLoading.delete(npc);}
+};
+
+function v1328RemoveGuardCapeAndRedSquares(avatar){
+  const root=avatar?.root;if(!root)return;
+  root.traverse(object=>{
+    const name=(object.name||'').toLowerCase();
+    if(name.includes('cape')||name.includes('pteruge')||name.includes('red_tunic')||name.includes('hopliteredtunic'))object.visible=false;
+  });
+  const cape=avatar.gear?.cape;
+  if(cape?.parent)cape.parent.remove(cape);
+  if(avatar.gear)avatar.gear.cape=null;
+  const skirt=avatar.gear?.cuirass?.skirt;
+  if(skirt)skirt.visible=false;
+}
+function v1328InstallGuardShield(avatar){
+  const root=avatar?.root,nodes=avatar?.nodes,shield=avatar?.gear?.shield;
+  const arm=nodes?.leftForearm||nodes?.leftHand,hand=nodes?.leftHand,chest=nodes?.chest;
+  if(!root||!shield||!arm||!hand||!chest)return false;
+  root.updateMatrixWorld(true);
+  let mount=avatar.v1328ShieldMount;
+  if(!mount){mount=new THREE.Group();mount.name='V1328_Guard_Aspis_Forearm_Mount';avatar.v1328ShieldMount=mount;}
+  if(mount.parent!==arm)arm.add(mount);
+  const foreRoot=v1291NodeLocalPosition(arm,root,new THREE.Vector3());
+  const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  const targetRoot=foreRoot.clone().lerp(handRoot,.80).add(new THREE.Vector3(.074,.010,-.010));
+  targetRoot.x=Math.max(targetRoot.x,chestRoot.x+.326);
+  targetRoot.y=THREE.MathUtils.clamp(targetRoot.y,.68,1.18);
+  targetRoot.z=THREE.MathUtils.clamp(targetRoot.z,-.20,.16);
+  const rootQuat=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(.94,.015,-.20).normalize());
+  rootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(.94,.015,-.20).normalize(),-.035));
+  v1294SetNodeFromRootTransform(root,mount,targetRoot,rootQuat);
+  avatar.v1328ShieldRestPosition=mount.position.clone();
+  avatar.v1328ShieldRootQuaternion=rootQuat.clone();
+  if(shield.parent!==mount)mount.add(shield);
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.92);shield.visible=true;
+  return true;
+}
+function v1328UpdateGuardShield(avatar){
+  const root=avatar?.root,nodes=avatar?.nodes,mount=avatar?.v1328ShieldMount,arm=nodes?.leftForearm||nodes?.leftHand,shield=avatar?.gear?.shield;
+  if(!root||!arm||!shield)return;
+  if(!mount||mount.parent!==arm||shield.parent!==mount){if(!v1328InstallGuardShield(avatar))return;}
+  root.updateMatrixWorld(true);
+  mount.position.copy(avatar.v1328ShieldRestPosition);
+  const worldQuat=root.getWorldQuaternion(new THREE.Quaternion()).multiply(avatar.v1328ShieldRootQuaternion);
+  mount.quaternion.copy(arm.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuat));
+  shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.92);shield.visible=true;
+}
+function v1328CreateForwardSpear(avatar){
+  const root=avatar?.root,hand=avatar?.nodes?.rightHand;
+  if(!root||!hand)return null;
+  if(avatar.tool?.parent)avatar.tool.parent.remove(avatar.tool);
+  const mount=new THREE.Group();mount.name='V1328_Guard_Spear_Forward_Mount';hand.add(mount);
+  const wood=new THREE.MeshStandardMaterial({color:0x6d4d31,roughness:.96,metalness:0});
+  const metal=new THREE.MeshStandardMaterial({color:0xc4c8cd,roughness:.32,metalness:.78});
+  const shaft=v1287Mesh(new THREE.CylinderGeometry(.014,.017,1.42,10),wood,'V1328_Guard_Spear_Shaft');
+  shaft.rotation.x=Math.PI/2;shaft.position.z=.54;mount.add(shaft);
+  const tip=v1287Mesh(new THREE.ConeGeometry(.032,.17,10),metal,'V1328_Guard_Spear_Tip');
+  tip.rotation.x=Math.PI/2;tip.position.z=1.30;mount.add(tip);
+  const butt=v1287Mesh(new THREE.ConeGeometry(.022,.10,10),metal,'V1328_Guard_Spear_Butt');
+  butt.rotation.x=-Math.PI/2;butt.position.z=-.23;mount.add(butt);
+  avatar.tool=mount;
+  avatar.v1328SpearMount=mount;
+  avatar.v1328SpearRootQuaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(-.08,.02,0,'XYZ'));
+  return mount;
+}
+function v1328UpdateForwardSpear(avatar){
+  const root=avatar?.root,hand=avatar?.nodes?.rightHand;
+  if(!root||!hand)return;
+  let mount=avatar.v1328SpearMount;
+  if(!mount||mount.parent!==hand)mount=v1328CreateForwardSpear(avatar);
+  if(!mount)return;
+  root.updateMatrixWorld(true);
+  mount.position.set(.025,.010,.020);
+  const worldQuat=root.getWorldQuaternion(new THREE.Quaternion()).multiply(avatar.v1328SpearRootQuaternion);
+  mount.quaternion.copy(hand.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuat));
+}
+function v1328FinalizeGuard(npc){
+  const avatar=npc?.userData?.v1327Avatar;if(!avatar)return null;
+  v1328DedupeNPC(npc,'guard');
+  v1328ConfigureLocomotion(avatar,{guard:true});
+  v1328RemoveGuardCapeAndRedSquares(avatar);
+  v1328RemoveBodyRings(avatar.root);
+  v1328InstallGuardShield(avatar);
+  if(!avatar.v1328SpearMount)v1328CreateForwardSpear(avatar);
+  return avatar;
+}
+const v1328CreateGuardBase=v1327CreateGuardAvatar;
+v1327CreateGuardAvatar=async function(npc,index=0){
+  if(!npc)return null;
+  const existing=npc.userData?.v1327Avatar;
+  if(existing)return v1328FinalizeGuard(npc);
+  if(v1328State.guardLoading.has(npc))return null;
+  v1328State.guardLoading.add(npc);
+  try{await v1328CreateGuardBase(npc,index);return v1328FinalizeGuard(npc);}
+  finally{v1328State.guardLoading.delete(npc);}
+};
+
+v1326UpdateProfessionNPCs=function(dt){
+  for(const npc of [trainingNPC,farmerNPC,blacksmithNPC,builderNPC]){
+    const avatar=npc?.userData?.v1326Avatar;if(!avatar)continue;
+    v1328DedupeNPC(npc,'profession');
+    if(!avatar.userData?.v1328Locomotion)v1328ConfigureLocomotion(avatar);
+    const moved=npc.position.distanceToSquared(avatar.lastPos)>.00006;
+    const action=v1326NpcAction(npc,moved);
+    v1326SetAvatarAction(avatar,action==='walk'?'walk':action,.16);
+    avatar.mixer.update(dt);
+    avatar.lastPos.copy(npc.position);
+    v1328RemoveBodyRings(avatar.root);
+  }
+};
+v1327UpdatePatrolGuards=function(dt){
+  const rally=patrolFormation?.mode==='rally';
+  for(const npc of (patrolGuards||[])){
+    const avatar=npc?.userData?.v1327Avatar;if(!avatar)continue;
+    v1328FinalizeGuard(npc);
+    const moved=npc.position.distanceToSquared(avatar.lastPos)>.00005;
+    const action=moved?(rally?'run':'walk'):'idle';
+    v1326SetAvatarAction(avatar,action,.14);
+    avatar.mixer.update(dt);
+    avatar.lastPos.copy(npc.position);
+    v1328UpdateGuardShield(avatar);
+    v1328UpdateForwardSpear(avatar);
+  }
+};
+function v1328Maintenance(){
+  for(const npc of [trainingNPC,farmerNPC,blacksmithNPC,builderNPC])v1328DedupeNPC(npc,'profession');
+  for(const npc of (patrolGuards||[]))v1328FinalizeGuard(npc);
+  v1328CleanAllRings();
+}
+const v1328UpdateBase=update;
+update=function(){
+  v1328UpdateBase();
+  v1328Maintenance();
+};
+setTimeout(v1328Maintenance,0);
+setTimeout(v1328Maintenance,700);
+setTimeout(v1328Maintenance,1800);
+
+const v1328CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1328CaptureSaveBase();
+  save.meta={
+    ...(save.meta||{}),
+    build:V1328_BUILD,
+    skeletalNPCFixes:{deduplicated:true,bodyRingsRemoved:true,professionsWalkOnly:true,patrolRunOnlyOnBell:true},
+    patrolVisuals:{cape:false,redSquares:false,shield:'gregorius-forearm-placement',spear:'forward-locked'}
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1328=V1328_BUILD;
+  window.ODYSSEE_FIX_SKELETAL_NPCS_V1328=v1328Maintenance;
+}
+/* =================== FIN ODYSSÉE v1.32.8 =================== */
+
+
 
 
 
@@ -11276,4 +11526,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.32.7-20260806-1818-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.32.8-20260806-1706-NC -->
