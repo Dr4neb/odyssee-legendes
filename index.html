@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.30.7 | 2026-08-06T14:26+11:00 | Bouclier avancé à la limite de la main -->
-<meta name="build-id" content="odyssee-v1.30.7-shield-further-forward-hand-edge-20260806-1426-nc">
+<!-- VERIFIED BUILD: Odyssée v1.31.0 | 2026-08-06T13:47+11:00 | Stabilisation définitive de Gregorius -->
+<meta name="build-id" content="odyssee-v1.31.0-gregorius-stabilized-20260806-1347-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.30.7 — Bouclier avancé à la limite de la main</title>
+<title>Odyssée — v1.31.0 — Gregorius stabilisé</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -9569,6 +9569,180 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.30.6 =================== */
 
+/* ===================== ODYSSÉE v1.31.0 — STABILISATION DÉFINITIVE DE GREGORIUS ===================== */
+const V1310_BUILD='v1.31.0 — gregorius-stabilized-20260806-1347-NC';
+const V1310_XIPHOS_FROZEN_STORAGE='odyssee-v1310-xiphos-frozen';
+const v1310State={
+  initialized:false,
+  helmetApplied:false,
+  capeRemoved:false,
+  shieldInstalled:false,
+  frozenXiphos:null
+};
+
+function v1310ReadFrozenXiphos(){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem(V1310_XIPHOS_FROZEN_STORAGE)||'null');}catch(error){}
+  const source=(saved&&typeof saved==='object')?saved:v1297XiphosConfig;
+  const frozen={};
+  for(const key of Object.keys(v1297XiphosDefaults)){
+    const value=Number(source?.[key]);
+    frozen[key]=Number.isFinite(value)?value:Number(v1297XiphosConfig?.[key]||0);
+  }
+  try{localStorage.setItem(V1310_XIPHOS_FROZEN_STORAGE,JSON.stringify(frozen));}catch(error){}
+  return Object.freeze(frozen);
+}
+function v1310LockXiphosConfig(){
+  if(!v1310State.frozenXiphos)v1310State.frozenXiphos=v1310ReadFrozenXiphos();
+  for(const key of Object.keys(v1297XiphosDefaults))v1297XiphosConfig[key]=v1310State.frozenXiphos[key];
+  return v1310State.frozenXiphos;
+}
+
+function v1310RemoveCalibrationUI(){
+  v1297XiphosPanelOpen=false;
+  document.getElementById('v1297XiphosCalibBtn')?.remove();
+  document.getElementById('v1297XiphosPanel')?.remove();
+  document.getElementById('v1297XiphosStyle')?.remove();
+  document.querySelectorAll('style').forEach(style=>{
+    if((style.textContent||'').includes('#v1297XiphosCalibBtn'))style.remove();
+  });
+}
+
+function v1310RemoveAllCapes(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root||gear?.root;
+  const remove=[];
+  root?.traverse?.(object=>{
+    if(object===root)return;
+    const name=(object.name||'').toLowerCase();
+    if(
+      name.includes('cape')||
+      object.userData?.v1298RigidBackCape||object.userData?.v1299PatrolCape||
+      object.userData?.v1302ShoulderCape||object.userData?.v1303ShoulderCape||
+      object.userData?.v1304Cape
+    )remove.push(object);
+  });
+  const roots=remove.filter(object=>!remove.includes(object.parent));
+  for(const object of roots)if(object.parent)object.parent.remove(object);
+  if(gear)gear.cape=null;
+  v1310State.capeRemoved=true;
+}
+
+function v1310ApplyHelmetOnce(){
+  const gear=v1287HopliteGear;
+  if(!gear?.ready||!gear.helmet)return false;
+  if(gear.v1310HelmetBlackApplied){v1310State.helmetApplied=true;return true;}
+  const applied=typeof v1303ApplyBlackHelmet==='function'?v1303ApplyBlackHelmet():false;
+  if(applied){gear.v1310HelmetBlackApplied=true;v1310State.helmetApplied=true;}
+  return applied;
+}
+
+const v1310ApplyXiphosBase=v1297ApplyXiphosController;
+v1297ApplyXiphosController=function(){
+  v1310LockXiphosConfig();
+  const result=v1310ApplyXiphosBase?.();
+  const weapon=v1286GregoriusRig?.weapon;
+  if(weapon){
+    // Forme finale validée : orientation calibrée et longueur raccourcie.
+    weapon.scale.set(.92,.76,.92);
+    weapon.visible=!equipmentStowed;
+  }
+  return result;
+};
+
+// Le panneau n'est plus autorisé à se recréer après la stabilisation.
+v1297CreateCalibrationUI=function(){};
+v1297SetPanel=function(){v1297XiphosPanelOpen=false;v1310RemoveCalibrationUI();};
+
+// Cape totalement désactivée jusqu'à une future refonte dédiée.
+v1287BuildCape=function(){return null;};
+v1298EnsureCape=function(){return null;};
+v1298UpdateCape=function(){};
+v1299EnsureCape=function(){return null;};
+v1299UpdateCape=function(){};
+v1302EnsureCape=function(){return null;};
+v1302UpdateCape=function(){};
+v1303EnsureCape=function(){return null;};
+v1303UpdateCape=function(){};
+v1304EnsureCape=function(){return null;};
+v1304UpdateCape=function(){};
+
+// Un seul contrôleur de bouclier reste actif : la position v1.30.7 validée.
+const v1310InstallShieldStable=v1306InstallShield;
+const v1310UpdateShieldStable=v1306UpdateShield;
+function v1310InstallShield(){
+  const installed=!!v1310InstallShieldStable?.();
+  v1310State.shieldInstalled=installed;
+  return installed;
+}
+function v1310UpdateShield(dt=1/60){
+  v1310UpdateShieldStable?.(dt);
+  v1310State.shieldInstalled=!!v1294ShieldState?.ready;
+}
+v1294InstallShield=v1310InstallShield;
+v1294UpdateShield=v1310UpdateShield;
+v1291InstallShieldController=v1310InstallShield;
+v1291UpdateShieldController=v1310UpdateShield;
+
+// Mise à jour directe et minimale de l'équipement : aucun ancien contrôleur de cape n'est rappelé.
+v1287UpdateHopliteGear=function(dt=0){
+  const gear=v1287HopliteGear;
+  if(!gear?.ready)return;
+  const now=performance.now(),t=now*.001;
+  const speed=velocity?.length?.()||0;
+  const motion=THREE.MathUtils.clamp(speed/2.8,0,1);
+  if(gear.crest){
+    gear.crest.rotation.x=.015+Math.sin(t*4.2)*(.006+.014*motion);
+    gear.crest.rotation.z=Math.sin(t*3.1)*(.004+.010*motion);
+  }
+  if(gear.cape)v1310RemoveAllCapes();
+  if(gear.shield)gear.shield.visible=!equipmentStowed;
+  if(gear.xiphos)gear.xiphos.visible=!equipmentStowed;
+  v1306RemoveRedArtifact?.();
+  v1310ApplyHelmetOnce();
+  gear.lastTime=now;
+};
+
+function v1310Initialize(){
+  v1310LockXiphosConfig();
+  v1310RemoveCalibrationUI();
+  v1310RemoveAllCapes();
+  v1306RemoveRedArtifact?.();
+  v1310ApplyHelmetOnce();
+  v1294ShieldState.ready=false;
+  v1310InstallShield();
+  v1297ApplyXiphosController();
+  v1302PreventTouchSelection?.();
+  document.body.dataset.gregoriusStable='v1.31.0';
+  v1310State.initialized=true;
+}
+
+v1310Initialize();
+setTimeout(v1310Initialize,0);
+setTimeout(v1310Initialize,450);
+
+const v1310CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1310CaptureSaveBase();
+  save.meta={
+    ...(save.meta||{}),
+    build:V1310_BUILD,
+    gregoriusStabilized:true,
+    shieldController:'v1307-frozen',
+    capeController:'disabled',
+    xiphosCalibration:'frozen',
+    touchSelection:'disabled'
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1310=V1310_BUILD;
+  window.ODYSSEE_GREGORIUS_STABILITY=v1310State;
+  window.ODYSSEE_REMOVE_CAPE=v1310RemoveAllCapes;
+  window.ODYSSEE_FIX_GREGORIUS_SHIELD=()=>{v1294ShieldState.ready=false;return v1310InstallShield();};
+}
+/* =================== FIN ODYSSÉE v1.31.0 =================== */
+
+
 
 
 
@@ -9576,4 +9750,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.29.9-20260806-1246-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.31.0-20260806-1347-NC -->
