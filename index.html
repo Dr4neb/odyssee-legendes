@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.32.10 | 2026-08-06T17:21+11:00 | Vérification générale, fluidité et patrouilleurs gris -->
-<meta name="build-id" content="odyssee-v1.32.10-smooth-audit-gray-patrol-20260806-1721-nc">
+<!-- VERIFIED BUILD: Odyssée v1.32.11 | 2026-08-06T18:46+11:00 | Palette PNJ réaliste, patrouilleurs stabilisés et bouclier corrigé -->
+<meta name="build-id" content="odyssee-v1.32.11-realistic-npc-palette-guard-glide-shield-fix-20260806-1846-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.32.10 — Vérification générale et patrouilleurs gris</title>
+<title>Odyssée — v1.32.11 — Palette réaliste et patrouilleurs corrigés</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -11891,6 +11891,176 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.32.10 =================== */
 
 
+/* ===================== ODYSSÉE v1.32.11 — PALETTE RÉALISTE, GLISSE CORRIGÉE, BOUCLIER PATROUILLEURS ===================== */
+const V13211_BUILD='v1.32.11 — realistic-npc-palette-guard-glide-shield-fix-20260806-1846-NC';
+const V13211_REALISTIC_IDENTITIES={
+  trainer:{scale:[1.00,1.01,1.00],cloth:0x5a2b24,secondary:0x3a322c,leather:0x4a3528,metal:0x8d7451},
+  farmer:{scale:[.95,.98,.95],cloth:0xc4b287,secondary:0x7b7157,leather:0x5a4330,metal:0x72787c},
+  blacksmith:{scale:[1.10,1.00,1.07],cloth:0x3f3a37,secondary:0x221f1d,leather:0x34281f,metal:0x7f878e},
+  builder:{scale:[1.04,.99,1.02],cloth:0x8c755b,secondary:0x5b4b3d,leather:0x564334,metal:0x7c8489},
+  guard:{scale:[1.00,1.01,1.00],cloth:0x5d5650,secondary:0x3a3d41,leather:0x30261e,metal:0x8d959c}
+};
+
+function v13211ApplyRealisticIdentityPalette(){
+  Object.assign(V1329_IDENTITIES.trainer,V13211_REALISTIC_IDENTITIES.trainer);
+  Object.assign(V1329_IDENTITIES.farmer,V13211_REALISTIC_IDENTITIES.farmer);
+  Object.assign(V1329_IDENTITIES.blacksmith,V13211_REALISTIC_IDENTITIES.blacksmith);
+  Object.assign(V1329_IDENTITIES.builder,V13211_REALISTIC_IDENTITIES.builder);
+  Object.assign(V1329_IDENTITIES.guard,V13211_REALISTIC_IDENTITIES.guard);
+}
+
+function v13211ShieldNoBodyPenetration(avatar){
+  const root=avatar?.root,nodes=avatar?.nodes,mount=avatar?.v1328ShieldMount;
+  const arm=nodes?.leftForearm||nodes?.leftHand,hand=nodes?.leftHand,chest=nodes?.chest,shield=avatar?.gear?.shield;
+  if(!root||!arm||!hand||!chest||!mount||!shield)return;
+  root.updateMatrixWorld(true);
+  const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+  const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+  const desired=handRoot.clone().add(new THREE.Vector3(.082,.008,.016));
+  desired.x=Math.max(desired.x,chestRoot.x+.372);
+  desired.y=THREE.MathUtils.clamp(desired.y,.68,1.18);
+  desired.z=THREE.MathUtils.clamp(desired.z,-.10,.22);
+  mount.position.lerp(desired,.55);
+  avatar.v1328ShieldRestPosition=desired.clone();
+}
+
+const v13211InstallGuardShieldBase=v1328InstallGuardShield;
+v1328InstallGuardShield=function(avatar){
+  const ok=v13211InstallGuardShieldBase(avatar);
+  if(!ok)return ok;
+  const root=avatar?.root,nodes=avatar?.nodes,mount=avatar?.v1328ShieldMount;
+  const hand=nodes?.leftHand,chest=nodes?.chest,shield=avatar?.gear?.shield;
+  if(root&&mount&&hand&&chest&&shield){
+    root.updateMatrixWorld(true);
+    const handRoot=v1291NodeLocalPosition(hand,root,new THREE.Vector3());
+    const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
+    const targetRoot=handRoot.clone().add(new THREE.Vector3(.082,.008,.016));
+    targetRoot.x=Math.max(targetRoot.x,chestRoot.x+.372);
+    targetRoot.y=THREE.MathUtils.clamp(targetRoot.y,.68,1.18);
+    targetRoot.z=THREE.MathUtils.clamp(targetRoot.z,-.10,.22);
+    const shieldNormal=new THREE.Vector3(.975,.015,-.11).normalize();
+    const rootQuat=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),shieldNormal);
+    rootQuat.premultiply(new THREE.Quaternion().setFromAxisAngle(shieldNormal,-.030));
+    v1294SetNodeFromRootTransform(root,mount,targetRoot,rootQuat);
+    avatar.v1328ShieldRestPosition=mount.position.clone();
+    avatar.v1328ShieldRootQuaternion=rootQuat.clone();
+    shield.position.set(0,0,0);shield.quaternion.identity();shield.scale.setScalar(.91);shield.visible=true;
+  }
+  return ok;
+};
+const v13211UpdateGuardShieldBase=v1328UpdateGuardShield;
+v1328UpdateGuardShield=function(avatar){
+  v13211UpdateGuardShieldBase(avatar);
+  v13211ShieldNoBodyPenetration(avatar);
+};
+
+const v13211ConfigureLocomotionBase=v1328ConfigureLocomotion;
+v1328ConfigureLocomotion=function(avatar,{guard=false}={}){
+  v13211ConfigureLocomotionBase(avatar,{guard});
+  if(!avatar?.actionMap)return;
+  const walk=avatar.actionMap.get('walk');
+  const run=avatar.actionMap.get('run');
+  if(walk)walk.setEffectiveTimeScale(guard?1.14:.96);
+  if(run)run.setEffectiveTimeScale(guard?1.18:1.04);
+};
+
+function v13211SyncPatrolStride(avatar,dt,moved){
+  if(!avatar?.actionMap||!dt)return;
+  const walk=avatar.actionMap.get('walk');
+  const run=avatar.actionMap.get('run');
+  const speed=Math.sqrt(avatar.lastPos.distanceToSquared(avatar.root.parent.position))/Math.max(dt,.001);
+  if(walk){
+    const walkScale=THREE.MathUtils.clamp(.96+speed*1.20,.95,1.22);
+    walk.setEffectiveTimeScale(walkScale);
+  }
+  if(run){
+    const runScale=THREE.MathUtils.clamp(1.06+speed*1.10,1.05,1.30);
+    run.setEffectiveTimeScale(runScale);
+  }
+}
+
+const v13211PatrolUpdateBase=v1327UpdatePatrolGuards;
+v1327UpdatePatrolGuards=function(dt){
+  const rally=patrolFormation?.mode==='rally';
+  for(const npc of (patrolGuards||[])){
+    const avatar=npc?.userData?.v1327Avatar;if(!avatar)continue;
+    v1328FinalizeGuard(npc);
+    const moved=npc.position.distanceToSquared(avatar.lastPos)>.00005;
+    v13211SyncPatrolStride(avatar,dt,moved);
+    const action=moved?(rally?'run':'walk'):'idle';
+    v1326SetAvatarAction(avatar,action,.14);
+    avatar.mixer.update(dt);
+    v1328UpdateGuardShield(avatar);
+    v1328UpdateForwardSpear(avatar);
+    avatar.lastPos.copy(npc.position);
+  }
+};
+
+const v13211BuildGuardIdentityBase=v1329BuildGuardIdentity;
+v1329BuildGuardIdentity=function(avatar){
+  v13211BuildGuardIdentityBase(avatar);
+  const root=avatar?.root;if(!root)return;
+  root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh)||!object.material)return;
+    const name=(object.name||'').toLowerCase();
+    if(/aspis_/.test(name)){
+      if(/interior|core/.test(name))v13210SetMaterial(object,0x5a6168,{roughness:.60,metalness:.38});
+      else if(/rim|boss/.test(name))v13210SetMaterial(object,0xa6adb4,{roughness:.33,metalness:.78});
+      else if(!/antilabe|porpax|grip|rivet/.test(name))v13210SetMaterial(object,0x858d94,{roughness:.42,metalness:.66});
+    }
+    if(/corinthian_(dome|brow|nose|cheek|neck_guard|crest_base)/.test(name)){
+      const edge=/brow|crest_base/.test(name);
+      v13210SetMaterial(object,edge?0xadb4bb:0x7f878e,{roughness:edge?.32:.40,metalness:.78});
+    }
+  });
+  v1328InstallGuardShield(avatar);
+};
+
+const v13211MaintenanceBase=v1329Maintenance;
+v1329Maintenance=function(force=false){
+  v13211ApplyRealisticIdentityPalette();
+  v13211MaintenanceBase(force);
+};
+
+const v13211AuditBase=v13210AuditCharacters;
+v13210AuditCharacters=function(){
+  v13211ApplyRealisticIdentityPalette();
+  const report=v13211AuditBase();
+  for(const guard of patrolGuards||[]){
+    const avatar=guard?.userData?.v1327Avatar;
+    if(avatar){
+      v1328InstallGuardShield(avatar);
+      v1328UpdateGuardShield(avatar);
+    }
+  }
+  report.realisticPalette=true;
+  report.guardShield='outward-hand-edge-fixed';
+  return report;
+};
+
+setTimeout(()=>{v13211ApplyRealisticIdentityPalette();v1329Maintenance(true);v13210AuditCharacters();},0);
+setTimeout(()=>{v13211ApplyRealisticIdentityPalette();v1329Maintenance(true);v13210AuditCharacters();},900);
+setTimeout(()=>{v13211ApplyRealisticIdentityPalette();v1329Maintenance(true);v13210AuditCharacters();},2100);
+
+const v13211CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v13211CaptureSaveBase();
+  save.meta={
+    ...(save.meta||{}),
+    build:V13211_BUILD,
+    visualRefresh:{npcPalette:'more-realistic-muted-earth-tones',downloadedWebAsset:false},
+    patrolFixes:{glide:'reduced-via-dynamic-stride-timescale',shield:'offset-outward-no-body-penetration'}
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V13211=V13211_BUILD;
+  window.ODYSSEE_REALISTIC_PALETTE_V13211=v13211ApplyRealisticIdentityPalette;
+}
+/* =================== FIN ODYSSÉE v1.32.11 =================== */
+
+
+
 
 
 
@@ -11903,4 +12073,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.32.10-20260806-1721-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.32.11-20260806-1846-NC -->
