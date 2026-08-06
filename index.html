@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.9 | 2026-08-06T12:46+11:00 | Cape des patrouilleurs sur le nouveau rig -->
-<meta name="build-id" content="odyssee-v1.29.9-patrol-cape-clean-back-mount-20260806-1246-nc">
+<!-- VERIFIED BUILD: Odyssée v1.30.0 | 2026-08-06T12:53+11:00 | Cape plaquée au dos et artefact rouge supprimé -->
+<meta name="build-id" content="odyssee-v1.30.0-cape-tight-back-remove-red-artifact-20260806-1253-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.9 — Cape des patrouilleurs</title>
+<title>Odyssée — v1.30.0 — Cape plaquée au dos</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -8588,7 +8588,7 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.29.8 =================== */
 
 /* ===================== ODYSSÉE v1.29.9 — CAPE DES PATROUILLEURS ===================== */
-const V1299_BUILD='v1.29.9 — patrol-cape-clean-back-mount-20260806-1246-NC';
+const V1299_BUILD='v1.30.0 — cape-tight-back-remove-red-artifact-20260806-1253-NC';
 const v1299CapeState={lastYaw:null,turnSpeed:0,lastTime:performance.now()};
 
 function v1299RemoveCapeArtifacts(){
@@ -8619,7 +8619,7 @@ function v1299BuildPatrolCape(chest,mat){
   // Le xiphos a fixé la convention : +Z est l'avant de Gregorius, donc la cape est placée en -Z.
   root.updateMatrixWorld(true);chest.updateWorldMatrix(true,false);
   const chestRoot=v1291NodeLocalPosition(chest,root,new THREE.Vector3());
-  const desiredRoot=chestRoot.clone().add(new THREE.Vector3(0,.115,-.185));
+  const desiredRoot=chestRoot.clone().add(new THREE.Vector3(0,.095,-.105));
   v1294SetNodeFromRootTransform(root,anchor,desiredRoot,new THREE.Quaternion());
   anchor.userData.v1299FixedPosition=anchor.position.clone();
   anchor.userData.v1299FixedQuaternion=anchor.quaternion.clone();
@@ -8635,13 +8635,13 @@ function v1299BuildPatrolCape(chest,mat){
     const t=THREE.MathUtils.clamp((.41-y)/.82,0,1);
     const width=.92-t*.30;
     // Miroir exact de l'ancienne cape : la toile descend et s'éloigne uniquement vers l'arrière (-Z).
-    pos.setXYZ(i,x*width,-t*.36,-.04-t*.11);
+    pos.setXYZ(i,x*width,-t*.36,-.008-t*.085);
     weights[i]=THREE.MathUtils.smoothstep(t,.08,.98);
   }
   pos.needsUpdate=true;geometry.computeVertexNormals();
   const cloth=new THREE.Mesh(geometry,capeMaterial);
   cloth.name='Gregorius_Patrol_Cape_Cloth';
-  cloth.rotation.x=.30;
+  cloth.rotation.x=.16;
   cloth.castShadow=true;cloth.receiveShadow=true;
   cloth.userData.v1299Base=geometry.attributes.position.array.slice();
   cloth.userData.v1299Weights=weights;
@@ -8697,11 +8697,11 @@ function v1299UpdateCape(dt=.016){
     const lateral=(flap*.010*motion-v1299CapeState.turnSpeed*.016*t)*w*t;
     const vertical=(-t*(.012+.010*motion)+Math.cos(time*2.8+t*3)*.004*t*(.3+motion))*w;
     // Toujours derrière : aucune partie mobile ne peut passer devant le plan du dos.
-    const rear=Math.min(bz-.018*t-flap*.025*t*motion-ripple*.008*t*(.2+motion),-.045-t*.055);
+    const rear=Math.min(bz-.010*t-flap*.022*t*motion-ripple*.006*t*(.2+motion),-.012-t*.050);
     attr.setXYZ(i,bx+lateral,by+vertical,rear);
   }
   attr.needsUpdate=true;cloth.geometry.computeVertexNormals();
-  cloth.rotation.x=.30-.08*motion-Math.sin(time*5.2)*.025*motion;
+  cloth.rotation.x=.16-.055*motion-Math.sin(time*5.2)*.018*motion;
   cloth.rotation.z=Math.sin(time*3.4)*.025*motion-v1299CapeState.turnSpeed*.018;
 }
 
@@ -8729,6 +8729,29 @@ if(typeof window!=='undefined'){
   window.ODYSSEE_BUILD_V1299=V1299_BUILD;
   window.ODYSSEE_REBUILD_CAPE=()=>{v1299RemoveCapeArtifacts();return v1299EnsureCape();};
 }
+
+
+/* ===================== ODYSSÉE v1.30.0 — NETTOYAGE BAS DU PERSONNAGE ===================== */
+function v1300RemoveLowerRedArtifact(){
+  const gear=v1287HopliteGear,root=v1286GregoriusRig?.root||gear?.root;
+  if(gear?.skirt){
+    gear.skirt.visible=false;
+    gear.skirt.traverse?.(object=>{object.visible=false;});
+  }
+  root?.traverse?.(object=>{
+    const name=v1287NormalizedName(object.name||'');
+    if(name==='hoplitepteruges'||name==='hopliteredtunic'||name.startsWith('pteruge'))object.visible=false;
+  });
+}
+const v1300UpdateCapeBase=v1299UpdateCape;
+v1299UpdateCape=function(dt=.016){
+  v1300RemoveLowerRedArtifact();
+  return v1300UpdateCapeBase(dt);
+};
+setTimeout(v1300RemoveLowerRedArtifact,0);
+window.ODYSSEE_REMOVE_RED_FOOT_ARTIFACT=v1300RemoveLowerRedArtifact;
+/* =================== FIN ODYSSÉE v1.30.0 =================== */
+
 /* =================== FIN ODYSSÉE v1.29.9 =================== */
 
 </script>
