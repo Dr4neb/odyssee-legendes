@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.32.0 | 2026-08-06T14:18+11:00 | Combat xiphos, blocage et mannequins actifs -->
-<meta name="build-id" content="odyssee-v1.32.0-combat-foundation-20260806-1418-nc">
+<!-- VERIFIED BUILD: Odyssée v1.32.1 | 2026-08-06T16:06+11:00 | Ennemi d’entraînement humanoïde actif -->
+<meta name="build-id" content="odyssee-v1.32.1-training-enemy-active-20260806-1606-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.32.0 — Système de combat</title>
+<title>Odyssée — v1.32.1 — Ennemi d’entraînement actif</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -10119,7 +10119,231 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.32.0 =================== */
 
+/* ===================== ODYSSÉE v1.32.1 — ENNEMI D’ENTRAÎNEMENT HUMANOÏDE ===================== */
+const V1321_BUILD='v1.32.1 — training-enemy-active-20260806-1606-NC';
+const v1321EnemyState={
+  object:null,
+  ring:null,
+  spawn:new THREE.Vector3(trainingCampCenter.x-.45,0,trainingCampCenter.z-.70),
+  health:70,
+  maxHealth:70,
+  cooldown:.8,
+  attackTimer:0,
+  attackDuration:1.05,
+  attackApplied:false,
+  hitReaction:0,
+  respawnTimer:0,
+  initialized:false
+};
+
+function v1321UpdateEnemyLabel(){
+  const enemy=v1321EnemyState.object,label=enemy?.userData?.v1321HealthLabel;
+  if(label) v117SetLabel?.(label,`ENNEMI ${Math.max(0,Math.ceil(v1321EnemyState.health))} / ${v1321EnemyState.maxHealth}`);
+}
+function v1321CreateEnemyRing(){
+  if(v1321EnemyState.ring||!scene)return v1321EnemyState.ring;
+  const material=new THREE.MeshBasicMaterial({color:0xc8322b,transparent:true,opacity:.30,depthWrite:false,side:THREE.DoubleSide});
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.55,.68,36),material);
+  ring.name='Training_Enemy_Attack_Telegraph';
+  ring.rotation.x=-Math.PI/2;
+  ring.renderOrder=19;
+  ring.visible=false;
+  scene.add(ring);
+  v1321EnemyState.ring=ring;
+  return ring;
+}
+function v1321SpawnEnemy(force=false){
+  const s=v1321EnemyState;
+  if(!scene||typeof createArmoredSoldier!=='function')return null;
+  if(s.object&&!force)return s.object;
+  if(s.object?.parent)s.object.parent.remove(s.object);
+  const spawn=s.spawn.clone();
+  spawn.y=typeof getTerrainHeight==='function'?getTerrainHeight(spawn.x,spawn.z):0;
+  const enemy=createArmoredSoldier({
+    position:spawn,
+    name:'Adversaire d’entraînement',
+    role:'ennemi',
+    weapon:'sword',
+    capeColor:0x7a1d1a,
+    shieldColor:0x111315,
+    training:false,
+    armored:true,
+    hasCape:false,
+    hasShield:true,
+    helmeted:true,
+    tunicColor:0x4b1717
+  });
+  enemy.name='Training_Enemy_Hoplite_V1321';
+  enemy.scale.setScalar(.98);
+  enemy.userData.v1321Enemy=true;
+  enemy.userData.destroyed=false;
+  enemy.userData.maxHealth=s.maxHealth;
+  enemy.userData.health=s.maxHealth;
+  enemy.userData.v1320CombatRadius=.68;
+  const label=v117Label?.(`ENNEMI ${s.maxHealth} / ${s.maxHealth}`);
+  if(label){label.position.set(0,1.92,0);label.scale.set(.98,.245,1);enemy.add(label);enemy.userData.v1321HealthLabel=label;}
+  s.object=enemy;
+  s.health=s.maxHealth;
+  s.cooldown=.8;
+  s.attackTimer=0;
+  s.attackApplied=false;
+  s.hitReaction=0;
+  s.respawnTimer=0;
+  s.initialized=true;
+  v1321CreateEnemyRing();
+  return enemy;
+}
+function v1321DestroyEnemy(){
+  const s=v1321EnemyState,enemy=s.object;
+  if(!enemy||enemy.userData.destroyed)return;
+  enemy.userData.destroyed=true;
+  enemy.userData.health=0;
+  s.health=0;
+  s.attackTimer=0;
+  s.respawnTimer=5;
+  enemy.visible=false;
+  if(s.ring)s.ring.visible=false;
+  const p=enemy.position.clone().add(new THREE.Vector3(0,1.0,0));
+  v117Dust?.(p,.85,0x8f302b);
+  v117ImpactSound?.('ground');
+  cameraShake=Math.max(cameraShake,.065);
+  v117Toast?.('ENNEMI VAINCU — RÉAPPARITION 5 S');
+}
+function v1321DamageEnemy(damage=18,kind='sword'){
+  const s=v1321EnemyState,enemy=s.object;
+  if(!enemy||!enemy.visible||enemy.userData.destroyed)return false;
+  s.health=Math.max(0,s.health-damage);
+  enemy.userData.health=s.health;
+  s.hitReaction=.28;
+  s.attackTimer=0;
+  s.cooldown=Math.max(s.cooldown,.45);
+  v1321UpdateEnemyLabel();
+  const p=enemy.position.clone().add(new THREE.Vector3(0,1.15,0));
+  v117Dust?.(p,.42,kind==='arrow'?0xd2c29c:0xa45c45);
+  v117ImpactSound?.('stone');
+  cameraShake=Math.max(cameraShake,.035);
+  if(s.health<=0)v1321DestroyEnemy();
+  return true;
+}
+
+const v1321DamageBase=v117Damage;
+v117Damage=function(target,damage=15,kind='sword'){
+  if(target?.userData?.v1321Enemy)return v1321DamageEnemy(damage,kind);
+  return v1321DamageBase?.(target,damage,kind);
+};
+
+const v1321FindBladeHitBase=v1320FindBladeHit;
+v1320FindBladeHit=function(segment){
+  const enemy=v1321EnemyState.object;
+  if(segment&&enemy?.visible&&!enemy.userData?.destroyed){
+    const delta=enemy.position.clone().sub(player).setY(0),range=delta.length();
+    if(range>.08&&range<2.45&&delta.normalize().dot(v1320PlayerForward())>-.04){
+      const contact=v1320TargetContactDistance(enemy,segment);
+      if(contact<=(enemy.userData.v1320CombatRadius||.68))return enemy;
+    }
+  }
+  return v1321FindBladeHitBase?.(segment)||null;
+};
+
+function v1321FaceEnemyTowardPlayer(enemy,dt){
+  const dx=player.x-enemy.position.x,dz=player.z-enemy.position.z;
+  if(dx*dx+dz*dz<1e-6)return;
+  const wanted=Math.atan2(dx,dz)+Math.PI;
+  enemy.rotation.y=normalizeAngle(enemy.rotation.y+THREE.MathUtils.clamp(normalizeAngle(wanted-enemy.rotation.y),-dt*5.6,dt*5.6));
+}
+function v1321MoveEnemy(enemy,dir,speed,dt){
+  const proposed=enemy.position.clone().addScaledVector(dir,speed*dt);
+  const fromSpawn=proposed.clone().sub(v1321EnemyState.spawn).setY(0);
+  if(fromSpawn.length()>5.2)proposed.copy(v1321EnemyState.spawn).add(fromSpawn.normalize().multiplyScalar(5.2));
+  resolveCollisions?.(proposed,.27);
+  proposed.y=getTerrainHeight?.(proposed.x,proposed.z)||0;
+  enemy.position.copy(proposed);
+}
+function v1321UpdateEnemy(dt){
+  const s=v1321EnemyState;
+  let enemy=s.object;
+  if(!enemy){enemy=v1321SpawnEnemy();if(!enemy)return;}
+  const ring=v1321CreateEnemyRing();
+  if(enemy.userData.destroyed){
+    s.respawnTimer=Math.max(0,s.respawnTimer-dt);
+    if(ring)ring.visible=false;
+    if(s.respawnTimer<=0){
+      enemy.position.copy(s.spawn);enemy.position.y=getTerrainHeight?.(s.spawn.x,s.spawn.z)||0;
+      enemy.visible=true;enemy.userData.destroyed=false;s.health=s.maxHealth;enemy.userData.health=s.maxHealth;
+      s.cooldown=1.0;s.attackTimer=0;s.attackApplied=false;s.hitReaction=0;
+      v1321UpdateEnemyLabel();
+      v117Toast?.('ENNEMI RÉAPPARU AU CAMP');
+    }
+    return;
+  }
+
+  s.cooldown=Math.max(0,s.cooldown-dt);
+  s.hitReaction=Math.max(0,s.hitReaction-dt);
+  const toPlayer=player.clone().sub(enemy.position).setY(0);
+  const distance=toPlayer.length();
+  const direction=distance>1e-5?toPlayer.clone().normalize():new THREE.Vector3();
+  v1321FaceEnemyTowardPlayer(enemy,dt);
+
+  let moving=false,actionType='',actionPhase=0;
+  if(s.hitReaction>0){
+    actionType='guard';actionPhase=1-s.hitReaction/.28;
+    if(ring)ring.visible=false;
+  }else if(s.attackTimer>0){
+    const previous=s.attackTimer;
+    s.attackTimer=Math.max(0,s.attackTimer-dt);
+    const progress=1-s.attackTimer/s.attackDuration;
+    actionType='slash';actionPhase=progress;
+    if(ring){
+      ring.visible=true;
+      ring.position.set(enemy.position.x,getTerrainHeight(enemy.position.x,enemy.position.z)+.035,enemy.position.z);
+      ring.material.opacity=.20+.58*Math.sin(Math.PI*THREE.MathUtils.clamp(progress,0,1));
+      ring.scale.setScalar(.85+progress*.42);
+    }
+    if(!s.attackApplied&&progress>=.72){
+      s.attackApplied=true;
+      const currentDistance=Math.hypot(player.x-enemy.position.x,player.z-enemy.position.z);
+      if(currentDistance<=1.62)v1320ApplyIncomingAttack({origin:enemy.position.clone().add(new THREE.Vector3(0,1.12,0)),damage:12,staminaDamage:18,force:1.08});
+    }
+    if(previous>0&&s.attackTimer===0){s.cooldown=1.15;s.attackApplied=false;if(ring)ring.visible=false;}
+  }else if(distance<=1.42&&s.cooldown<=0){
+    s.attackTimer=s.attackDuration;s.attackApplied=false;
+  }else{
+    const fromSpawn=enemy.position.clone().sub(s.spawn).setY(0),playerNearSpawn=player.clone().sub(s.spawn).setY(0).length()<7.5;
+    if(playerNearSpawn&&distance>1.16){v1321MoveEnemy(enemy,direction,.78,dt);moving=true;}
+    else if(!playerNearSpawn&&fromSpawn.length()>.25){v1321MoveEnemy(enemy,fromSpawn.normalize().multiplyScalar(-1),.62,dt);moving=true;}
+    if(ring)ring.visible=false;
+  }
+  applySoldierPose?.(enemy,dt,{moving,alert:1,actionType,actionPhase});
+}
+
+const v1321CombatUpdateBase=updateV117Combat;
+updateV117Combat=function(dt){
+  v1321CombatUpdateBase?.(dt);
+  v1321UpdateEnemy(dt);
+};
+
+function v1321InitializeEnemy(){
+  if(v1321SpawnEnemy())document.body.dataset.trainingEnemy='active';
+}
+setTimeout(v1321InitializeEnemy,0);
+setTimeout(v1321InitializeEnemy,650);
+setTimeout(v1321InitializeEnemy,1800);
+
+const v1321CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1321CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1321_BUILD,trainingEnemy:{type:'humanoid-hoplite',health:v1321EnemyState.health,maxHealth:v1321EnemyState.maxHealth,respawnSeconds:5}};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1321=V1321_BUILD;
+  window.ODYSSEE_TRAINING_ENEMY=v1321EnemyState;
+  window.ODYSSEE_RESPAWN_TRAINING_ENEMY=()=>v1321SpawnEnemy(true);
+}
+/* =================== FIN ODYSSÉE v1.32.1 =================== */
+
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.32.0-20260806-1418-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.32.1-20260806-1606-NC -->
