@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.29.1 | 2026-08-06T11:18+11:00 | Bouclier, blocage, marche et métiers -->
-<meta name="build-id" content="odyssee-v1.29.1-shield-block-walk-npc-spawns-20260806-1118-nc">
+<!-- VERIFIED BUILD: Odyssée v1.29.2 | 2026-08-06T11:38+11:00 | Correctif bras gauche du bouclier -->
+<meta name="build-id" content="odyssee-v1.29.2-left-arm-shield-fix-20260806-1138-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.29.1 — Bouclier, animations et métiers</title>
+<title>Odyssée — v1.29.2 — Correctif bouclier bras gauche</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -7844,6 +7844,16 @@ function v1291NodeLocalPosition(node,root,target=new THREE.Vector3()){
   if(!node||!root)return target.set(0,0,0);
   node.getWorldPosition(target);return root.worldToLocal(target);
 }
+function v1291ResolveShieldAnchorNode(gear,root){
+  const candidates=[gear?.leftHand,gear?.leftForearm,gear?.rightHand].filter(Boolean);
+  if(!candidates.length)return null;
+  let best=candidates[0],bestX=-Infinity;
+  for(const node of candidates){
+    const local=v1291NodeLocalPosition(node,root,new THREE.Vector3());
+    if(v1291FiniteVector(local)&&local.x>bestX){best=node;bestX=local.x;}
+  }
+  return best;
+}
 function v1291InstallShieldController(){
   const gear=v1287HopliteGear,root=v1286GregoriusRig.root,shield=gear?.shield;
   if(!gear?.ready||!root||!shield)return false;
@@ -7852,8 +7862,9 @@ function v1291InstallShieldController(){
   shield.userData.v1291Controlled=true;
   shield.userData.v1291Velocity=new THREE.Vector3();
   shield.userData.v1291Quat=new THREE.Quaternion();
-  shield.userData.v1291RestNormal=new THREE.Vector3(-.94,.015,-.20).normalize();
-  shield.userData.v1291BlockNormal=new THREE.Vector3(-.03,.015,-1).normalize();
+  // Le rig universel fait face vers -Z : le vrai flanc gauche est donc côté +X en local.
+  shield.userData.v1291RestNormal=new THREE.Vector3(.94,.015,-.20).normalize();
+  shield.userData.v1291BlockNormal=new THREE.Vector3(.03,.015,-1).normalize();
   shield.userData.v1291FrontAxis=new THREE.Vector3(0,0,1);
   shield.scale.setScalar(.92);
   root.updateMatrixWorld(true);
@@ -7865,20 +7876,20 @@ function v1291UpdateShieldController(dt=1/60){
   if(!gear?.ready||!root||!shield)return;
   if(!shield.userData.v1291Controlled&&!v1291InstallShieldController())return;
   root.updateMatrixWorld(true);
-  const handNode=gear.leftHand||gear.leftForearm,chestNode=gear.chest||gear.hips;
+  const handNode=v1291ResolveShieldAnchorNode(gear,root),chestNode=gear.chest||gear.hips;
   const hand=v1291NodeLocalPosition(handNode,root,new THREE.Vector3());
   const chest=v1291NodeLocalPosition(chestNode,root,new THREE.Vector3());
   if(!v1291FiniteVector(hand)||!v1291FiniteVector(chest))return;
 
-  // Position de repos : sur le flanc gauche, légèrement avancée, sans traverser le corps.
-  const rest=hand.clone().add(new THREE.Vector3(-.085,.105,-.055));
+  // Bouclier forcé sur le bras gauche anatomique : on choisit le point d'ancrage le plus à gauche (+X local).
+  const rest=hand.clone().add(new THREE.Vector3(.085,.105,-.055));
   rest.y=THREE.MathUtils.clamp(rest.y,.62,1.17);
-  rest.x=THREE.MathUtils.clamp(rest.x,-.58,-.20);
+  rest.x=THREE.MathUtils.clamp(rest.x,.20,.58);
   rest.z=THREE.MathUtils.clamp(rest.z,-.22,.16);
   // Position de garde : devant le torse et assez haute pour couvrir le visage sans masquer tout le personnage.
-  const guard=chest.clone().add(new THREE.Vector3(-.085,.035,-.355));
+  const guard=chest.clone().add(new THREE.Vector3(.085,.035,-.355));
   guard.y=THREE.MathUtils.clamp(guard.y,.82,1.22);
-  guard.x=THREE.MathUtils.clamp(guard.x,-.28,.04);
+  guard.x=THREE.MathUtils.clamp(guard.x,-.04,.28);
   guard.z=THREE.MathUtils.clamp(guard.z,-.46,-.22);
 
   const rawBlock=THREE.MathUtils.clamp(blockBlend+(blocking?0.35:0),0,1);
@@ -7888,8 +7899,8 @@ function v1291UpdateShieldController(dt=1/60){
   shield.position.lerp(target,responsiveness);
   const normal=shield.userData.v1291RestNormal.clone().lerp(shield.userData.v1291BlockNormal,guardBlend).normalize();
   const targetQuat=new THREE.Quaternion().setFromUnitVectors(shield.userData.v1291FrontAxis,normal);
-  // Légère inclinaison naturelle vers le porteur, sans retournement de l'aspis.
-  const roll=new THREE.Quaternion().setFromAxisAngle(normal,.035-.055*guardBlend);
+  // Légère inclinaison naturelle vers le porteur, miroir de la configuration précédente.
+  const roll=new THREE.Quaternion().setFromAxisAngle(normal,-.035+.055*guardBlend);
   targetQuat.premultiply(roll);
   shield.quaternion.slerp(targetQuat,responsiveness);
   shield.scale.setScalar(THREE.MathUtils.lerp(.92,.98,guardBlend));
