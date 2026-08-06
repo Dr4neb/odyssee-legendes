@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.32.8 | 2026-08-06T17:06+11:00 | Nettoyage rigs, marche PNJ et patrouilleurs corrigés -->
-<meta name="build-id" content="odyssee-v1.32.8-rig-cleanup-walk-patrol-fix-20260806-1706-nc">
+<!-- VERIFIED BUILD: Odyssée v1.32.10 | 2026-08-06T17:21+11:00 | Vérification générale, fluidité et patrouilleurs gris -->
+<meta name="build-id" content="odyssee-v1.32.10-smooth-audit-gray-patrol-20260806-1721-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.32.8 — Rigs nettoyés et patrouilleurs corrigés</title>
+<title>Odyssée — v1.32.10 — Vérification générale et patrouilleurs gris</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -11516,6 +11516,383 @@ if(typeof window!=='undefined'){
 /* =================== FIN ODYSSÉE v1.32.8 =================== */
 
 
+/* ===================== ODYSSÉE v1.32.9 — IDENTITÉS VISUELLES DISTINCTES DES PNJ ===================== */
+const V1329_BUILD='v1.32.9 — distinct-npc-visual-identities-20260806-1720-NC';
+const V1329_IDENTITIES={
+  trainer:{scale:[1.00,1.01,1.00],cloth:0x661f1b,secondary:0x2e2722,leather:0x3b281d,metal:0xa47b43},
+  farmer:{scale:[.94,.98,.94],cloth:0xb89a69,secondary:0x776044,leather:0x503722,metal:0x656b6e},
+  blacksmith:{scale:[1.09,.99,1.06],cloth:0x413a36,secondary:0x211d1b,leather:0x2d211b,metal:0x777d82},
+  builder:{scale:[1.03,.99,1.02],cloth:0x8c6843,secondary:0x4f3826,leather:0x453021,metal:0x858b8d},
+  guard:{scale:[1.00,1.01,1.00],cloth:0x30201d,secondary:0x111315,leather:0x2e2119,metal:0x1b1e22}
+};
+const v1329State={lastFrame:performance.now()};
+function v1329Material(color,{roughness=.88,metalness=.03,side=THREE.FrontSide}={}){
+  return new THREE.MeshStandardMaterial({color,roughness,metalness,side});
+}
+function v1329RemoveOldDress(avatar){
+  const root=avatar?.root;if(!root)return;
+  const remove=[];
+  root.traverse(object=>{
+    if(object===root)return;
+    const name=(object.name||'').toLowerCase();
+    if(
+      name.startsWith('v1326_')||
+      /_(tunic_torso|tunic_collar|belt|panel_\d+|work_apron|apron_strap_|straw_|trainer_sash|hoe_tool|hammer_tool|mallet_tool|xiphos_tool)/i.test(object.name||'')
+    ) remove.push(object);
+  });
+  remove.sort((a,b)=>{
+    let da=0,db=0;for(let n=a;n;n=n.parent)da++;for(let n=b;n;n=n.parent)db++;return db-da;
+  });
+  for(const object of remove)if(object.parent)object.parent.remove(object);
+  if(avatar.tool?.parent&&/v1326_/i.test(avatar.tool.name||''))avatar.tool.parent.remove(avatar.tool);
+  avatar.tool=null;
+}
+function v1329SetAvatarScale(avatar,role){
+  const root=avatar?.root,identity=V1329_IDENTITIES[role];if(!root||!identity)return;
+  if(!root.userData.v1329BaseScale)root.userData.v1329BaseScale=root.scale.clone();
+  const base=root.userData.v1329BaseScale;
+  root.scale.set(base.x*identity.scale[0],base.y*identity.scale[1],base.z*identity.scale[2]);
+}
+function v1329TintBaseOutfit(root,role){
+  const identity=V1329_IDENTITIES[role];if(!root||!identity)return;
+  root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh)||object.userData?.v1329Generated)return;
+    const mats=Array.isArray(object.material)?object.material:[object.material];
+    const tag=`${object.name||''} ${mats.map(m=>m?.name||'').join(' ')}`.toLowerCase();
+    if(!/(ranger|outfit|tunic|shirt|pants|trouser|boot|glove|cloth|leather|vest)/.test(tag))return;
+    object.material=mats.map((material,index)=>{
+      if(!material)return material;
+      const clone=material.clone();
+      const useSecondary=/(boot|glove|leather|belt|strap)/.test(tag)||index%2===1;
+      clone.color?.setHex(useSecondary?identity.secondary:identity.cloth);
+      clone.roughness=Math.max(.72,clone.roughness??.8);
+      clone.metalness=Math.min(.10,clone.metalness??.05);
+      clone.needsUpdate=true;
+      return clone;
+    });
+    if(object.material.length===1)object.material=object.material[0];
+  });
+}
+function v1329Generated(mesh){mesh.userData=mesh.userData||{};mesh.userData.v1329Generated=true;return mesh;}
+function v1329Box(size,material,name){return v1329Generated(v1287Mesh(new THREE.BoxGeometry(size[0],size[1],size[2]),material,name));}
+function v1329Cylinder(top,bottom,height,segments,material,name){return v1329Generated(v1287Mesh(new THREE.CylinderGeometry(top,bottom,height,segments),material,name));}
+function v1329Sphere(radius,material,name){return v1329Generated(v1287Mesh(new THREE.SphereGeometry(radius,14,10),material,name));}
+function v1329Group(name,parent){const group=new THREE.Group();group.name=name;group.userData.v1329Generated=true;parent?.add(group);return group;}
+function v1329LegNodes(root){return {
+  left:v1287FindRigNode(root,[['calfl'],['lowerlegl'],['shinl']]),
+  right:v1287FindRigNode(root,[['calfr'],['lowerlegr'],['shinr']])
+};}
+function v1329ForearmNodes(root){return {
+  left:v1287FindRigNode(root,[['lowerarml'],['forearml'],['leftlowerarm']]),
+  right:v1287FindRigNode(root,[['lowerarmr'],['forearmr'],['rightlowerarm']])
+};}
+function v1329BuildTrainer(avatar){
+  const nodes=avatar.nodes||v1326FindRigNodes(avatar.root),arms=v1329ForearmNodes(avatar.root),id=V1329_IDENTITIES.trainer;
+  const red=v1329Material(id.cloth,{roughness:.86}),dark=v1329Material(id.secondary,{roughness:.92}),leather=v1329Material(id.leather,{roughness:.94}),bronze=v1329Material(id.metal,{roughness:.42,metalness:.55});
+  const chest=v1329Group('V1329_Trainer_Light_Cuirass',nodes.chest);chest.position.set(0,-.025,.005);
+  const plate=v1329Generated(v1287Mesh(new THREE.CapsuleGeometry(.165,.22,7,16),leather,'V1329_Trainer_Leather_Cuirass'));plate.scale.set(1.05,1,.62);plate.position.set(0,-.015,.005);chest.add(plate);
+  const breast=v1329Box([.26,.18,.035],bronze,'V1329_Trainer_Breast_Plate');breast.position.set(0,.06,-.145);chest.add(breast);
+  const belt=v1329Cylinder(.195,.20,.07,18,dark,'V1329_Trainer_War_Belt');belt.position.y=-.21;chest.add(belt);
+  const skirt=v1329Group('V1329_Trainer_Short_Tunic',nodes.hips);skirt.position.set(0,-.065,.005);
+  for(let i=-3;i<=3;i++){const p=v1329Box([.052,.30,.028],i%2?dark:red,`V1329_Trainer_Tunic_${i+3}`);p.position.set(i*.052,-.14,.025);p.rotation.z=i*.018;skirt.add(p);}
+  for(const [side,node] of [['L',arms.left],['R',arms.right]])if(node){const bracer=v1329Cylinder(.058,.052,.18,12,leather,`V1329_Trainer_Bracer_${side}`);bracer.position.set(0,-.09,.01);node.add(bracer);}
+  const shoulderL=v1329Sphere(.075,leather,'V1329_Trainer_Shoulder_L');shoulderL.scale.set(1.15,.72,.92);shoulderL.position.set(-.17,.17,.005);chest.add(shoulderL);
+  const shoulderR=shoulderL.clone();shoulderR.name='V1329_Trainer_Shoulder_R';shoulderR.position.x=.17;chest.add(shoulderR);
+  avatar.tool=v1326AddTool(nodes.rightHand,{leather,metal:bronze,wood:leather},'xiphos');
+}
+function v1329BuildFarmer(avatar){
+  const nodes=avatar.nodes||v1326FindRigNodes(avatar.root),legs=v1329LegNodes(avatar.root),id=V1329_IDENTITIES.farmer;
+  const cloth=v1329Material(id.cloth,{roughness:.98}),earth=v1329Material(id.secondary,{roughness:.98}),leather=v1329Material(id.leather,{roughness:.96}),metal=v1329Material(id.metal,{roughness:.55,metalness:.42}),straw=v1329Material(0xc6a765,{roughness:1});
+  const tunic=v1329Group('V1329_Farmer_Loose_Tunic',nodes.chest);tunic.position.set(0,-.035,.005);
+  const body=v1329Cylinder(.185,.225,.46,18,cloth,'V1329_Farmer_Tunic_Body');body.position.y=-.035;tunic.add(body);
+  const sash=v1329Box([.065,.48,.045],earth,'V1329_Farmer_Shoulder_Sash');sash.position.set(-.085,-.02,-.13);sash.rotation.z=-.23;tunic.add(sash);
+  const ropeBelt=v1329Cylinder(.205,.205,.055,18,leather,'V1329_Farmer_Rope_Belt');ropeBelt.position.y=-.22;tunic.add(ropeBelt);
+  const hat=v1329Group('V1329_Farmer_Wide_Straw_Hat',nodes.head);hat.position.set(0,.10,.005);
+  const brim=v1329Cylinder(.235,.235,.026,24,straw,'V1329_Farmer_Hat_Brim');hat.add(brim);
+  const crown=v1329Cylinder(.095,.135,.13,18,straw,'V1329_Farmer_Hat_Crown');crown.position.y=.075;hat.add(crown);
+  const band=v1329Box([.23,.025,.16],earth,'V1329_Farmer_Hat_Band');band.position.y=.032;hat.add(band);
+  const satchel=v1329Group('V1329_Farmer_Satchel',nodes.hips);satchel.position.set(.22,-.05,.02);
+  const bag=v1329Box([.18,.22,.12],leather,'V1329_Farmer_Bag');bag.position.set(.02,-.12,-.02);bag.rotation.z=-.10;satchel.add(bag);
+  const flap=v1329Box([.19,.075,.13],earth,'V1329_Farmer_Bag_Flap');flap.position.set(.02,-.025,-.025);satchel.add(flap);
+  for(const [side,node] of [['L',legs.left],['R',legs.right]])if(node){for(let i=0;i<3;i++){const wrap=v1329Box([.105,.038,.105],earth,`V1329_Farmer_Leg_Wrap_${side}_${i}`);wrap.position.set(0,-.07-i*.055,.01);node.add(wrap);}}
+  avatar.tool=v1326AddTool(nodes.rightHand,{leather,metal,wood:leather},'hoe');
+}
+function v1329BuildBlacksmith(avatar){
+  const nodes=avatar.nodes||v1326FindRigNodes(avatar.root),arms=v1329ForearmNodes(avatar.root),id=V1329_IDENTITIES.blacksmith;
+  const cloth=v1329Material(id.cloth,{roughness:.96}),dark=v1329Material(id.secondary,{roughness:.97}),leather=v1329Material(id.leather,{roughness:.96}),metal=v1329Material(id.metal,{roughness:.40,metalness:.68}),ember=v1329Material(0x7b2c18,{roughness:.75,metalness:.10});
+  const chest=v1329Group('V1329_Blacksmith_Broad_Torso',nodes.chest);chest.position.set(0,-.02,.005);
+  const tunic=v1329Box([.42,.43,.30],cloth,'V1329_Blacksmith_Dark_Tunic');tunic.position.y=-.015;chest.add(tunic);
+  const apron=v1329Box([.30,.48,.055],leather,'V1329_Blacksmith_Heavy_Apron');apron.position.set(0,-.08,-.17);apron.rotation.x=.04;chest.add(apron);
+  const apronTop=v1329Box([.20,.13,.065],dark,'V1329_Blacksmith_Apron_Chest');apronTop.position.set(0,.17,-.17);chest.add(apronTop);
+  const shoulderL=v1329Sphere(.085,cloth,'V1329_Blacksmith_Shoulder_L');shoulderL.scale.set(1.20,.82,1.05);shoulderL.position.set(-.20,.16,0);chest.add(shoulderL);
+  const shoulderR=shoulderL.clone();shoulderR.name='V1329_Blacksmith_Shoulder_R';shoulderR.position.x=.20;chest.add(shoulderR);
+  const headband=v1329Box([.245,.035,.18],dark,'V1329_Blacksmith_Headband');headband.position.set(0,.095,-.015);nodes.head?.add(headband);
+  for(const [side,node] of [['L',nodes.leftHand],['R',nodes.rightHand]])if(node){const glove=v1329Sphere(.060,leather,`V1329_Blacksmith_Glove_${side}`);glove.scale.set(1.08,.78,1.02);node.add(glove);}
+  for(const [side,node] of [['L',arms.left],['R',arms.right]])if(node){const cuff=v1329Cylinder(.060,.055,.14,12,dark,`V1329_Blacksmith_Cuff_${side}`);cuff.position.set(0,-.075,.005);node.add(cuff);}
+  const tong=v1329Box([.035,.30,.025],metal,'V1329_Blacksmith_Tongs');tong.position.set(.17,-.25,-.02);tong.rotation.z=-.18;chest.add(tong);
+  const hotRivet=v1329Sphere(.018,ember,'V1329_Blacksmith_Ember_Rivet');hotRivet.position.set(0,-.04,-.205);chest.add(hotRivet);
+  avatar.tool=v1326AddTool(nodes.rightHand,{leather,metal,wood:leather},'hammer');
+}
+function v1329BuildBuilder(avatar){
+  const nodes=avatar.nodes||v1326FindRigNodes(avatar.root),id=V1329_IDENTITIES.builder;
+  const cloth=v1329Material(id.cloth,{roughness:.96}),earth=v1329Material(id.secondary,{roughness:.98}),leather=v1329Material(id.leather,{roughness:.96}),metal=v1329Material(id.metal,{roughness:.55,metalness:.38});
+  const chest=v1329Group('V1329_Builder_Work_Vest',nodes.chest);chest.position.set(0,-.025,.005);
+  const vest=v1329Box([.38,.40,.285],cloth,'V1329_Builder_Earth_Vest');vest.position.y=-.01;chest.add(vest);
+  const openFront=v1329Box([.055,.35,.04],earth,'V1329_Builder_Vest_Edge_L');openFront.position.set(-.085,-.01,-.16);chest.add(openFront);
+  const openFrontR=openFront.clone();openFrontR.name='V1329_Builder_Vest_Edge_R';openFrontR.position.x=.085;chest.add(openFrontR);
+  const belt=v1329Cylinder(.21,.205,.075,18,leather,'V1329_Builder_Tool_Belt');belt.position.y=-.22;chest.add(belt);
+  for(let i=0;i<3;i++){const pouch=v1329Box([.105,.13,.075],i===1?earth:leather,`V1329_Builder_Pouch_${i}`);pouch.position.set((i-1)*.13,-.27,-.07);pouch.rotation.z=(i-1)*.06;chest.add(pouch);}
+  const shoulderPad=v1329Box([.16,.075,.20],leather,'V1329_Builder_Shoulder_Pad');shoulderPad.position.set(.18,.17,0);shoulderPad.rotation.z=.12;chest.add(shoulderPad);
+  const rule=v1329Box([.035,.36,.025],metal,'V1329_Builder_Measuring_Rule');rule.position.set(-.19,-.12,-.02);rule.rotation.z=.12;chest.add(rule);
+  const skirt=v1329Group('V1329_Builder_Split_Apron',nodes.hips);skirt.position.set(0,-.055,.005);
+  for(let i=-2;i<=2;i++){const panel=v1329Box([.065,.28,.03],i%2?earth:cloth,`V1329_Builder_Apron_${i+2}`);panel.position.set(i*.064,-.13,.025);panel.rotation.z=i*.025;skirt.add(panel);}
+  avatar.tool=v1326AddTool(nodes.rightHand,{leather,metal,wood:leather},'mallet');
+}
+function v1329RecolorGuardGear(avatar){
+  const root=avatar?.root;if(!root)return;
+  root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh)||!object.material)return;
+    const name=(object.name||'').toLowerCase();
+    let color=null,metalness=null,roughness=null;
+    if(/crest|plume/.test(name)){color=name.includes('base')?0x35100f:0x7a1e1a;metalness=.04;roughness=.86;}
+    else if(/corinthian|cuirass|greave|bronze_greave/.test(name)){color=/edge|brow|ridge|band/.test(name)?0x31353a:0x111316;metalness=.68;roughness=.40;}
+    else if(/strap|belt|antilabe|porpax/.test(name)){color=0x2d2119;metalness=.04;roughness=.94;}
+    if(color===null)return;
+    const mats=Array.isArray(object.material)?object.material:[object.material];
+    object.material=mats.map(material=>{const clone=material.clone();clone.color?.setHex(color);if(metalness!==null)clone.metalness=metalness;if(roughness!==null)clone.roughness=roughness;clone.needsUpdate=true;return clone;});
+    if(object.material.length===1)object.material=object.material[0];
+  });
+}
+function v1329BuildGuardIdentity(avatar){
+  const nodes=avatar.nodes||v1326FindRigNodes(avatar.root),id=V1329_IDENTITIES.guard;
+  const dark=v1329Material(id.secondary,{roughness:.88}),leather=v1329Material(id.leather,{roughness:.95});
+  const skirt=v1329Group('V1329_Guard_Dark_Pteruges',nodes.hips);skirt.position.set(0,-.075,.005);
+  for(let i=-3;i<=3;i++){const panel=v1329Box([.050,.27,.027],i%2?leather:dark,`V1329_Guard_Dark_Panel_${i+3}`);panel.position.set(i*.050,-.135,.026);panel.rotation.z=i*.018;skirt.add(panel);}
+  v1329RecolorGuardGear(avatar);
+  v1328RemoveGuardCapeAndRedSquares(avatar);
+  v1328InstallGuardShield(avatar);
+  if(!avatar.v1328SpearMount)v1328CreateForwardSpear(avatar);
+}
+function v1329ApplyIdentity(npc,role){
+  const avatar=role==='guard'?npc?.userData?.v1327Avatar:npc?.userData?.v1326Avatar;
+  if(!avatar?.root)return null;
+  if(avatar.root.userData.v1329Identity===role)return avatar;
+  v1329RemoveOldDress(avatar);
+  v1329SetAvatarScale(avatar,role);
+  v1329TintBaseOutfit(avatar.root,role);
+  avatar.nodes=avatar.nodes||v1326FindRigNodes(avatar.root);
+  if(role==='trainer')v1329BuildTrainer(avatar);
+  else if(role==='farmer')v1329BuildFarmer(avatar);
+  else if(role==='blacksmith')v1329BuildBlacksmith(avatar);
+  else if(role==='builder')v1329BuildBuilder(avatar);
+  else if(role==='guard')v1329BuildGuardIdentity(avatar);
+  avatar.root.userData.v1329Identity=role;
+  avatar.root.updateMatrixWorld(true);
+  return avatar;
+}
+function v1329Maintenance(){
+  v1329ApplyIdentity(trainingNPC,'trainer');
+  v1329ApplyIdentity(farmerNPC,'farmer');
+  v1329ApplyIdentity(blacksmithNPC,'blacksmith');
+  v1329ApplyIdentity(builderNPC,'builder');
+  for(const guard of patrolGuards||[])v1329ApplyIdentity(guard,'guard');
+}
+const v1329CreateProfessionBase=v1326CreateAvatarForNPC;
+v1326CreateAvatarForNPC=async function(npc,spec){const avatar=await v1329CreateProfessionBase(npc,spec);const role=npc===trainingNPC?'trainer':npc===farmerNPC?'farmer':npc===blacksmithNPC?'blacksmith':npc===builderNPC?'builder':null;if(role)v1329ApplyIdentity(npc,role);return avatar;};
+const v1329CreateGuardBase=v1327CreateGuardAvatar;
+v1327CreateGuardAvatar=async function(npc,index=0){const avatar=await v1329CreateGuardBase(npc,index);v1329ApplyIdentity(npc,'guard');return avatar;};
+const v1329UpdateBase=update;
+update=function(){v1329UpdateBase();v1329Maintenance();};
+setTimeout(v1329Maintenance,0);
+setTimeout(v1329Maintenance,700);
+setTimeout(v1329Maintenance,1800);
+const v1329CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1329CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1329_BUILD,npcVisualIdentity:{trainer:'red-leather-instructor',farmer:'straw-hat-field-worker',blacksmith:'broad-dark-apron',builder:'earth-tool-belt',patrol:'black-hoplite-red-crest'}};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1329=V1329_BUILD;
+  window.ODYSSEE_REFRESH_NPC_IDENTITIES=v1329Maintenance;
+}
+/* =================== FIN ODYSSÉE v1.32.9 =================== */
+
+/* ===================== ODYSSÉE v1.32.10 — AUDIT, FLUIDITÉ ET PATROUILLEURS GRIS ===================== */
+const V13210_BUILD='v1.32.10 — smooth-audit-gray-patrol-20260806-1721-NC';
+const v13210State={
+  lastRigMaintenance:0,
+  lastIdentityMaintenance:0,
+  auditRuns:0,
+  report:null
+};
+
+function v13210SetMaterial(object,color,{roughness=.44,metalness=.64}={}){
+  if(!(object?.isMesh||object?.isSkinnedMesh)||!object.material)return;
+  const materials=Array.isArray(object.material)?object.material:[object.material];
+  const alreadyCorrect=object.userData?.v13210GrayPatrol&&materials.every(material=>material&&material.color?.getHex?.()===color&&Math.abs((material.roughness??0)-roughness)<.001&&Math.abs((material.metalness??0)-metalness)<.001);
+  if(alreadyCorrect)return;
+  object.material=materials.map(material=>{
+    if(!material)return material;
+    const clone=material.clone();
+    clone.color?.setHex(color);
+    clone.roughness=roughness;
+    clone.metalness=metalness;
+    clone.needsUpdate=true;
+    return clone;
+  });
+  if(object.material.length===1)object.material=object.material[0];
+  object.userData=object.userData||{};
+  object.userData.v13210GrayPatrol=true;
+}
+function v13210ApplyGrayPatrolGear(avatar,{force=false}={}){
+  const root=avatar?.root;if(!root)return false;
+  if(root.userData.v13210GrayPatrolApplied&&!force)return true;
+  root.traverse(object=>{
+    if(!(object.isMesh||object.isSkinnedMesh))return;
+    const name=(object.name||'').toLowerCase();
+    if(/crest_plume|red_crest|plume/.test(name))return;
+    if(/corinthian_(dome|brow|nose|cheek|neck_guard|crest_base)/.test(name)){
+      const edge=/brow|crest_base/.test(name);
+      v13210SetMaterial(object,edge?0x969da4:0x686f76,{roughness:edge?.34:.43,metalness:.72});
+      return;
+    }
+    if(/aspis_/.test(name)){
+      if(/antilabe|porpax|grip|rivet/.test(name))return;
+      if(/interior|core/.test(name))v13210SetMaterial(object,0x454b51,{roughness:.66,metalness:.34});
+      else if(/rim|boss/.test(name))v13210SetMaterial(object,0x9299a0,{roughness:.34,metalness:.74});
+      else v13210SetMaterial(object,0x626970,{roughness:.47,metalness:.58});
+    }
+  });
+  root.userData.v13210GrayPatrolApplied=true;
+  return true;
+}
+
+// Les nettoyages lourds ne sont plus relancés à chaque image.
+const v13210RemoveRingsBase=v1328RemoveBodyRings;
+v1328RemoveBodyRings=function(root,force=false){
+  if(!root)return;
+  if(root.userData?.v13210RingsClean&&!force)return;
+  v13210RemoveRingsBase(root);
+  root.userData=root.userData||{};
+  root.userData.v13210RingsClean=true;
+};
+const v13210RigMaintenanceBase=v1328Maintenance;
+v1328Maintenance=function(force=false){
+  const now=performance.now();
+  if(!force&&now-v13210State.lastRigMaintenance<900)return;
+  v13210State.lastRigMaintenance=now;
+  v13210RigMaintenanceBase();
+};
+const v13210IdentityMaintenanceBase=v1329Maintenance;
+v1329Maintenance=function(force=false){
+  const now=performance.now();
+  if(!force&&now-v13210State.lastIdentityMaintenance<900)return;
+  v13210State.lastIdentityMaintenance=now;
+  v13210IdentityMaintenanceBase();
+};
+
+// La finalisation d'un patrouilleur ne recalcule plus tout son montage à chaque frame.
+const v13210FinalizeGuardBase=v1328FinalizeGuard;
+v1328FinalizeGuard=function(npc,force=false){
+  const avatar=npc?.userData?.v1327Avatar;
+  if(!avatar)return null;
+  if(avatar.root?.userData?.v13210GuardFinalized&&!force)return avatar;
+  const finalized=v13210FinalizeGuardBase(npc);
+  if(finalized?.root){
+    v13210ApplyGrayPatrolGear(finalized,{force:true});
+    finalized.root.userData.v13210GuardFinalized=true;
+  }
+  return finalized;
+};
+
+const v13210BuildGuardIdentityBase=v1329BuildGuardIdentity;
+v1329BuildGuardIdentity=function(avatar){
+  v13210BuildGuardIdentityBase(avatar);
+  v13210ApplyGrayPatrolGear(avatar,{force:true});
+  if(avatar?.root)avatar.root.userData.v13210GuardFinalized=true;
+};
+const v13210CreateGuardBase=v1327CreateGuardAvatar;
+v1327CreateGuardAvatar=async function(npc,index=0){
+  const result=await v13210CreateGuardBase(npc,index);
+  const avatar=npc?.userData?.v1327Avatar;
+  if(avatar){
+    avatar.root.userData.v13210GuardFinalized=false;
+    v1328FinalizeGuard(npc,true);
+    v13210ApplyGrayPatrolGear(avatar,{force:true});
+  }
+  return result;
+};
+
+function v13210AuditCharacters(){
+  const report={professionRoots:{},guardRoots:[],duplicatesRemoved:0,ringsCleaned:0,grayGuards:0,enemyRemoved:false};
+  const professions=[
+    ['Nikon',trainingNPC],['Demos',farmerNPC],['Myron',blacksmithNPC],['Theron',builderNPC]
+  ];
+  for(const [name,npc] of professions){
+    if(!npc)continue;
+    const before=v1328AvatarRoots(npc).length;
+    v1328DedupeNPC(npc,'profession');
+    const avatar=npc.userData?.v1326Avatar;
+    if(avatar?.root){
+      v1328RemoveBodyRings(avatar.root,true);report.ringsCleaned++;
+    }
+    const after=v1328AvatarRoots(npc).length;
+    report.duplicatesRemoved+=Math.max(0,before-after);
+    report.professionRoots[name]=after;
+  }
+  for(const guard of patrolGuards||[]){
+    const before=v1328AvatarRoots(guard).length;
+    v1328DedupeNPC(guard,'guard');
+    const avatar=guard.userData?.v1327Avatar;
+    if(avatar){
+      avatar.root.userData.v13210GuardFinalized=false;
+      v1328FinalizeGuard(guard,true);
+      v1328RemoveGuardCapeAndRedSquares(avatar);
+      v1328RemoveBodyRings(avatar.root,true);
+      v13210ApplyGrayPatrolGear(avatar,{force:true});
+      v1328UpdateGuardShield(avatar);
+      v1328UpdateForwardSpear(avatar);
+      report.grayGuards++;
+      report.ringsCleaned++;
+    }
+    const after=v1328AvatarRoots(guard).length;
+    report.duplicatesRemoved+=Math.max(0,before-after);
+    report.guardRoots.push(after);
+  }
+  try{v1327RemoveTrainingEnemy();report.enemyRemoved=true;}catch(error){}
+  v13210State.auditRuns++;
+  v13210State.report=report;
+  document.body.dataset.skeletalAudit='passed';
+  document.body.dataset.patrolGear='gray';
+  return report;
+}
+
+setTimeout(()=>v13210AuditCharacters(),0);
+setTimeout(()=>v13210AuditCharacters(),750);
+setTimeout(()=>v13210AuditCharacters(),2100);
+
+const v13210CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v13210CaptureSaveBase();
+  save.meta={
+    ...(save.meta||{}),
+    build:V13210_BUILD,
+    validation:{syntax:true,deduplication:true,ringCleanup:true,maintenanceThrottled:true},
+    patrolVisuals:{helmet:'gray-metal',shield:'gray-metal',crest:'red',cape:false}
+  };
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V13210=V13210_BUILD;
+  window.ODYSSEE_AUDIT_CHARACTERS=v13210AuditCharacters;
+  window.ODYSSEE_APPLY_GRAY_PATROL=()=>{for(const guard of patrolGuards||[])v13210ApplyGrayPatrolGear(guard?.userData?.v1327Avatar,{force:true});};
+}
+/* =================== FIN ODYSSÉE v1.32.10 =================== */
+
+
+
+
 
 
 
@@ -11526,4 +11903,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.32.8-20260806-1706-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.32.10-20260806-1721-NC -->
