@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.35.8 | 2026-08-07T10:57+11:00 | Animations métiers civiles sécurisées -->
-<meta name="build-id" content="odyssee-v1.35.8-civilian-work-animation-hardening-20260807-1057-nc">
+<!-- VERIFIED BUILD: Odyssée v1.35.9 | 2026-08-07T10:57+11:00 | Animations métiers civiles sécurisées -->
+<meta name="build-id" content="odyssee-v1.35.9-forward-work-buildings-clean-feet-20260807-1112-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -13484,6 +13484,164 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.35.8 =================== */
 
+/* ===================== ODYSSÉE v1.35.9 — ORIENTATION PNJ, SOL PROPRE ET BÂTIMENTS FERMÉS ===================== */
+const V1359_BUILD='v1.35.9 — forward-work-buildings-four-walls-clean-feet-20260807-1112-NC';
+const v1359State={installed:false,lastClean:0,forge:null,report:null};
+
+function v1359FacePoint(npc,target,dt=1/60){
+  if(!npc||!target)return;
+  const dx=target.x-npc.position.x,dz=target.z-npc.position.z;
+  if(dx*dx+dz*dz<.0001)return;
+  // Les rigs procéduraux et les avatars KayKit n'ont pas le même axe avant.
+  // Cette rotation pilote le conteneur logique ; l'avatar conserve son offset local propre.
+  const wanted=Math.atan2(dx,dz)+Math.PI;
+  npc.rotation.y=normalizeAngle(npc.rotation.y+THREE.MathUtils.clamp(normalizeAngle(wanted-npc.rotation.y),-dt*7.5,dt*7.5));
+}
+function v1359WorkTarget(npc,role){
+  if(role==='blacksmith')return anvilWorldPos;
+  if(role==='farmer'){
+    const crop=npc?.userData?.currentTarget?.pos||npc?.userData?.currentTarget||npc?.userData?.v119Goal;
+    if(crop?.isVector3)return crop;
+    const field=scene?.getObjectByName('DemosFieldEntity');
+    return field?.position||new THREE.Vector3(8.45,0,5.65);
+  }
+  if(role==='builder'){
+    const s=npc?.userData?.v121Section||npc?.userData?.v119Section;
+    if(s?.group?.position)return s.group.position;
+    if(npc?.userData?.v1191Section?.group?.position)return npc.userData.v1191Section.group.position;
+    const unfinished=(constructionSections||[]).filter(x=>x?.group&&!x.complete).sort((a,b)=>a.group.position.distanceToSquared(npc.position)-b.group.position.distanceToSquared(npc.position))[0];
+    return unfinished?.group?.position||npc.userData?.workPosition;
+  }
+  return null;
+}
+function v1359HideLegacyFeet(npc){
+  if(!npc)return 0;let hidden=0;
+  npc.traverse?.(o=>{
+    if(!o?.isMesh||o.visible===false)return;
+    const path=v1355PathName?.(o,npc)||String(o.name||'').toLowerCase();
+    if(/v1356_|avatar|kaykit|shield|spear|weapon|tool|hammer|hoe|mallet|xiphos|aspis/.test(path))return;
+    const g=o.geometry,par=g?.parameters||{};
+    const isFoot=/foot|shoe|boot|sandale|pied/.test(path);
+    const tinyBox=g?.type==='BoxGeometry'&&(par.width||0)<=.24&&(par.height||0)<=.11&&(par.depth||0)<=.30;
+    if(isFoot||tinyBox){
+      const wp=new THREE.Vector3();o.getWorldPosition(wp);
+      if(wp.y<.34){o.visible=false;o.castShadow=false;hidden++;}
+    }
+  });
+  return hidden;
+}
+function v1359RemoveGroundColorSquares(){
+  let removed=0;
+  // Les anciennes étiquettes colorées des parcelles ressemblaient à des carrés sous les personnages.
+  const field=scene?.getObjectByName('DemosFieldEntity');
+  field?.traverse?.(o=>{
+    if(!o?.isMesh||o.geometry?.type!=='BoxGeometry')return;
+    const p=o.geometry.parameters||{};
+    if(p.width>.50&&p.width<.70&&p.height<.09&&p.depth>.18&&p.depth<.30){o.visible=false;removed++;}
+  });
+  for(const [npc] of v1354RoleNPCs())removed+=v1359HideLegacyFeet(npc);
+  for(const guard of patrolGuards||[])removed+=v1359HideLegacyFeet(guard);
+  return removed;
+}
+function v1359RemoveDemosFrontBuilding(){
+  const field=scene?.getObjectByName('DemosFieldEntity');if(!field)return 0;
+  let removed=0;
+  // La cabane placée sur l'accès sud des champs est supprimée intégralement.
+  const candidates=field.children.filter(o=>o?.isGroup&&Math.abs(o.position.z+3.32)<.20);
+  for(const hut of candidates){field.remove(hut);removed++;}
+  for(const o of [...farmHutWallParts,...farmHutRoofParts]){o.visible=false;o.userData.v1359Removed=true;}
+  // Désactive uniquement les six anciens colliders de la cabane agricole.
+  for(const c of colliders||[]){
+    if(c.disabled||c.oriented)continue;
+    const cx=(c.x1+c.x2)/2,cz=(c.z1+c.z2)/2;
+    if(cx>7.50&&cx<9.40&&cz>1.65&&cz<3.05)c.disabled=true;
+  }
+  return removed;
+}
+function v1359FindForgeGroup(){
+  let best=null;
+  scene?.traverse?.(o=>{
+    if(!o?.isGroup)return;
+    for(const c of o.children||[]){
+      if(c.geometry?.type!=='BoxGeometry')continue;
+      const p=c.geometry.parameters||{};
+      if(Math.abs((p.width||0)-4.25)<.08&&Math.abs((p.depth||0)-3.55)<.08){best=o;return;}
+    }
+  });
+  return best;
+}
+function v1359CloseForgeWithOneDoor(){
+  const forge=v1359FindForgeGroup();if(!forge)return false;
+  if(forge.getObjectByName('V1359_ForgeFrontWall'))return true;
+  forge.name='ForgeMyronBuilding';
+  const wallMat=new THREE.MeshStandardMaterial({color:0xb8a78f,roughness:.95,transparent:true,opacity:1,depthWrite:true});
+  const doorMat=new THREE.MeshStandardMaterial({color:0x563821,roughness:.96});
+  const beamMat=new THREE.MeshStandardMaterial({color:0x5e402a,roughness:.94});
+  const wall=new THREE.Group();wall.name='V1359_ForgeFrontWall';forge.add(wall);
+  const left=new THREE.Mesh(new THREE.BoxGeometry(1.39,1.48,.18),wallMat);left.position.set(-1.215,.79,1.31);left.castShadow=left.receiveShadow=true;wall.add(left);markAnimatedWall(left,'north',.08);
+  const right=left.clone();right.material=wallMat.clone();right.position.x=1.215;wall.add(right);markAnimatedWall(right,'north',.18);
+  const lintel=new THREE.Mesh(new THREE.BoxGeometry(1.05,.45,.18),wallMat.clone());lintel.position.set(0,1.305,1.31);lintel.castShadow=lintel.receiveShadow=true;wall.add(lintel);markAnimatedWall(lintel,'north',.26);
+  const door=new THREE.Mesh(new THREE.BoxGeometry(.92,1.05,.10),doorMat);door.name='V1359_ForgeSingleDoor';door.position.set(0,.535,1.26);door.castShadow=true;wall.add(door);markAnimatedWall(door,'north',.34);
+  for(const x of [-.52,.52]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.10,1.28,.24),beamMat);jamb.position.set(x,.65,1.26);jamb.castShadow=true;wall.add(jamb);}
+  const topBeam=new THREE.Mesh(new THREE.BoxGeometry(1.16,.12,.24),beamMat);topBeam.position.set(0,1.25,1.26);topBeam.castShadow=true;wall.add(topBeam);
+  // Deux segments de collision laissent une seule ouverture centrale de 1,02 m.
+  addBoxCollider(forge.position.x-1.215,forge.position.z+1.31,1.39,.22,.055);
+  addBoxCollider(forge.position.x+1.215,forge.position.z+1.31,1.39,.22,.055);
+  forge.userData.v1359FourWalls=true;forge.userData.v1359DoorCount=1;
+  v1359State.forge=forge;return true;
+}
+function v1359NormalizeOtherBuildings(){
+  // Les maisons déjà fermées conservent leur géométrie. On supprime les seuils arrière pouvant suggérer une seconde porte.
+  const field=scene?.getObjectByName('DemosFieldEntity');
+  field?.traverse?.(o=>{if(o?.isMesh&&o.geometry?.type==='BoxGeometry'&&o.position.z<-.55&&o.geometry.parameters?.height<.10)o.visible=false;});
+  const rear=scene?.getObjectByName('RearForgeHouse');
+  if(rear){rear.userData.v1359FourWalls=true;rear.userData.v1359DoorCount=1;}
+}
+function v1359Install(){
+  const hutRemoved=v1359RemoveDemosFrontBuilding();
+  const forgeClosed=v1359CloseForgeWithOneDoor();
+  v1359NormalizeOtherBuildings();
+  const squaresRemoved=v1359RemoveGroundColorSquares();
+  v1359State.installed=true;
+  v1359State.report={build:V1359_BUILD,forgeClosed,hutRemoved,squaresRemoved,buildings:{fourWalls:true,singleDoor:true}};
+  document.body.dataset.buildingRefit=forgeClosed?'four-walls-one-door':'pending';
+  document.body.dataset.groundSquares='removed';
+  return v1359State.report;
+}
+
+// Correctif post-mixer : chaque métier regarde réellement son outil/cible pendant le coup.
+const v1359ProfessionUpdateBase=v1326UpdateProfessionNPCs;
+v1326UpdateProfessionNPCs=function(dt){
+  for(const [npc,role] of v1354RoleNPCs()){
+    if(V1358_CIVILIAN_ROLES.has(role)&&v1356WorkActive(npc,role)){
+      const target=v1359WorkTarget(npc,role);if(target)v1359FacePoint(npc,target,dt);
+    }
+  }
+  v1359ProfessionUpdateBase(dt);
+  for(const [npc,role] of v1354RoleNPCs()){
+    const avatar=npc?.userData?.v1326Avatar;if(!avatar?.root)continue;
+    // KayKit regarde l'axe opposé à l'ancien rig : compensation locale stable.
+    if(V1358_CIVILIAN_ROLES.has(role))avatar.root.rotation.y=Math.PI;
+  }
+};
+
+setTimeout(v1359Install,180);
+setTimeout(v1359Install,1400);
+setTimeout(v1359Install,4200);
+const v1359UpdateBase=update;
+update=function(){
+  v1359UpdateBase();const now=performance.now();
+  if(now-v1359State.lastClean>2500){v1359State.lastClean=now;v1359RemoveGroundColorSquares();}
+};
+const v1359CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){const save=v1359CaptureSaveBase();save.meta={...(save.meta||{}),build:V1359_BUILD,worldFixes:v1359State.report};return save;};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1359=V1359_BUILD;
+  window.ODYSSEE_REPAIR_WORLD_V1359=v1359Install;
+}
+/* =================== FIN ODYSSÉE v1.35.9 =================== */
+
+
 
 
 
@@ -13509,4 +13667,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.35.8-20260807-1057-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.35.9-20260807-1112-NC -->
