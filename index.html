@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- VERIFIED BUILD: Odyssée v1.35.7 | 2026-08-07T10:41+11:00 | Double audit couches, collisions, patrouilles et patterns -->
-<meta name="build-id" content="odyssee-v1.35.7-double-audit-safe-patrol-pattern-layers-20260807-1041-nc">
+<!-- VERIFIED BUILD: Odyssée v1.35.8 | 2026-08-07T10:57+11:00 | Animations métiers civiles sécurisées -->
+<meta name="build-id" content="odyssee-v1.35.8-civilian-work-animation-hardening-20260807-1057-nc">
 <meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Odyssée">
 <link id="V121_BELL_PRELOAD" rel="preload" as="audio" href="https://opengameart.org/sites/default/files/bell3_0.mp3" crossorigin="anonymous">
-<title>Odyssée — v1.35.7 — Audit complet et patrouilles sécurisées</title>
+<title>Odyssée — v1.35.8 — Animations métiers corrigées</title>
 <style>
 :root{--gold:#d7bd86;--red:#7c2b21;--ink:#0b1012;--panel:rgba(9,13,15,.84)}
 *{box-sizing:border-box}
@@ -13406,6 +13406,85 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.35.7 =================== */
 
+/* ===================== ODYSSÉE v1.35.8 — ANIMATIONS MÉTIERS CIVILES SÉCURISÉES ===================== */
+const V1358_BUILD='v1.35.8 — civilian-work-animation-hardening-20260807-1057-NC';
+const V1358_CIVILIAN_ROLES=new Set(['farmer','blacksmith','builder']);
+
+function v1358StopForbiddenCivilianAttack(avatar){
+  if(!avatar||!V1358_CIVILIAN_ROLES.has(avatar.role))return;
+  const forbidden=avatar.actionMap?.get('work');
+  if(forbidden){forbidden.stop();forbidden.enabled=false;forbidden.setEffectiveWeight(0);}
+  if(avatar.current==='work')avatar.current='';
+  avatar.root.userData.v1358CivilianAttackDisabled=true;
+}
+function v1358SanitizeProfessionAvatar(npc,role){
+  const avatar=npc?.userData?.v1326Avatar;if(!avatar)return null;
+  avatar.role=role;
+  if(V1358_CIVILIAN_ROLES.has(role))v1358StopForbiddenCivilianAttack(avatar);
+  return avatar;
+}
+
+// Le clip Sword_Attack reste disponible uniquement pour l'instructeur.
+// Les métiers civils utilisent Idle/Walk comme base, puis leurs poses procédurales dédiées.
+v1326UpdateProfessionNPCs=function(dt){
+  for(const [npc,role] of v1354RoleNPCs()){
+    const avatar=v1358SanitizeProfessionAvatar(npc,role);if(!avatar?.root)continue;
+    v1328DedupeNPC(npc,'profession');
+    if(!avatar.userData?.v1328Locomotion)v1328ConfigureLocomotion(avatar);
+    const moved=npc.position.distanceToSquared(avatar.lastPos)>.00006;
+    const working=v1356WorkActive(npc,role);
+    let baseAction=moved?'walk':'idle';
+    if(role==='trainer'&&working)baseAction='work';
+    v1326SetAvatarAction(avatar,baseAction,.16);
+    avatar.mixer.update(dt);
+    if(V1358_CIVILIAN_ROLES.has(role)&&working)v1356ApplyWorkPattern(avatar,npc,role,dt);
+    else if(role!=='trainer'){
+      avatar.userData=avatar.userData||{};
+      avatar.userData.v1356WorkClock=0;
+    }
+    avatar.lastPos.copy(npc.position);
+    v1328RemoveBodyRings(avatar.root);
+  }
+};
+
+// Sécurise aussi les avatars déjà chargés et ceux remplacés par les installateurs de tenues.
+const v1358EnsureProfessionBase=v1354EnsureProfessionAvatars;
+v1354EnsureProfessionAvatars=async function(){
+  const ready=await v1358EnsureProfessionBase();
+  for(const [npc,role] of v1354RoleNPCs())v1358SanitizeProfessionAvatar(npc,role);
+  return ready;
+};
+v1352EnsureRealOutfits=v1354EnsureProfessionAvatars;
+v1353EnsureOutfits=v1354EnsureProfessionAvatars;
+
+function v1358AuditCivilianAnimations(){
+  const result=[];
+  for(const [npc,role] of v1354RoleNPCs()){
+    if(role==='trainer')continue;
+    const avatar=npc?.userData?.v1326Avatar;
+    const forbidden=avatar?.actionMap?.get('work');
+    result.push({role,avatar:!!avatar,forbiddenStopped:!forbidden||(!forbidden.isRunning()&&forbidden.enabled===false),pattern:role==='farmer'?'hoe':role==='blacksmith'?'hammer':'mallet'});
+  }
+  const pass=result.length===3&&result.every(x=>x.avatar&&x.forbiddenStopped);
+  document.body.dataset.civilianWorkAnimations=pass?'secured':'pending';
+  return {build:V1358_BUILD,pass,result};
+}
+setTimeout(()=>{for(const [npc,role] of v1354RoleNPCs())v1358SanitizeProfessionAvatar(npc,role);v1358AuditCivilianAnimations();},300);
+setTimeout(()=>{for(const [npc,role] of v1354RoleNPCs())v1358SanitizeProfessionAvatar(npc,role);v1358AuditCivilianAnimations();},1800);
+
+const v1358CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1358CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1358_BUILD,civilianWorkAnimations:{genericSwordAttack:false,farmer:'procedural-hoe',blacksmith:'procedural-hammer',builder:'procedural-mallet',trainerCombatClip:true}};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1358=V1358_BUILD;
+  window.ODYSSEE_AUDIT_CIVILIAN_ANIMATIONS_V1358=v1358AuditCivilianAnimations;
+}
+/* =================== FIN ODYSSÉE v1.35.8 =================== */
+
+
 
 
 
@@ -13430,4 +13509,4 @@ if(typeof window!=='undefined'){
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
-<!-- GITHUB-UPLOAD-REFRESH: v1.35.7-20260807-1041-NC -->
+<!-- GITHUB-UPLOAD-REFRESH: v1.35.8-20260807-1057-NC -->
