@@ -13848,6 +13848,174 @@ if(typeof window!=='undefined'){
 }
 /* =================== FIN ODYSSÉE v1.36.0 =================== */
 
+/* ===================== ODYSSÉE v1.36.1 — CORRECTION VISUELLE PNJ: AXE AVANT, PIEDS, VÊTEMENTS EXTERNES ===================== */
+const V1361_BUILD='v1.36.1 — npc-forward-feet-garments-real-overlay-20260807-NC';
+const v1361State={lastClean:0,lastReport:null};
+
+function v1361RoleEntries(){
+  return typeof v1354RoleNPCs==='function'?v1354RoleNPCs():[
+    [trainingNPC,'trainer'],[farmerNPC,'farmer'],[blacksmithNPC,'blacksmith'],[builderNPC,'builder']
+  ];
+}
+function v1361AngleToPointForward(npc,target){
+  if(!npc||!target)return null;
+  const dx=target.x-npc.position.x,dz=target.z-npc.position.z;
+  if(dx*dx+dz*dz<.0001)return null;
+  // Le conteneur logique doit envoyer son +Z vers la cible.
+  // Le glTF conserve son offset local absolu: pas de +PI ici, sinon le métier frappe derrière lui.
+  return Math.atan2(dx,dz);
+}
+function v1361FaceWorkTarget(npc,role,dt=1/60){
+  const target=(typeof v1360CivilWorkTarget==='function'?v1360CivilWorkTarget(npc,role):null);
+  const wanted=v1361AngleToPointForward(npc,target);
+  if(wanted===null)return false;
+  const current=npc.rotation.y||0;
+  const step=Math.max(.035,Math.min(.55,dt*9.5));
+  npc.rotation.y=normalizeAngle(current+THREE.MathUtils.clamp(normalizeAngle(wanted-current),-step,step));
+  npc.userData.v1361FacingWork={role,x:target.x,z:target.z,angle:npc.rotation.y};
+  return true;
+}
+// Remplace le correctif v1.36.0 qui ajoutait Math.PI au conteneur et faisait frapper les civils derrière la cible.
+if(typeof v1360AngleToPoint==='function')v1360AngleToPoint=v1361AngleToPointForward;
+if(typeof v1360FacePointAbsolute==='function'){
+  v1360FacePointAbsolute=function(npc,target,dt=1/60){
+    const wanted=v1361AngleToPointForward(npc,target);
+    if(wanted===null)return false;
+    const current=npc.rotation.y||0,step=Math.max(.035,Math.min(.55,dt*9.5));
+    npc.rotation.y=normalizeAngle(current+THREE.MathUtils.clamp(normalizeAngle(wanted-current),-step,step));
+    npc.userData.v1361FacingTarget={x:target.x,z:target.z,angle:npc.rotation.y};
+    return true;
+  };
+}
+
+function v1361IsNearAnyNPC(worldPos,maxDist=.64){
+  for(const [npc] of v1361RoleEntries()){
+    if(!npc)continue;
+    const dx=worldPos.x-npc.position.x,dz=worldPos.z-npc.position.z;
+    if(dx*dx+dz*dz<maxDist*maxDist)return true;
+  }
+  for(const guard of patrolGuards||[]){
+    if(!guard)continue;
+    const dx=worldPos.x-guard.position.x,dz=worldPos.z-guard.position.z;
+    if(dx*dx+dz*dz<maxDist*maxDist)return true;
+  }
+  return false;
+}
+function v1361HideFootSquaresIn(root){
+  let hidden=0;
+  root?.traverse?.(o=>{
+    if(!o?.isMesh||o.visible===false||!o.geometry)return;
+    const g=o.geometry,p=g.parameters||{},name=String(o.name||'').toLowerCase();
+    const flatBox=g.type==='BoxGeometry'&&(p.height||0)<=.16&&(p.width||0)<=.82&&(p.depth||0)<=.82;
+    const flatCylinder=g.type==='CylinderGeometry'&&(p.height||0)<=.09&&Math.max(p.radiusTop||0,p.radiusBottom||0)<=.38;
+    const footDebug=/foot|feet|shoe|sole|boot_marker|pied|debug|marker|square|destination|target/.test(name);
+    if(!(flatBox||flatCylinder||footDebug))return;
+    const wp=new THREE.Vector3();o.getWorldPosition(wp);
+    if(wp.y>-0.08&&wp.y<.26&&v1361IsNearAnyNPC(wp,.72)){
+      o.visible=false;o.castShadow=false;o.receiveShadow=false;
+      o.userData.v1361HiddenFootSquareVisualOnly=true;hidden++;
+    }
+  });
+  return hidden;
+}
+function v1361CleanAllFootSquares(){
+  let hidden=0;
+  for(const [npc] of v1361RoleEntries())hidden+=v1361HideFootSquaresIn(npc);
+  for(const guard of patrolGuards||[])hidden+=v1361HideFootSquaresIn(guard);
+  // Dernier filet de sécurité: petits carrés plats visibles au sol dans toute la scène, uniquement s'ils sont près d'un PNJ.
+  hidden+=v1361HideFootSquaresIn(scene);
+  document.body.dataset.footSquares='v1361-hidden-near-npcs';
+  return hidden;
+}
+
+function v1361OutfitMaterial(material){
+  const list=Array.isArray(material)?material:[material];
+  for(const m of list){
+    if(!m)continue;
+    m.depthTest=true;m.depthWrite=true;
+    m.polygonOffset=true;m.polygonOffsetFactor=-8;m.polygonOffsetUnits=-8;
+    m.needsUpdate=true;
+  }
+}
+function v1361FloatGarments(root){
+  let fixed=0;
+  root?.traverse?.(o=>{
+    if(!o?.isMesh||!o.userData?.v1356Garment)return;
+    const name=String(o.name||'').toLowerCase();
+    v1361OutfitMaterial(o.material);
+    o.renderOrder=20;
+    // Les pièces frontales créées en v1.35.6 étaient souvent côté -Z, donc enfouies ou derrière le corps glTF.
+    if(/apron|aprontop|sash|breastplate|cuirass|vestedge|toolpouch/.test(name)){
+      o.position.z=Math.abs(o.position.z||0)+.055;
+      o.scale.x=Math.max(o.scale.x,1.10);
+      o.scale.z=Math.max(o.scale.z,1.18);
+      fixed++;
+    }else if(/torso|waist|undersuit|sleeve|forearm|trouser|boot/.test(name)){
+      o.position.z=Math.abs(o.position.z||0)+.022;
+      o.scale.x=Math.max(o.scale.x,1.08);
+      o.scale.z=Math.max(o.scale.z,1.08);
+      fixed++;
+    }
+    o.userData.v1361GarmentFloated=true;
+  });
+  return fixed;
+}
+function v1361FixAllGarments(){
+  let fixed=0;
+  for(const [npc] of v1361RoleEntries())fixed+=v1361FloatGarments(npc?.userData?.v1326Avatar?.root);
+  for(const guard of patrolGuards||[])fixed+=v1361FloatGarments(guard?.userData?.v1327Avatar?.root);
+  document.body.dataset.garments='v1361-outside-body';
+  return fixed;
+}
+
+function v1361StopCivilClipAndKeepPose(npc,role){
+  const avatar=npc?.userData?.v1326Avatar;
+  if(!avatar)return false;
+  if(typeof V1358_CIVILIAN_ROLES!=='undefined'&&V1358_CIVILIAN_ROLES.has(role)){
+    const work=avatar.actionMap?.get('work');
+    if(work){work.stop();work.enabled=false;work.setEffectiveWeight(0);}
+    if(avatar.current==='work')avatar.current='';
+  }
+  if(typeof v1360StableAvatarForward==='function')v1360StableAvatarForward(npc,role);
+  if(typeof v1356WorkActive==='function'&&v1356WorkActive(npc,role))v1361FaceWorkTarget(npc,role,1/60);
+  return true;
+}
+
+function v1361Install(){
+  let faces=0;
+  for(const [npc,role] of v1361RoleEntries())if(v1361StopCivilClipAndKeepPose(npc,role))faces++;
+  const footSquares=v1361CleanAllFootSquares();
+  const garments=v1361FixAllGarments();
+  v1361State.lastReport={build:V1361_BUILD,faces,footSquares,garments};
+  document.body.dataset.odysseeVisualNPCFix=V1361_BUILD;
+  return v1361State.lastReport;
+}
+
+const v1361ProfessionUpdateBase=v1326UpdateProfessionNPCs;
+v1326UpdateProfessionNPCs=function(dt){
+  v1361ProfessionUpdateBase(dt);
+  for(const [npc,role] of v1361RoleEntries())v1361StopCivilClipAndKeepPose(npc,role);
+};
+const v1361UpdateBase=update;
+update=function(){
+  v1361UpdateBase();
+  const now=performance.now();
+  if(now-v1361State.lastClean>700){
+    v1361State.lastClean=now;
+    v1361CleanAllFootSquares();
+    v1361FixAllGarments();
+  }
+};
+setTimeout(v1361Install,260);
+setTimeout(v1361Install,1500);
+setTimeout(v1361Install,4200);
+setTimeout(v1361Install,8000);
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1361=V1361_BUILD;
+  window.ODYSSEE_FIX_NPC_VISUALS_V1361=v1361Install;
+}
+/* =================== FIN ODYSSÉE v1.36.1 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
