@@ -13664,6 +13664,190 @@ if(typeof window!=='undefined'){
 
 
 
+/* ===================== ODYSSÉE v1.36.0 — CORRECTIF FINAL DEMANDÉ: PNJ, PIEDS, DÉMOS, BÂTIMENTS ===================== */
+const V1360_BUILD='v1.36.0 — requested-npc-orientation-civil-work-demos-fields-building-audit-20260807-NC';
+const V1360_FRONT_OFFSETS={trainer:Math.PI,farmer:Math.PI,blacksmith:Math.PI,builder:Math.PI};
+const v1360State={installed:false,lastAudit:null,lastClean:0};
+
+function v1360AngleToPoint(npc,target){
+  if(!npc||!target)return null;
+  const dx=target.x-npc.position.x,dz=target.z-npc.position.z;
+  if(dx*dx+dz*dz<.0001)return null;
+  return Math.atan2(dx,dz)+Math.PI;
+}
+function v1360FacePointAbsolute(npc,target,dt=1/60){
+  const wanted=v1360AngleToPoint(npc,target);
+  if(wanted===null)return false;
+  const current=npc.rotation.y||0;
+  const maxStep=Math.max(.025,Math.min(.42,dt*8.0));
+  npc.rotation.y=normalizeAngle(current+THREE.MathUtils.clamp(normalizeAngle(wanted-current),-maxStep,maxStep));
+  npc.userData.v1360FacingTarget={x:target.x,z:target.z,angle:npc.rotation.y};
+  return true;
+}
+function v1360StableAvatarForward(npc,role){
+  const avatar=npc?.userData?.v1326Avatar;
+  if(!avatar?.root)return false;
+  // Axe avant observé dans les correctifs KayKit/glTF existants: l'avatar visible regarde l'opposé du conteneur procédural.
+  // Rotation locale absolue, jamais accumulée.
+  avatar.root.rotation.y=V1360_FRONT_OFFSETS[role]??Math.PI;
+  avatar.root.userData.v1360ForwardOffset=avatar.root.rotation.y;
+  return true;
+}
+function v1360CivilWorkTarget(npc,role){
+  if(role==='blacksmith')return anvilWorldPos;
+  if(role==='farmer'){
+    const current=npc?.userData?.currentTarget?.pos||npc?.userData?.currentTarget||npc?.userData?.v119Goal;
+    if(current?.isVector3)return current;
+    const near=(farmPlotCenters||[]).slice().sort((a,b)=>a.pos.distanceToSquared(npc.position)-b.pos.distanceToSquared(npc.position))[0];
+    return near?.pos||scene?.getObjectByName('DemosFieldEntity')?.position||new THREE.Vector3(8.45,0,5.65);
+  }
+  if(role==='builder'){
+    const section=npc?.userData?.v121Section||npc?.userData?.v119Section||npc?.userData?.v1191Section;
+    if(section?.group?.position)return section.group.position;
+    const target=(constructionSections||[]).filter(s=>s?.group&&!s.complete).sort((a,b)=>a.group.position.distanceToSquared(npc.position)-b.group.position.distanceToSquared(npc.position))[0];
+    return target?.group?.position||constructionSiteCenter||npc?.userData?.workPosition;
+  }
+  return null;
+}
+function v1360StopCivilSwordWork(npc,role){
+  const avatar=npc?.userData?.v1326Avatar;
+  if(!avatar||!V1358_CIVILIAN_ROLES?.has(role))return false;
+  const work=avatar.actionMap?.get('work');
+  if(work){work.stop();work.enabled=false;work.setEffectiveWeight(0);}
+  if(avatar.current==='work')avatar.current='';
+  avatar.root.userData.v1360CivilSwordAttackBlocked=true;
+  return true;
+}
+function v1360HideUnwantedFootVisuals(root){
+  let hidden=0;
+  root?.traverse?.(o=>{
+    if(!o?.isMesh||o.visible===false)return;
+    const name=String(o.name||'').toLowerCase();
+    const geo=o.geometry,par=geo?.parameters||{};
+    const tinySquare=geo?.type==='BoxGeometry'&&(par.width||0)<=.70&&(par.height||0)<=.10&&(par.depth||0)<=.35;
+    const footLike=/foot|feet|shoe|boot|sandale|pied|debug|marker/.test(name);
+    if(!(tinySquare||footLike))return;
+    const wp=new THREE.Vector3();o.getWorldPosition(wp);
+    if(wp.y<=.34){
+      o.visible=false;o.castShadow=false;o.receiveShadow=false;
+      o.userData.v1360HiddenVisualOnly=true;hidden++;
+    }
+  });
+  return hidden;
+}
+function v1360CleanGroundSquares(){
+  let hidden=0;
+  const field=scene?.getObjectByName('DemosFieldEntity');
+  field?.traverse?.(o=>{
+    if(!o?.isMesh||o.visible===false||o.geometry?.type!=='BoxGeometry')return;
+    const p=o.geometry.parameters||{};
+    const coloredPlotMarker=(p.width>.50&&p.width<.70&&p.height<.09&&p.depth>.16&&p.depth<.32);
+    if(coloredPlotMarker){
+      o.visible=false;o.castShadow=false;o.receiveShadow=false;
+      o.userData.v1360HiddenPlotMarker=true;hidden++;
+    }
+  });
+  for(const [npc] of v1354RoleNPCs())hidden+=v1360HideUnwantedFootVisuals(npc);
+  for(const guard of patrolGuards||[])hidden+=v1360HideUnwantedFootVisuals(guard);
+  return hidden;
+}
+function v1360RemoveDemosFrontBuildingComplete(){
+  const field=scene?.getObjectByName('DemosFieldEntity');
+  let removed=0;
+  field?.children?.slice().forEach(child=>{
+    if(child?.isGroup&&Math.abs(child.position.z+3.32)<.25){
+      child.traverse?.(o=>{o.userData.v1360RemovedDemosFrontBuilding=true;});
+      field.remove(child);removed++;
+    }
+  });
+  for(const arr of [farmHutWallParts,farmHutRoofParts]){
+    for(const obj of arr.slice()){
+      obj.userData.v1360RemovedDemosFrontBuilding=true;
+      obj.parent?.remove(obj);
+      removed++;
+    }
+    arr.length=0;
+  }
+  for(const c of colliders||[]){
+    if(c.oriented)continue;
+    const cx=((c.x1||0)+(c.x2||0))/2,cz=((c.z1||0)+(c.z2||0))/2;
+    if(cx>7.35&&cx<9.55&&cz>1.55&&cz<3.15){
+      c.disabled=true;c.v1360RemovedDemosFrontBuilding=true;
+    }
+  }
+  if(typeof farmHutReveal==='number')farmHutReveal=0;
+  return removed;
+}
+function v1360AuditBuildings(){
+  const zones=(v119BuildingZones||[]).map(b=>({name:b.name,x:b.x,z:b.z,hx:b.hx,hz:b.hz}));
+  const colliderKeys=new Map();let duplicateColliders=0;
+  for(const c of colliders||[]){
+    if(c.disabled)continue;
+    const key=c.oriented?`o:${c.cx.toFixed(2)}:${c.cz.toFixed(2)}:${c.w.toFixed(2)}:${c.d.toFixed(2)}:${c.rot.toFixed(2)}`:`a:${c.x1.toFixed(2)}:${c.x2.toFixed(2)}:${c.z1.toFixed(2)}:${c.z2.toFixed(2)}`;
+    if(colliderKeys.has(key))duplicateColliders++; else colliderKeys.set(key,true);
+  }
+  const demosFrontGone=!scene?.getObjectByName('DemosFieldEntity')?.children?.some(o=>o?.isGroup&&Math.abs(o.position.z+3.32)<.25);
+  return {build:V1360_BUILD,zones,collidersActive:colliderKeys.size,duplicateColliders,demosFrontGone};
+}
+function v1360Install(){
+  const removedDemos=v1360RemoveDemosFrontBuildingComplete();
+  const hiddenSquares=v1360CleanGroundSquares();
+  for(const [npc,role] of v1354RoleNPCs()){
+    if(V1358_CIVILIAN_ROLES.has(role))v1360StopCivilSwordWork(npc,role);
+    v1360StableAvatarForward(npc,role);
+  }
+  v1360State.installed=true;
+  v1360State.lastAudit=v1360AuditBuildings();
+  document.body.dataset.odysseeRequestedFix=V1360_BUILD;
+  document.body.dataset.demosFrontBuilding=v1360State.lastAudit.demosFrontGone?'removed':'pending';
+  document.body.dataset.civilSwordWork='blocked';
+  document.body.dataset.groundSquares='hidden-visual-only';
+  return {...v1360State.lastAudit,removedDemos,hiddenSquares};
+}
+
+const v1360ProfessionUpdateBase=v1326UpdateProfessionNPCs;
+v1326UpdateProfessionNPCs=function(dt){
+  v1360ProfessionUpdateBase(dt);
+  for(const [npc,role] of v1354RoleNPCs()){
+    if(!npc)continue;
+    v1360StableAvatarForward(npc,role);
+    if(V1358_CIVILIAN_ROLES.has(role)){
+      v1360StopCivilSwordWork(npc,role);
+      if(v1356WorkActive(npc,role)){
+        const target=v1360CivilWorkTarget(npc,role);
+        if(target)v1360FacePointAbsolute(npc,target,dt);
+      }
+    }
+  }
+};
+
+const v1360UpdateBase=update;
+update=function(){
+  v1360UpdateBase();
+  const now=performance.now();
+  if(now-v1360State.lastClean>1500){
+    v1360State.lastClean=now;
+    v1360CleanGroundSquares();
+    v1360RemoveDemosFrontBuildingComplete();
+  }
+};
+
+setTimeout(v1360Install,220);
+setTimeout(v1360Install,1600);
+setTimeout(v1360Install,4600);
+const v1360CaptureSaveBase=v124CaptureSave;
+v124CaptureSave=function(){
+  const save=v1360CaptureSaveBase();
+  save.meta={...(save.meta||{}),build:V1360_BUILD,requestedFixes:v1360State.lastAudit};
+  return save;
+};
+if(typeof window!=='undefined'){
+  window.ODYSSEE_BUILD_V1360=V1360_BUILD;
+  window.ODYSSEE_APPLY_REQUESTED_FIXES_V1360=v1360Install;
+  window.ODYSSEE_AUDIT_REQUESTED_FIXES_V1360=v1360AuditBuildings;
+}
+/* =================== FIN ODYSSÉE v1.36.0 =================== */
+
 </script>
 <!-- V1230-PAYLOAD: npc-work-routes-zones-rigs-20260805-2116-NC -->
 </body></html>
